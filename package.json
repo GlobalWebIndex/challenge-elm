@@ -1,0 +1,20 @@
+{
+  "name": "challenge-elm",
+  "version": "1.0.0",
+  "description": "This repository contains requirements definition of entry project used for job applications on **position of [Elm](elm-lang.org)/[JavaScript](https://www.javascript.com/) developer**. This includes two parts test where **only the first part is required**. Whole assignment is based on real part of our production app. However since there is a lot of domain specific knowladge required for most parts of our system and we are aware of the fact that most of this logic might be confusing for newcomers we've tried to pick task which doesn't require any specific insight and have hiden all details which might possibly cause any confusion. Thanks to this this project can be used as general challenge to build HTML app in Elm.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile-elm": "elm make ./src/Main.elm --output ./build/dev/index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/domogled/challenge-elm.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/domogled/challenge-elm/issues"
+  },
+  "homepage": "https://github.com/domogled/challenge-elm#readme"
+}
