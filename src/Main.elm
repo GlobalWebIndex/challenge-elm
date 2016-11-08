@@ -1,16 +1,119 @@
 module Main exposing (main)
 
+import Html.App
 import Html exposing (Html)
+import Html exposing (..)
+import Html.Attributes exposing (..)
 
 
 -- Import Modules
 
 import Data.Audience
-import Data.AudienceFolder
+import Data.AudienceFolder exposing (AudienceFolder)
+import Json.Decode as Decode exposing (Decoder, (:=))
+import Json.Decode.Extra as Decode exposing ((|:))
 
 
 {-| Main file of application
 -}
-main : Html msg
+main : Program Never
 main =
-    Html.text "There will be app soon!"
+    -- Html.text "There will be app soon!"
+    Html.App.program
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
+
+
+
+-- MODEL
+
+
+type alias Model =
+    { audienceFolders : List Data.AudienceFolder.AudienceFolder
+    }
+
+
+init : ( Model, Cmd Msg )
+init =
+    let
+        audienceFolder =
+            case Debug.log "audiencefolder" (audienceFoldersDecoder Data.AudienceFolder.audienceFoldersJSON) of
+                Ok data ->
+                    data
+
+                -- @TODO: error reporting
+                Err err ->
+                    []
+    in
+        ( { audienceFolders = audienceFolder
+          }
+        , Cmd.none
+        )
+
+
+audienceFoldersDecoder : String -> Result String (List AudienceFolder)
+audienceFoldersDecoder json =
+    json
+        |> Decode.decodeString (Decode.at [ "data" ] <| Decode.list audienceFolderDecodeItem)
+
+
+audienceFolderDecodeItem : Decoder AudienceFolder
+audienceFolderDecodeItem =
+    Decode.succeed AudienceFolder
+        |: ("id" := Decode.int)
+        |: ("name" := Decode.string)
+        |: ("parent" := Decode.maybe Decode.int)
+
+
+
+-- MESSAGES
+
+
+type Msg
+    = NoOp
+
+
+
+-- UPDATE
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        NoOp ->
+            ( model, Cmd.none )
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
+
+
+
+-- VIEW
+
+
+view : Model -> Html Msg
+view model =
+    div []
+        [ h1 [] [ text "folders" ]
+        , ul [] (List.map viewFolders model.audienceFolders)
+        , h1 [] [ text "raw source data" ]
+        , pre
+            []
+            [ text Data.AudienceFolder.audienceFoldersJSON ]
+        ]
+
+
+viewFolders : Data.AudienceFolder.AudienceFolder -> Html Msg
+viewFolders folder =
+    li []
+        [ text folder.name
+        ]
