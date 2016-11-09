@@ -70,7 +70,7 @@ audiencesJSON =
             },
             {
                 "id": 97,
-                "name": "Brand \"Likers\"",
+                "name": "Brand Likers",
                 "expression": {
                     "or": [
                         {
