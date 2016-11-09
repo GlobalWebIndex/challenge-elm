@@ -9,11 +9,10 @@ import Html.Events exposing (..)
 
 -- Import Modules
 
-import Data.Audience
+import Data.Audience exposing (Audience, AudienceType(..))
 import Data.AudienceFolder exposing (AudienceFolder)
 import Json.Decode as Decode exposing (Decoder, (:=))
 import Json.Decode.Extra as Decode exposing ((|:))
-import List.Extra exposing (last)
 
 
 {-| Main file of application
@@ -35,7 +34,9 @@ main =
 
 type alias Model =
     { audienceFolders : List Data.AudienceFolder.AudienceFolder
+    , audiencies : List Data.Audience.Audience
     , currentPath : Maybe (List Data.AudienceFolder.AudienceFolder)
+    , currentFolder : Maybe (Data.AudienceFolder.AudienceFolder)
     }
 
 
@@ -50,12 +51,27 @@ init =
                 -- @TODO: error reporting
                 Err err ->
                     []
+
+        audiencies =
+            case Debug.log "audiencies" (audienciesDecoder Data.Audience.audiencesJSON) of
+                Ok data ->
+                    data
+
+                -- @TODO: error reporting
+                Err err ->
+                    []
     in
         ( { audienceFolders = audienceFolder
+          , audiencies = audiencies
           , currentPath = Nothing
+          , currentFolder = Nothing
           }
         , Cmd.none
         )
+
+
+
+-- DECODERS
 
 
 audienceFoldersDecoder : String -> Result String (List AudienceFolder)
@@ -72,12 +88,47 @@ audienceFolderDecodeItem =
         |: ("parent" := Decode.maybe Decode.int)
 
 
+audienciesDecoder : String -> Result String (List Audience)
+audienciesDecoder json =
+    json
+        |> Decode.decodeString (Decode.at [ "data" ] <| Decode.list audienciesDecoderItem)
+
+
+audienciesDecoderItem : Decoder Audience
+audienciesDecoderItem =
+    Decode.succeed Audience
+        |: ("id" := Decode.int)
+        |: ("name" := Decode.string)
+        |: ("type"
+                := Decode.string
+                `Decode.andThen` audienceTypeDecoder
+           )
+        |: ("folder" := Decode.maybe Decode.int)
+
+
+audienceTypeDecoder : String -> Decoder AudienceType
+audienceTypeDecoder audienceType =
+    case audienceType of
+        "authored" ->
+            Decode.succeed Authored
+
+        "shared" ->
+            Decode.succeed Shared
+
+        "curated" ->
+            Decode.succeed Curated
+
+        _ ->
+            Decode.fail (audienceType ++ " is not a recognized audienceType for Audience")
+
+
 
 -- MESSAGES
 
 
 type Msg
     = SelectRootDirectory Data.AudienceFolder.AudienceFolder
+    | SelectBreadcrumbItem Data.AudienceFolder.AudienceFolder
     | NoOp
 
 
@@ -96,7 +147,15 @@ update msg model =
     in
         case msg of
             SelectRootDirectory folder ->
-                ( { model | currentPath = Just [ folder ] }, Cmd.none )
+                ( { model
+                    | currentPath = Just [ folder ]
+                    , currentFolder = Just folder
+                  }
+                , Cmd.none
+                )
+
+            SelectBreadcrumbItem folder ->
+                ( { model | currentFolder = Just folder }, Cmd.none )
 
             NoOp ->
                 ( model, Cmd.none )
@@ -121,11 +180,11 @@ view model =
         [ h1 [] [ text "folders" ]
           -- , ul [] (List.map viewFolders model.audienceFolders)
         , ul [ id "rootFoldersPanel" ]
-            (List.map viewFolders <|
+            (List.map viewRootFolderNavigationItem <|
                 List.filter rootFoldersFilter model.audienceFolders
             )
         , ol [ id "breadcrumbPanel" ] [ viewBreadcrumb model.currentPath ]
-        , div [ id "contentPanel" ] [ viewFolderContent model.currentPath ]
+        , div [ id "contentPanel" ] [ viewFolderContent model.currentFolder ]
         , h1 [] [ text "raw source data" ]
         , pre
             []
@@ -133,25 +192,27 @@ view model =
         ]
 
 
-viewFolders : Data.AudienceFolder.AudienceFolder -> Html Msg
-viewFolders folder =
+viewRootFolderNavigationItem : Data.AudienceFolder.AudienceFolder -> Html Msg
+viewRootFolderNavigationItem folder =
     li []
         [ a [ class "btn ml1 h1", onClick (SelectRootDirectory folder) ]
             [ text folder.name ]
         ]
 
 
-viewFolderContent : Maybe (List Data.AudienceFolder.AudienceFolder) -> Html Msg
-viewFolderContent currentPath =
-    case currentPath of
-        Just currentPath ->
-            case last currentPath of
-                Just folder ->
-                    text <| "HEN JE OBSAH " ++ (folder.name)
+viewBreadcrumbItem : Data.AudienceFolder.AudienceFolder -> Html Msg
+viewBreadcrumbItem folder =
+    li []
+        [ a [ class "btn ml1 h1", onClick (SelectBreadcrumbItem folder) ]
+            [ text folder.name ]
+        ]
 
-                -- @TODO: unexpected state, because model.currentPath is always Nothing instead empty List
-                Nothing ->
-                    text "Obsah nenalezen"
+
+viewFolderContent : Maybe (Data.AudienceFolder.AudienceFolder) -> Html Msg
+viewFolderContent currentFolder =
+    case currentFolder of
+        Just currentFolder ->
+            text <| "HEN JE OBSAH " ++ (currentFolder.name)
 
         Nothing ->
             text "hen bude obsah"
@@ -163,7 +224,7 @@ viewBreadcrumb currentPath =
         Just currentPath ->
             ol [] <|
                 List.map
-                    viewFolders
+                    viewBreadcrumbItem
                     currentPath
 
         Nothing ->
