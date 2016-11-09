@@ -4,6 +4,7 @@ import Html.App
 import Html exposing (Html)
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 
 
 -- Import Modules
@@ -12,6 +13,7 @@ import Data.Audience
 import Data.AudienceFolder exposing (AudienceFolder)
 import Json.Decode as Decode exposing (Decoder, (:=))
 import Json.Decode.Extra as Decode exposing ((|:))
+import List.Extra exposing (last)
 
 
 {-| Main file of application
@@ -33,6 +35,7 @@ main =
 
 type alias Model =
     { audienceFolders : List Data.AudienceFolder.AudienceFolder
+    , currentPath : Maybe (List Data.AudienceFolder.AudienceFolder)
     }
 
 
@@ -49,6 +52,7 @@ init =
                     []
     in
         ( { audienceFolders = audienceFolder
+          , currentPath = Nothing
           }
         , Cmd.none
         )
@@ -73,7 +77,8 @@ audienceFolderDecodeItem =
 
 
 type Msg
-    = NoOp
+    = SelectRootDirectory Data.AudienceFolder.AudienceFolder
+    | NoOp
 
 
 
@@ -82,9 +87,19 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        NoOp ->
-            ( model, Cmd.none )
+    let
+        _ =
+            Debug.log "UPDATE msg: " msg
+
+        _ =
+            Debug.log "UPDATE model: " model
+    in
+        case msg of
+            SelectRootDirectory folder ->
+                ( { model | currentPath = Just [ folder ] }, Cmd.none )
+
+            NoOp ->
+                ( model, Cmd.none )
 
 
 
@@ -104,7 +119,12 @@ view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "folders" ]
-        , ul [] (List.map viewFolders model.audienceFolders)
+          -- , ul [] (List.map viewFolders model.audienceFolders)
+        , ul [ id "RootFoldersPanel" ]
+            (List.map viewFolders <|
+                List.filter rootFoldersFilter model.audienceFolders
+            )
+        , div [ id "contentPanel" ] [ folderContent model.currentPath ]
         , h1 [] [ text "raw source data" ]
         , pre
             []
@@ -115,5 +135,31 @@ view model =
 viewFolders : Data.AudienceFolder.AudienceFolder -> Html Msg
 viewFolders folder =
     li []
-        [ text folder.name
+        [ a [ class "btn ml1 h1", onClick (SelectRootDirectory folder) ]
+            [ text folder.name ]
         ]
+
+
+folderContent : Maybe (List Data.AudienceFolder.AudienceFolder) -> Html Msg
+folderContent currentPath =
+    case currentPath of
+        Just currentPath ->
+            case last currentPath of
+                Just folder ->
+                    text <| "HEN JE OBSAH " ++ (folder.name)
+
+                -- @TODO: unexpected state, because model.currentPath is always Nothing instead empty List
+                Nothing ->
+                    text "Obsah nenalezen"
+
+        Nothing ->
+            text "hen bude obsah"
+
+
+
+-- FILTERS
+
+
+rootFoldersFilter : Data.AudienceFolder.AudienceFolder -> Bool
+rootFoldersFilter folder =
+    folder.parent == Nothing
