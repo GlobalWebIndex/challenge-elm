@@ -120,11 +120,12 @@ view model =
     div []
         [ h1 [] [ text "folders" ]
           -- , ul [] (List.map viewFolders model.audienceFolders)
-        , ul [ id "RootFoldersPanel" ]
+        , ul [ id "rootFoldersPanel" ]
             (List.map viewFolders <|
                 List.filter rootFoldersFilter model.audienceFolders
             )
-        , div [ id "contentPanel" ] [ folderContent model.currentPath ]
+        , ol [ id "breadcrumbPanel" ] [ viewBreadcrumb model.currentPath ]
+        , div [ id "contentPanel" ] [ viewFolderContent model.currentPath ]
         , h1 [] [ text "raw source data" ]
         , pre
             []
@@ -140,8 +141,8 @@ viewFolders folder =
         ]
 
 
-folderContent : Maybe (List Data.AudienceFolder.AudienceFolder) -> Html Msg
-folderContent currentPath =
+viewFolderContent : Maybe (List Data.AudienceFolder.AudienceFolder) -> Html Msg
+viewFolderContent currentPath =
     case currentPath of
         Just currentPath ->
             case last currentPath of
@@ -154,6 +155,19 @@ folderContent currentPath =
 
         Nothing ->
             text "hen bude obsah"
+
+
+viewBreadcrumb : Maybe (List Data.AudienceFolder.AudienceFolder) -> Html Msg
+viewBreadcrumb currentPath =
+    case currentPath of
+        Just currentPath ->
+            ol [] <|
+                List.map
+                    viewFolders
+                    currentPath
+
+        Nothing ->
+            text "bez navigace"
 
 
 
