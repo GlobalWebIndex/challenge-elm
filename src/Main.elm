@@ -4,12 +4,13 @@ import Html exposing (Html)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import FontAwesome.Web as Icon
 
 
 -- Import Modules
 
 import Data.Audience exposing (Audience, AudienceType(..))
-import Data.AudienceFolder exposing (AudienceFolder)
+import Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
 import Json.Decode as Decode exposing (Decoder, field)
 import Json.Decode.Extra as Decode exposing ((|:))
 
@@ -32,10 +33,10 @@ main =
 
 
 type alias Model =
-    { audienceFolders : List Data.AudienceFolder.AudienceFolder
+    { audienceFolders : List AudienceFolder
     , audiences : List Data.Audience.Audience
-    , currentPath : List Data.AudienceFolder.AudienceFolder
-    , currentFolder : Maybe Data.AudienceFolder.AudienceFolder
+    , currentPath : List AudienceFolder
+    , currentFolder : Maybe AudienceFolder
     }
 
 
@@ -43,7 +44,7 @@ init : ( Model, Cmd Msg )
 init =
     let
         audienceFolder =
-            case Debug.log "audiencefolder" (audienceFoldersDecoder Data.AudienceFolder.audienceFoldersJSON) of
+            case Debug.log "audiencefolder" (audienceFoldersDecoder audienceFoldersJSON) of
                 Ok data ->
                     data
 
@@ -126,8 +127,8 @@ audienceTypeDecoder audienceType =
 
 
 type Msg
-    = SelectRootDirectory Data.AudienceFolder.AudienceFolder
-    | SelectBreadcrumbItem Data.AudienceFolder.AudienceFolder
+    = SelectRootDirectory AudienceFolder
+    | SelectBreadcrumbItem AudienceFolder
     | NoOp
 
 
@@ -179,8 +180,16 @@ view model =
         [ h1 [] [ text "folders" ]
           -- , ul [] (List.map viewFolders model.audienceFolders)
         , ul [ id "rootFoldersPanel" ]
-            (List.map viewRootFolderNavigationItem <|
-                List.filter rootFoldersFilter model.audienceFolders
+            (List.filterMap
+                (viewRootFolderNavigationItem
+                    model.currentFolder
+                )
+                model.audienceFolders
+             {- (List.filter
+                    rootFoldersFilter
+                    model.audienceFolders
+                )
+             -}
             )
         , viewBreadcrumb model.currentPath
         , div [ id "contentPanel" ]
@@ -194,19 +203,34 @@ view model =
         , h1 [] [ text "raw source data" ]
         , pre
             []
-            [ text Data.AudienceFolder.audienceFoldersJSON ]
+            [ text audienceFoldersJSON ]
         ]
 
 
-viewRootFolderNavigationItem : Data.AudienceFolder.AudienceFolder -> Html Msg
-viewRootFolderNavigationItem folder =
-    li []
-        [ a [ class "btn ml1 h1", onClick (SelectRootDirectory folder) ]
-            [ text folder.name ]
-        ]
+viewRootFolderNavigationItem : Maybe AudienceFolder -> AudienceFolder -> Maybe (Html Msg)
+viewRootFolderNavigationItem currentFolder folder =
+    if folder.parent == Nothing then
+        Just <|
+            li
+                []
+                [ a [ class "button is-info", onClick (SelectRootDirectory folder) ]
+                    [ case currentFolder of
+                        Just openedFolder ->
+                            if folder.id == openedFolder.id then
+                                Icon.folder_open
+                            else
+                                Icon.folder
+
+                        _ ->
+                            Icon.folder
+                    , text folder.name
+                    ]
+                ]
+    else
+        Nothing
 
 
-viewBreadcrumbItem : Data.AudienceFolder.AudienceFolder -> Html Msg
+viewBreadcrumbItem : AudienceFolder -> Html Msg
 viewBreadcrumbItem folder =
     li []
         [ a [ class "btn ml1 h1", onClick (SelectBreadcrumbItem folder) ]
@@ -214,21 +238,21 @@ viewBreadcrumbItem folder =
         ]
 
 
-viewFolderContentSubFolders : Maybe Data.AudienceFolder.AudienceFolder -> List Data.AudienceFolder.AudienceFolder -> Html Msg
+viewFolderContentSubFolders : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
 viewFolderContentSubFolders currentFolder audienceFolders =
     case currentFolder of
-        Just currentFolder ->
-            ul [ id "contentPanel folderList" ] <|
-                List.map
-                    viewRootFolderNavigationItem
-                <|
-                    List.filter rootFoldersFilter audienceFolders
+        Just folder ->
+            ul [ id "contentPanel folderList" ] [ text "any content" ]
 
+        {- List.map
+           (viewRootFolderNavigationItem currentFolder)
+           (List.filter rootFoldersFilter audienceFolders)
+        -}
         Nothing ->
             text "no select folder"
 
 
-viewFolderContentAudiences : Maybe Data.AudienceFolder.AudienceFolder -> List Data.Audience.Audience -> Html Msg
+viewFolderContentAudiences : Maybe AudienceFolder -> List Data.Audience.Audience -> Html Msg
 viewFolderContentAudiences currentFolderM audiences =
     case currentFolderM of
         Just currentFolder ->
@@ -258,7 +282,7 @@ viewContentAudienceItem audience =
     text audience.name
 
 
-viewBreadcrumb : List Data.AudienceFolder.AudienceFolder -> Html Msg
+viewBreadcrumb : List AudienceFolder -> Html Msg
 viewBreadcrumb currentPath =
     case currentPath of
         [] ->
@@ -273,8 +297,9 @@ viewBreadcrumb currentPath =
 
 
 -- FILTERS
+{-
 
-
-rootFoldersFilter : Data.AudienceFolder.AudienceFolder -> Bool
-rootFoldersFilter folder =
-    folder.parent == Nothing
+   rootFoldersFilter : AudienceFolder -> Bool
+   rootFoldersFilter folder =
+       folder.parent == Nothing
+-}
