@@ -178,25 +178,10 @@ view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "folders" ]
-          -- , ul [] (List.map viewFolders model.audienceFolders)
-        , aside [ class "menu" ]
-            [ ul
-                [ id "rootFoldersPanel"
-                , class "menu-list"
-                ]
-                (List.filterMap
-                    (viewRootFolderNavigationItem
-                        model.currentFolder
-                    )
-                    model.audienceFolders
-                 {- (List.filter
-                        rootFoldersFilter
-                        model.audienceFolders
-                    )
-                 -}
-                )
-            ]
-        , viewBreadcrumb model.currentFolder model.currentPath
+        , model.audienceFolders
+            |> viewRootFolderNavigation model.currentFolder
+        , model.currentPath
+            |> viewBreadcrumb model.currentFolder
         , div [ id "contentPanel", class "panel" ]
             [ viewFolderContentSubFolders
                 model.currentFolder
@@ -212,19 +197,32 @@ view model =
         ]
 
 
+
+-- VIEW main menu (root folders)
+
+
+viewRootFolderNavigation : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
+viewRootFolderNavigation currentFolder audienceFolders =
+    aside [ class "menu" ]
+        [ ul
+            [ id "rootFoldersPanel"
+            , class "menu-list"
+            ]
+            -- @TODO s |> a <| jdou teda dělat rúzné capiny, otázka zda nejsou naḱonec lepší "(...)"
+            (audienceFolders
+                |> List.filterMap
+                    (viewRootFolderNavigationItem
+                        currentFolder
+                    )
+            )
+        ]
+
+
 viewRootFolderNavigationItem : Maybe AudienceFolder -> AudienceFolder -> Maybe (Html Msg)
 viewRootFolderNavigationItem currentFolder folder =
     let
         isOpened =
-            case currentFolder of
-                Just openedFolder ->
-                    if folder.id == openedFolder.id then
-                        True
-                    else
-                        False
-
-                _ ->
-                    False
+            isOpenFolder currentFolder folder
     in
         if folder.parent == Nothing then
             Just <|
@@ -247,6 +245,40 @@ viewRootFolderNavigationItem currentFolder folder =
                     ]
         else
             Nothing
+
+
+
+-- VIEW Breadcrumb
+
+
+viewBreadcrumb : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
+viewBreadcrumb currentFolder currentPath =
+    ol [ id "breadcrumbPanel" ] <|
+        List.map
+            (viewBreadcrumbItem currentFolder)
+            currentPath
+
+
+viewBreadcrumbItem : Maybe AudienceFolder -> AudienceFolder -> Html Msg
+viewBreadcrumbItem currentFolder folder =
+    let
+        isOpened =
+            isOpenFolder currentFolder folder
+    in
+        li []
+            [ if isOpened then
+                span [ class "tag is-primary is-medium" ] [ text folder.name ]
+              else
+                a
+                    [ class "tag is-info"
+                    , onClick (SelectBreadcrumbItem folder)
+                    ]
+                    [ text folder.name ]
+            ]
+
+
+
+-- VIEW content
 
 
 viewFolderContentSubFolders : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
@@ -293,40 +325,6 @@ viewContentAudienceItem audience =
     text audience.name
 
 
-viewBreadcrumb : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
-viewBreadcrumb currentFolder currentPath =
-    ol [ id "breadcrumbPanel" ] <|
-        List.map
-            (viewBreadcrumbItem currentFolder)
-            currentPath
-
-
-viewBreadcrumbItem : Maybe AudienceFolder -> AudienceFolder -> Html Msg
-viewBreadcrumbItem currentFolder folder =
-    let
-        isOpened =
-            case currentFolder of
-                Just openedFolder ->
-                    if folder.id == openedFolder.id then
-                        True
-                    else
-                        False
-
-                _ ->
-                    False
-    in
-        li []
-            [ if isOpened then
-                span [ class "tag is-primary is-medium" ] [ text folder.name ]
-              else
-                a
-                    [ class "tag is-info"
-                    , onClick (SelectBreadcrumbItem folder)
-                    ]
-                    [ text folder.name ]
-            ]
-
-
 
 -- FILTERS
 {-
@@ -335,3 +333,17 @@ viewBreadcrumbItem currentFolder folder =
    rootFoldersFilter folder =
        folder.parent == Nothing
 -}
+-- UTILS
+
+
+isOpenFolder : Maybe AudienceFolder -> AudienceFolder -> Bool
+isOpenFolder currentFolder folder =
+    case currentFolder of
+        Just openedFolder ->
+            if folder.id == openedFolder.id then
+                True
+            else
+                False
+
+        _ ->
+            False
