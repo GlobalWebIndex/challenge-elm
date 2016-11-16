@@ -1,6 +1,5 @@
 module Main exposing (main)
 
-import Html.App
 import Html exposing (Html)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -11,16 +10,16 @@ import Html.Events exposing (..)
 
 import Data.Audience exposing (Audience, AudienceType(..))
 import Data.AudienceFolder exposing (AudienceFolder)
-import Json.Decode as Decode exposing (Decoder, (:=))
+import Json.Decode as Decode exposing (Decoder, field)
 import Json.Decode.Extra as Decode exposing ((|:))
 
 
 {-| Main file of application
 -}
-main : Program Never
+main : Program Never Model Msg
 main =
     -- Html.text "There will be app soon!"
-    Html.App.program
+    Html.program
         { init = init
         , view = view
         , update = update
@@ -34,9 +33,9 @@ main =
 
 type alias Model =
     { audienceFolders : List Data.AudienceFolder.AudienceFolder
-    , audiencies : List Data.Audience.Audience
-    , currentPath : Maybe (List Data.AudienceFolder.AudienceFolder)
-    , currentFolder : Maybe (Data.AudienceFolder.AudienceFolder)
+    , audiences : List Data.Audience.Audience
+    , currentPath : List Data.AudienceFolder.AudienceFolder
+    , currentFolder : Maybe Data.AudienceFolder.AudienceFolder
     }
 
 
@@ -52,8 +51,8 @@ init =
                 Err err ->
                     []
 
-        audiencies =
-            case Debug.log "audiencies" (audienciesDecoder Data.Audience.audiencesJSON) of
+        audiences =
+            case Debug.log "audiences" (audiencesDecoder Data.Audience.audiencesJSON) of
                 Ok data ->
                     data
 
@@ -62,8 +61,8 @@ init =
                     []
     in
         ( { audienceFolders = audienceFolder
-          , audiencies = audiencies
-          , currentPath = Nothing
+          , audiences = audiences
+          , currentPath = []
           , currentFolder = Nothing
           }
         , Cmd.none
@@ -83,33 +82,33 @@ audienceFoldersDecoder json =
 audienceFolderDecodeItem : Decoder AudienceFolder
 audienceFolderDecodeItem =
     Decode.succeed AudienceFolder
-        |: ("id" := Decode.int)
-        |: ("name" := Decode.string)
-        |: ("parent" := Decode.maybe Decode.int)
+        |: (field "id" Decode.int)
+        |: (field "name" Decode.string)
+        |: (field "parent" <| Decode.maybe Decode.int)
 
 
-audienciesDecoder : String -> Result String (List Audience)
-audienciesDecoder json =
+audiencesDecoder : String -> Result String (List Audience)
+audiencesDecoder json =
     json
-        |> Decode.decodeString (Decode.at [ "data" ] <| Decode.list audienciesDecoderItem)
+        |> Decode.decodeString (Decode.at [ "data" ] <| Decode.list audiencesDecoderItem)
 
 
-audienciesDecoderItem : Decoder Audience
-audienciesDecoderItem =
+audiencesDecoderItem : Decoder Audience
+audiencesDecoderItem =
     Decode.succeed Audience
-        |: ("id" := Decode.int)
-        |: ("name" := Decode.string)
-        |: ("type"
-                := Decode.string
-                `Decode.andThen` audienceTypeDecoder
+        |: (field "id" Decode.int)
+        |: (field "name" Decode.string)
+        |: (field "type_"
+                Decode.string
+                |> Decode.andThen audienceTypeDecoder
            )
-        |: ("folder" := Decode.maybe Decode.int)
+        |: (field "folder" <| Decode.maybe Decode.int)
 
 
 audienceTypeDecoder : String -> Decoder AudienceType
 audienceTypeDecoder audienceType =
     case audienceType of
-        "authored" ->
+        "user" ->
             Decode.succeed Authored
 
         "shared" ->
@@ -148,7 +147,7 @@ update msg model =
         case msg of
             SelectRootDirectory folder ->
                 ( { model
-                    | currentPath = Just [ folder ]
+                    | currentPath = [ folder ]
                     , currentFolder = Just folder
                   }
                 , Cmd.none
@@ -183,8 +182,15 @@ view model =
             (List.map viewRootFolderNavigationItem <|
                 List.filter rootFoldersFilter model.audienceFolders
             )
-        , ol [ id "breadcrumbPanel" ] [ viewBreadcrumb model.currentPath ]
-        , div [ id "contentPanel" ] [ viewFolderContent model.currentFolder ]
+        , viewBreadcrumb model.currentPath
+        , div [ id "contentPanel" ]
+            [ viewFolderContentSubFolders
+                model.currentFolder
+                model.audienceFolders
+            , viewFolderContentAudiences
+                model.currentFolder
+                model.audiences
+            ]
         , h1 [] [ text "raw source data" ]
         , pre
             []
@@ -208,27 +214,61 @@ viewBreadcrumbItem folder =
         ]
 
 
-viewFolderContent : Maybe (Data.AudienceFolder.AudienceFolder) -> Html Msg
-viewFolderContent currentFolder =
+viewFolderContentSubFolders : Maybe Data.AudienceFolder.AudienceFolder -> List Data.AudienceFolder.AudienceFolder -> Html Msg
+viewFolderContentSubFolders currentFolder audienceFolders =
     case currentFolder of
         Just currentFolder ->
-            text <| "HEN JE OBSAH " ++ (currentFolder.name)
+            ul [ id "contentPanel folderList" ] <|
+                List.map
+                    viewRootFolderNavigationItem
+                <|
+                    List.filter rootFoldersFilter audienceFolders
 
         Nothing ->
-            text "hen bude obsah"
+            text "no select folder"
 
 
-viewBreadcrumb : Maybe (List Data.AudienceFolder.AudienceFolder) -> Html Msg
+viewFolderContentAudiences : Maybe Data.AudienceFolder.AudienceFolder -> List Data.Audience.Audience -> Html Msg
+viewFolderContentAudiences currentFolderM audiences =
+    case currentFolderM of
+        Just currentFolder ->
+            ul [ id "contentPanel audienceList" ] []
+
+        {- <|
+           List.map
+               viewContentAudienceItem
+               (List.filter
+                   (\audience ->
+                       case audience.folder of
+                           folderId ->
+                               currentFolder.id == folderId
+
+                           _ ->
+                               False
+                   )
+                   audiences
+               )
+        -}
+        Nothing ->
+            text "no select folder"
+
+
+viewContentAudienceItem : Data.Audience.Audience -> Html Msg
+viewContentAudienceItem audience =
+    text audience.name
+
+
+viewBreadcrumb : List Data.AudienceFolder.AudienceFolder -> Html Msg
 viewBreadcrumb currentPath =
     case currentPath of
-        Just currentPath ->
-            ol [] <|
+        [] ->
+            text "bez navigace"
+
+        path ->
+            ol [ id "breadcrumbPanel" ] <|
                 List.map
                     viewBreadcrumbItem
-                    currentPath
-
-        Nothing ->
-            text "bez navigace"
+                    path
 
 
 
