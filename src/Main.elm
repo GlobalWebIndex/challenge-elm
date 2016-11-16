@@ -179,18 +179,23 @@ view model =
     div []
         [ h1 [] [ text "folders" ]
           -- , ul [] (List.map viewFolders model.audienceFolders)
-        , ul [ id "rootFoldersPanel" ]
-            (List.filterMap
-                (viewRootFolderNavigationItem
-                    model.currentFolder
-                )
-                model.audienceFolders
-             {- (List.filter
-                    rootFoldersFilter
+        , aside [ class "menu" ]
+            [ ul
+                [ id "rootFoldersPanel"
+                , class "menu-list"
+                ]
+                (List.filterMap
+                    (viewRootFolderNavigationItem
+                        model.currentFolder
+                    )
                     model.audienceFolders
+                 {- (List.filter
+                        rootFoldersFilter
+                        model.audienceFolders
+                    )
+                 -}
                 )
-             -}
-            )
+            ]
         , viewBreadcrumb model.currentPath
         , div [ id "contentPanel" ]
             [ viewFolderContentSubFolders
@@ -209,25 +214,40 @@ view model =
 
 viewRootFolderNavigationItem : Maybe AudienceFolder -> AudienceFolder -> Maybe (Html Msg)
 viewRootFolderNavigationItem currentFolder folder =
-    if folder.parent == Nothing then
-        Just <|
-            li
-                []
-                [ a [ class "button is-info", onClick (SelectRootDirectory folder) ]
-                    [ case currentFolder of
-                        Just openedFolder ->
-                            if folder.id == openedFolder.id then
-                                Icon.folder_open
-                            else
-                                Icon.folder
+    let
+        isOpened =
+            case currentFolder of
+                Just openedFolder ->
+                    if folder.id == openedFolder.id then
+                        True
+                    else
+                        False
 
-                        _ ->
+                _ ->
+                    False
+    in
+        if folder.parent == Nothing then
+            Just <|
+                li
+                    []
+                    [ a
+                        [ class <|
+                            "button is-info"
+                                ++ if isOpened then
+                                    "is-active"
+                                   else
+                                    ""
+                        , onClick (SelectRootDirectory folder)
+                        ]
+                        [ if isOpened then
+                            Icon.folder_open
+                          else
                             Icon.folder
-                    , text folder.name
+                        , text folder.name
+                        ]
                     ]
-                ]
-    else
-        Nothing
+        else
+            Nothing
 
 
 viewBreadcrumbItem : AudienceFolder -> Html Msg
