@@ -196,8 +196,8 @@ view model =
                  -}
                 )
             ]
-        , viewBreadcrumb model.currentPath
-        , div [ id "contentPanel" ]
+        , viewBreadcrumb model.currentFolder model.currentPath
+        , div [ id "contentPanel", class "panel" ]
             [ viewFolderContentSubFolders
                 model.currentFolder
                 model.audienceFolders
@@ -229,14 +229,13 @@ viewRootFolderNavigationItem currentFolder folder =
         if folder.parent == Nothing then
             Just <|
                 li
-                    []
+                    [ class "button is-info" ]
                     [ a
                         [ class <|
-                            "button is-info"
-                                ++ if isOpened then
-                                    "is-active"
-                                   else
-                                    ""
+                            if isOpened then
+                                " is-active"
+                            else
+                                ""
                         , onClick (SelectRootDirectory folder)
                         ]
                         [ if isOpened then
@@ -248,14 +247,6 @@ viewRootFolderNavigationItem currentFolder folder =
                     ]
         else
             Nothing
-
-
-viewBreadcrumbItem : AudienceFolder -> Html Msg
-viewBreadcrumbItem folder =
-    li []
-        [ a [ class "btn ml1 h1", onClick (SelectBreadcrumbItem folder) ]
-            [ text folder.name ]
-        ]
 
 
 viewFolderContentSubFolders : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
@@ -302,17 +293,38 @@ viewContentAudienceItem audience =
     text audience.name
 
 
-viewBreadcrumb : List AudienceFolder -> Html Msg
-viewBreadcrumb currentPath =
-    case currentPath of
-        [] ->
-            text "bez navigace"
+viewBreadcrumb : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
+viewBreadcrumb currentFolder currentPath =
+    ol [ id "breadcrumbPanel" ] <|
+        List.map
+            (viewBreadcrumbItem currentFolder)
+            currentPath
 
-        path ->
-            ol [ id "breadcrumbPanel" ] <|
-                List.map
-                    viewBreadcrumbItem
-                    path
+
+viewBreadcrumbItem : Maybe AudienceFolder -> AudienceFolder -> Html Msg
+viewBreadcrumbItem currentFolder folder =
+    let
+        isOpened =
+            case currentFolder of
+                Just openedFolder ->
+                    if folder.id == openedFolder.id then
+                        True
+                    else
+                        False
+
+                _ ->
+                    False
+    in
+        li []
+            [ if isOpened then
+                span [ class "tag is-primary is-medium" ] [ text folder.name ]
+              else
+                a
+                    [ class "tag is-info"
+                    , onClick (SelectBreadcrumbItem folder)
+                    ]
+                    [ text folder.name ]
+            ]
 
 
 
