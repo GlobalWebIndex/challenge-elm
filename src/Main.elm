@@ -214,21 +214,6 @@ view model =
 
 
 
--- , div [ id "contentPanel", class "panel" ]
---     [ model.audienceFolders
---         |> (viewFolderContentSubFolders
---                 model.selectedFolder
---            )
---     , model.audiences
---         |> (viewFolderContentAudiences
---                 model.selectedFolder
---            )
---     ]
--- , h1 [] [ text "raw source data" ]
--- , pre
---     []
---     [ text audienceFoldersJSON ]
--- ]
 -- VIEW main menu (root folders)
 
 
@@ -252,8 +237,19 @@ viewRootFolderNavigation selectedFolder audienceFolders =
 viewRootFolderNavigationItem : Maybe AudienceFolder -> AudienceFolder -> Maybe (Html Msg)
 viewRootFolderNavigationItem selectedFolder folder =
     let
+        {- @TODO: asi je blbost zobrazovat otevřenou vybranou položku v tomto menu,
+           určitě to takto nefunguje jak má, protože
+           pokud jsem v podsložce tak už nezjistím pod kterou root složkou jsem
+           leda bych z currentPath (které ale v této cfunkci stejně nemám) tahal poslední prvek
+        -}
+        -- @TODO: no nevím, esli by nebylo lepší do funkce isOpenFolder nebylo lepší dávat Just folder a matchovat až tam
         isOpened =
-            isOpenFolder selectedFolder folder
+            case selectedFolder of
+                Just selectedFolder_unwrap ->
+                    isOpenFolder selectedFolder_unwrap folder
+
+                Nothing ->
+                    False
     in
         if folder.parent == Nothing then
             Just <|
@@ -284,7 +280,7 @@ viewRootFolderNavigationItem selectedFolder folder =
 
 viewBreadcrumb : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
 viewBreadcrumb selectedFolder currentPath =
-    ol [ id "breadcrumbPanel", class "menu-list" ] <|
+    ul [ id "breadcrumbPanel", class "menu-list" ] <|
         List.map
             (viewBreadcrumbItem selectedFolder)
             (List.reverse currentPath)
@@ -293,19 +289,24 @@ viewBreadcrumb selectedFolder currentPath =
 viewBreadcrumbItem : Maybe AudienceFolder -> AudienceFolder -> Html Msg
 viewBreadcrumbItem selectedFolder folder =
     let
+        -- @TODO: no nevím, esli by nebylo lepší do funkce isOpenFolder nebylo lepší dávat Just folder a matchovat až tam
         isOpened =
-            isOpenFolder selectedFolder folder
+            case selectedFolder of
+                Just selectedFolder_unwrap ->
+                    isOpenFolder selectedFolder_unwrap folder
+
+                Nothing ->
+                    False
     in
-        li []
-            [ if isOpened then
-                span [ class "button is-primary is-medium" ] [ text <| folder.name ]
-              else
-                a
-                    [ class "button is-primary"
-                    , onClick (SelectBreadcrumbItem folder)
+        if isOpened then
+            li [ class "tag is-primary is-medium" ] [ text <| folder.name ]
+        else
+            li [ class "tag is-primary" ]
+                [ a
+                    [ onClick (SelectBreadcrumbItem folder)
                     ]
                     [ text <| folder.name ]
-            ]
+                ]
 
 
 
@@ -315,48 +316,43 @@ viewBreadcrumbItem selectedFolder folder =
 viewFolderContentSubFolders : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
 viewFolderContentSubFolders selectedFolder audienceFolders =
     case selectedFolder of
-        Just folder ->
+        Just selectedFolder_unwrap ->
             ul [ id "contentPanel folderList" ]
                 (audienceFolders
                     |> List.filterMap
                         (viewFolderContentSubFolderItem
-                            selectedFolder
+                            selectedFolder_unwrap
                         )
                 )
 
         Nothing ->
-            text "no select folder"
+            div [ class "notification is-warning" ] [ text "no select folder - no subfolders" ]
 
 
-viewFolderContentSubFolderItem : Maybe AudienceFolder -> AudienceFolder -> Maybe (Html Msg)
+viewFolderContentSubFolderItem : AudienceFolder -> AudienceFolder -> Maybe (Html Msg)
 viewFolderContentSubFolderItem selectedFolder folder =
     let
         isOpened =
             isOpenFolder selectedFolder folder
     in
-        case selectedFolder of
-            Just selectedFolder_ ->
-                case folder.parent of
-                    -- @TODO: může být rozpoznáno přímo v case??? Just (parentFolder.id) ->
-                    Just parent ->
-                        if (Debug.log "parent id" parent) == (Debug.log "selectedFolder_.id" selectedFolder_.id) then
-                            Just <|
-                                li
-                                    [ class "button is-info" ]
-                                    [ a
-                                        [ onClick (SelectSubDirectory folder)
-                                        ]
-                                        [ Icon.folder
-                                        , text folder.name
-                                        ]
-                                    ]
-                        else
-                            Nothing
+        case folder.parent of
+            -- @TODO: má Elm pattern matching, že by to šlo přímo v case??? Just (parentFolder.id) ->
+            Just parentId ->
+                if (Debug.log "parent id" parentId) == (Debug.log "selectedFolder.id" selectedFolder.id) then
+                    Just <|
+                        li
+                            [ class "button is-info" ]
+                            [ a
+                                [ onClick (SelectSubDirectory folder)
+                                ]
+                                [ Icon.folder
+                                , text folder.name
+                                ]
+                            ]
+                else
+                    Nothing
 
-                    _ ->
-                        Nothing
-
-            _ ->
+            Nothing ->
                 Nothing
 
 
@@ -364,58 +360,43 @@ viewFolderContentSubFolderItem selectedFolder folder =
 -- VIEW content - audiences
 
 
-viewFolderContentAudiences : Maybe AudienceFolder -> List Data.Audience.Audience -> Html Msg
-viewFolderContentAudiences selectedFolderM audiences =
-    case selectedFolderM of
-        Just selectedFolder ->
-            ul [ id "contentPanel audienceList" ] [ text "any audiences" ]
+viewFolderContentAudiences : Maybe AudienceFolder -> List Audience -> Html Msg
+viewFolderContentAudiences selectedFolder audiences =
+    case selectedFolder of
+        Just selectedFolder_unwrap ->
+            ul [ id "contentPanel audienceList" ]
+                (audiences
+                    |> List.filterMap
+                        (viewContentAudienceItem selectedFolder_unwrap)
+                )
 
-        {- <|
-           List.map
-               viewContentAudienceItem
-               (List.filter
-                   (\audience ->
-                       case audience.folder of
-                           folderId ->
-                               selectedFolder.id == folderId
-
-                           _ ->
-                               False
-                   )
-                   audiences
-               )
-        -}
         Nothing ->
-            text "no select folder"
+            div [ class "notification is-warning" ] [ text "no select folder - no audiences" ]
 
 
-viewContentAudienceItem : Data.Audience.Audience -> Html Msg
-viewContentAudienceItem audience =
-    text audience.name
+viewContentAudienceItem : AudienceFolder -> Audience -> Maybe (Html Msg)
+viewContentAudienceItem selectedFolder audience =
+    case audience.folder of
+        Just folderId ->
+            if folderId == selectedFolder.id then
+                Just (div [] [ text audience.name ])
+            else
+                Nothing
+
+        Nothing ->
+            Nothing
 
 
 
--- FILTERS
-{-
-
-   rootFoldersFilter : AudienceFolder -> Bool
-   rootFoldersFilter folder =
-       folder.parent == Nothing
--}
 -- UTILS
 
 
-isOpenFolder : Maybe AudienceFolder -> AudienceFolder -> Bool
+isOpenFolder : AudienceFolder -> AudienceFolder -> Bool
 isOpenFolder selectedFolder folder =
-    case selectedFolder of
-        Just openedFolder ->
-            if folder.id == openedFolder.id then
-                True
-            else
-                False
-
-        _ ->
-            False
+    if folder.id == selectedFolder.id then
+        True
+    else
+        False
 
 
 setCurrentPath : AudienceFolder -> List AudienceFolder -> List AudienceFolder
