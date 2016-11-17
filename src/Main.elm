@@ -36,7 +36,7 @@ type alias Model =
     { audienceFolders : List AudienceFolder
     , audiences : List Data.Audience.Audience
     , currentPath : List AudienceFolder
-    , currentFolder : Maybe AudienceFolder
+    , selectedFolder : Maybe AudienceFolder
     }
 
 
@@ -64,7 +64,7 @@ init =
         ( { audienceFolders = audienceFolder
           , audiences = audiences
           , currentPath = []
-          , currentFolder = Nothing
+          , selectedFolder = Nothing
           }
         , Cmd.none
         )
@@ -129,6 +129,7 @@ audienceTypeDecoder audienceType =
 type Msg
     = SelectRootDirectory AudienceFolder
     | SelectBreadcrumbItem AudienceFolder
+    | SelectSubDirectory AudienceFolder
     | NoOp
 
 
@@ -149,13 +150,25 @@ update msg model =
             SelectRootDirectory folder ->
                 ( { model
                     | currentPath = [ folder ]
-                    , currentFolder = Just folder
+                    , selectedFolder = Just folder
                   }
                 , Cmd.none
                 )
 
             SelectBreadcrumbItem folder ->
-                ( { model | currentFolder = Just folder }, Cmd.none )
+                ( { model | selectedFolder = Just folder }, Cmd.none )
+
+            SelectSubDirectory folder ->
+                let
+                    newCurrentPath =
+                        setCurrentPath folder model.currentPath
+                in
+                    ( { model
+                        | currentPath = newCurrentPath
+                        , selectedFolder = Just folder
+                      }
+                    , Cmd.none
+                    )
 
             NoOp ->
                 ( model, Cmd.none )
@@ -178,31 +191,49 @@ view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "folders" ]
-        , model.audienceFolders
-            |> viewRootFolderNavigation model.currentFolder
-        , model.currentPath
-            |> viewBreadcrumb model.currentFolder
-        , div [ id "contentPanel", class "panel" ]
-            [ viewFolderContentSubFolders
-                model.currentFolder
-                model.audienceFolders
-            , viewFolderContentAudiences
-                model.currentFolder
-                model.audiences
+        , div [ class "column is-one-third" ]
+            [ model.audienceFolders
+                |> viewRootFolderNavigation model.selectedFolder
             ]
-        , h1 [] [ text "raw source data" ]
-        , pre
-            []
-            [ text audienceFoldersJSON ]
+        , div [ class "column" ]
+            [ model.currentPath
+                |> viewBreadcrumb model.selectedFolder
+            ]
+        , div [ id "contentPanel", class "panel" ]
+            [ h1 [] [ text "content" ]
+            , model.audienceFolders
+                |> (viewFolderContentSubFolders
+                        model.selectedFolder
+                   )
+            , model.audiences
+                |> (viewFolderContentAudiences
+                        model.selectedFolder
+                   )
+            ]
         ]
 
 
 
+-- , div [ id "contentPanel", class "panel" ]
+--     [ model.audienceFolders
+--         |> (viewFolderContentSubFolders
+--                 model.selectedFolder
+--            )
+--     , model.audiences
+--         |> (viewFolderContentAudiences
+--                 model.selectedFolder
+--            )
+--     ]
+-- , h1 [] [ text "raw source data" ]
+-- , pre
+--     []
+--     [ text audienceFoldersJSON ]
+-- ]
 -- VIEW main menu (root folders)
 
 
 viewRootFolderNavigation : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
-viewRootFolderNavigation currentFolder audienceFolders =
+viewRootFolderNavigation selectedFolder audienceFolders =
     aside [ class "menu" ]
         [ ul
             [ id "rootFoldersPanel"
@@ -212,22 +243,22 @@ viewRootFolderNavigation currentFolder audienceFolders =
             (audienceFolders
                 |> List.filterMap
                     (viewRootFolderNavigationItem
-                        currentFolder
+                        selectedFolder
                     )
             )
         ]
 
 
 viewRootFolderNavigationItem : Maybe AudienceFolder -> AudienceFolder -> Maybe (Html Msg)
-viewRootFolderNavigationItem currentFolder folder =
+viewRootFolderNavigationItem selectedFolder folder =
     let
         isOpened =
-            isOpenFolder currentFolder folder
+            isOpenFolder selectedFolder folder
     in
         if folder.parent == Nothing then
             Just <|
                 li
-                    [ class "button is-info" ]
+                    []
                     [ a
                         [ class <|
                             if isOpened then
@@ -252,54 +283,92 @@ viewRootFolderNavigationItem currentFolder folder =
 
 
 viewBreadcrumb : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
-viewBreadcrumb currentFolder currentPath =
-    ol [ id "breadcrumbPanel" ] <|
+viewBreadcrumb selectedFolder currentPath =
+    ol [ id "breadcrumbPanel", class "menu-list" ] <|
         List.map
-            (viewBreadcrumbItem currentFolder)
-            currentPath
+            (viewBreadcrumbItem selectedFolder)
+            (List.reverse currentPath)
 
 
 viewBreadcrumbItem : Maybe AudienceFolder -> AudienceFolder -> Html Msg
-viewBreadcrumbItem currentFolder folder =
+viewBreadcrumbItem selectedFolder folder =
     let
         isOpened =
-            isOpenFolder currentFolder folder
+            isOpenFolder selectedFolder folder
     in
         li []
             [ if isOpened then
-                span [ class "tag is-primary is-medium" ] [ text folder.name ]
+                span [ class "button is-primary is-medium" ] [ text <| folder.name ]
               else
                 a
-                    [ class "tag is-info"
+                    [ class "button is-primary"
                     , onClick (SelectBreadcrumbItem folder)
                     ]
-                    [ text folder.name ]
+                    [ text <| folder.name ]
             ]
 
 
 
--- VIEW content
+-- VIEW content - subfolders
 
 
 viewFolderContentSubFolders : Maybe AudienceFolder -> List AudienceFolder -> Html Msg
-viewFolderContentSubFolders currentFolder audienceFolders =
-    case currentFolder of
+viewFolderContentSubFolders selectedFolder audienceFolders =
+    case selectedFolder of
         Just folder ->
-            ul [ id "contentPanel folderList" ] [ text "any content" ]
+            ul [ id "contentPanel folderList" ]
+                (audienceFolders
+                    |> List.filterMap
+                        (viewFolderContentSubFolderItem
+                            selectedFolder
+                        )
+                )
 
-        {- List.map
-           (viewRootFolderNavigationItem currentFolder)
-           (List.filter rootFoldersFilter audienceFolders)
-        -}
         Nothing ->
             text "no select folder"
 
 
+viewFolderContentSubFolderItem : Maybe AudienceFolder -> AudienceFolder -> Maybe (Html Msg)
+viewFolderContentSubFolderItem selectedFolder folder =
+    let
+        isOpened =
+            isOpenFolder selectedFolder folder
+    in
+        case selectedFolder of
+            Just selectedFolder_ ->
+                case folder.parent of
+                    -- @TODO: může být rozpoznáno přímo v case??? Just (parentFolder.id) ->
+                    Just parent ->
+                        if (Debug.log "parent id" parent) == (Debug.log "selectedFolder_.id" selectedFolder_.id) then
+                            Just <|
+                                li
+                                    [ class "button is-info" ]
+                                    [ a
+                                        [ onClick (SelectSubDirectory folder)
+                                        ]
+                                        [ Icon.folder
+                                        , text folder.name
+                                        ]
+                                    ]
+                        else
+                            Nothing
+
+                    _ ->
+                        Nothing
+
+            _ ->
+                Nothing
+
+
+
+-- VIEW content - audiences
+
+
 viewFolderContentAudiences : Maybe AudienceFolder -> List Data.Audience.Audience -> Html Msg
-viewFolderContentAudiences currentFolderM audiences =
-    case currentFolderM of
-        Just currentFolder ->
-            ul [ id "contentPanel audienceList" ] []
+viewFolderContentAudiences selectedFolderM audiences =
+    case selectedFolderM of
+        Just selectedFolder ->
+            ul [ id "contentPanel audienceList" ] [ text "any audiences" ]
 
         {- <|
            List.map
@@ -308,7 +377,7 @@ viewFolderContentAudiences currentFolderM audiences =
                    (\audience ->
                        case audience.folder of
                            folderId ->
-                               currentFolder.id == folderId
+                               selectedFolder.id == folderId
 
                            _ ->
                                False
@@ -337,8 +406,8 @@ viewContentAudienceItem audience =
 
 
 isOpenFolder : Maybe AudienceFolder -> AudienceFolder -> Bool
-isOpenFolder currentFolder folder =
-    case currentFolder of
+isOpenFolder selectedFolder folder =
+    case selectedFolder of
         Just openedFolder ->
             if folder.id == openedFolder.id then
                 True
@@ -347,3 +416,22 @@ isOpenFolder currentFolder folder =
 
         _ ->
             False
+
+
+setCurrentPath : AudienceFolder -> List AudienceFolder -> List AudienceFolder
+setCurrentPath newFolder currentPath =
+    case newFolder.parent of
+        Just parentId ->
+            case currentPath of
+                [] ->
+                    -- @TODO: a co když newFolder není root folder?
+                    [ newFolder ]
+
+                deepFolder :: subPath ->
+                    if parentId == deepFolder.id then
+                        newFolder :: currentPath
+                    else
+                        setCurrentPath newFolder subPath
+
+        Nothing ->
+            [ newFolder ]
