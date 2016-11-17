@@ -99,7 +99,7 @@ audiencesDecoderItem =
     Decode.succeed Audience
         |: (field "id" Decode.int)
         |: (field "name" Decode.string)
-        |: (field "type_"
+        |: (field "type"
                 Decode.string
                 |> Decode.andThen audienceTypeDecoder
            )
