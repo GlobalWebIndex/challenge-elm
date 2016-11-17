@@ -224,7 +224,6 @@ viewRootFolderNavigation selectedFolder audienceFolders =
             [ id "rootFoldersPanel"
             , class "menu-list"
             ]
-            -- @TODO s |> a <| jdou teda dělat rúzné capiny, otázka zda nejsou naḱonec lepší "(...)"
             (audienceFolders
                 |> List.filterMap
                     (viewRootFolderNavigationItem
@@ -237,12 +236,7 @@ viewRootFolderNavigation selectedFolder audienceFolders =
 viewRootFolderNavigationItem : Maybe AudienceFolder -> AudienceFolder -> Maybe (Html Msg)
 viewRootFolderNavigationItem selectedFolder folder =
     let
-        {- @TODO: asi je blbost zobrazovat otevřenou vybranou položku v tomto menu,
-           určitě to takto nefunguje jak má, protože
-           pokud jsem v podsložce tak už nezjistím pod kterou root složkou jsem
-           leda bych z currentPath (které ale v této cfunkci stejně nemám) tahal poslední prvek
-        -}
-        -- @TODO: no nevím, esli by nebylo lepší do funkce isOpenFolder nebylo lepší dávat Just folder a matchovat až tam
+        -- @TODO: show state open/close of root folder is not correct for selected subfolders
         isOpened =
             case selectedFolder of
                 Just selectedFolder_unwrap ->
@@ -289,7 +283,7 @@ viewBreadcrumb selectedFolder currentPath =
 viewBreadcrumbItem : Maybe AudienceFolder -> AudienceFolder -> Html Msg
 viewBreadcrumbItem selectedFolder folder =
     let
-        -- @TODO: no nevím, esli by nebylo lepší do funkce isOpenFolder nebylo lepší dávat Just folder a matchovat až tam
+        -- @TODO: Im considering, that is better pattern matching of selectedFolder:Maybe AudienceFolder in "isOpenFolder" function???
         isOpened =
             case selectedFolder of
                 Just selectedFolder_unwrap ->
@@ -336,7 +330,6 @@ viewFolderContentSubFolderItem selectedFolder folder =
             isOpenFolder selectedFolder folder
     in
         case folder.parent of
-            -- @TODO: má Elm pattern matching, že by to šlo přímo v case??? Just (parentFolder.id) ->
             Just parentId ->
                 if (Debug.log "parent id" parentId) == (Debug.log "selectedFolder.id" selectedFolder.id) then
                     Just <|
@@ -405,7 +398,7 @@ setCurrentPath newFolder currentPath =
         Just parentId ->
             case currentPath of
                 [] ->
-                    -- @TODO: a co když newFolder není root folder?
+                    -- @TODO: what if newFolder is not root folder?
                     [ newFolder ]
 
                 deepFolder :: subPath ->
