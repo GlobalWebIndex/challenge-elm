@@ -1,14 +1,15 @@
 # Challenge: Elm
 
-This repository contains requirements definition of entry project used for job applications
+Hello! Wellcome to Elm Challenge.
+
+This repository contains requirements definition of project used for job applications
 on **position of [Elm](elm-lang.org)/[JavaScript](https://www.javascript.com/) developer**.
 This includes two parts test where **only the first part is required**.
 Whole assignment is based on real part of our production app.
 However since there is a lot of domain specific knowladge required for most parts of our system
 and we are aware of the fact that most of this logic might be confusing for newcomers we've tried to
-pick task which doesn't require any specific insight and have hiden all details which might
-possibly cause any confusion. Thanks to this this project can be used as general
-challenge to build HTML app in Elm.
+pick task which doesn't require any specific insight and removed all parts which might be possibly confusing to pick up.
+Thanks to this this project can be used as general challenge to build HTML app in Elm.
 
 ## Position Description
 
