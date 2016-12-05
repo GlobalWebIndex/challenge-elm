@@ -1,12 +1,12 @@
 # Challenge: Elm
 
-Hello! Wellcome to Elm Challenge.
+Hello! Welcome to Elm Challenge.
 
 This repository contains requirements definition of project used for job applications
 on **position of [Elm](elm-lang.org)/[JavaScript](https://www.javascript.com/) developer**.
 This includes two parts test where **only the first part is required**.
 Whole assignment is based on real part of our production app.
-However since there is a lot of domain specific knowladge required for most parts of our system
+However since there is a lot of domain specific knowledge required for most parts of our system
 and we are aware of the fact that most of this logic might be confusing for newcomers we've tried to
 pick task which doesn't require any specific insight and removed all parts which might be possibly confusing to pick up.
 Thanks to this this project can be used as general challenge to build HTML app in Elm.
@@ -41,8 +41,8 @@ All data are provided in JSON format.
 ## Introduction
 
 There are two models `Audience` and `AudeinceFodlder` defined each with its own API endpoint.
-You'll find all necessary data inside [/src/Data](/src/Data) folder. There are data in plain `JSON` format witch represts what API returns.
-Also you will find coresponding type definitions of each model. Your job is to serialize this data to collection and build interactive browser.
+You'll find all necessary data inside [/src/Data](/src/Data) folder. There are data in plain `JSON` format which represents what API returns.
+Also you will find particular type definitions of each model. Your job is to serialize this data to collection and build interactive browser.
 
 ## General Acceptance Criteria
 
@@ -51,7 +51,7 @@ Also you will find coresponding type definitions of each model. Your job is to s
 - `elm-lang/html` must be used for rendering UI.
 - You are free use `ports` and `subscribtions` in case you want to.
 - You can use [screenshot](/media/screenshot.png) as inspiration for UI or come with any own layout if it's satisfy requirements.
-- All naming including comments and additional documentation must be in english language.
+- All naming including comments and additional documentation must be in English language.
 - Final result must be in form of full git repository with your own implementation.
 - There are **no time restrictions** for completing this challenge.
 - **(Only) First part is required.**
@@ -59,10 +59,10 @@ Also you will find coresponding type definitions of each model. Your job is to s
 
 ## Where to Start
 
-If you are interested in applying for this possition or just want to challenge yourself (which is also 100% OK for us)
+If you are interested in applying for this position or just want to challenge yourself (which is also 100% OK for us)
 please continue in following steps:
 
-- Fork this repository under your Github account.
+- Fork this repository under your GitHub account.
 - Complete implementation inside your fork.
 - Open pull request to [original](https://github.com/GlobalWebIndex/challenge-elm/) repository with your own implementation.
 - Comment your pull request with message containing `READY` or `RDY` to let us know that we can review your code.
@@ -78,7 +78,7 @@ please continue in following steps:
 ## Goal
 
 The goal is to test your ability to come up with solution for real world problem which will be part of your day to day responsibility.
-Obviously the first thing what we will look at is to what degree your implmentation satisfy original requirements.
+Obviously the first thing what we will look at is to what degree your implementation satisfy original requirements.
 Also we want to see your ability to come up with robust solution and will look on over all code quality.
 
 ## Contacts

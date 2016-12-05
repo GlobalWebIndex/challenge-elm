@@ -10,7 +10,7 @@ This will split original tree of `Audience`s to three independent trees user can
 
 ## Requirements
 
-There are three categories of audinces we want to separate in data set.
+There are three categories of audiences we want to separate in data set.
 User should be able to select one of these at the time and see only audiences which are member of this category.
 Categories are:
 
@@ -22,14 +22,14 @@ Categories are:
 ### This is requirements for this step:
 
 - [ ] You must not change any of pre-defined types and fixtures.
-    - However wou can use existing files for your implementation.
+    - However you can use existing files for your implementation.
 - [ ] Add 3 buttons - one for every category of audiences.
-- [ ] Clicking on each button activate coresponding category of audience.
+- [ ] Clicking on each button activate particular category of audience.
 - [ ] By default `Authored` audiences are filtered.
 - [ ] There must by at least one category selected at the time.
-- [ ] Everytime user changes category she sees its root level.
+- [ ] Every-time user changes category she sees its root level.
 - [ ] In case of shared audiences ignore tree structure and display audiences in single level without any folder.
-- [ ] Final solution should be compilable to html app or should contain HTML and source compilable to javascript included in HTML.
+- [ ] Final solution should be compilable to html app or should contain HTML and source compilable to JavaScript included in HTML.
 
 ## Hints
 
@@ -40,7 +40,7 @@ These are things you might consider thinking about:
 
 ## Final Words
 
-Thank you for picking up this challege!
+Thank you for picking up this challenge!
 You're amazing. I have no words.
 As always let us know in case you need any help.
 **Good luck!**:rocket:
