@@ -24,7 +24,7 @@ type AudienceType
 type alias Audience =
     { id : Int
     , name : String
-    , type' : AudienceType
+    , type_ : AudienceType
     , folder : Maybe Int
     }
 
