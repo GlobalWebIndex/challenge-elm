@@ -1,0 +1,23 @@
+.audience .panel, .folder .panel {
+  margin: 10px 0;
+  padding: 9px 5px;
+}
+
+a.audience, a.folder {
+  text-decoration: none;
+  color: initial;
+}
+
+.folder .panel {
+    background-color: #3383bc;
+    color: #dddddd;
+}
+
+.folder.go-up .panel {
+    background-color: #bbbbbb;
+    color: black;
+}
+
+.folder .panel .glyphicon {
+  margin-right: 5px;
+}
