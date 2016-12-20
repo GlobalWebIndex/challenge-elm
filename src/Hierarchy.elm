@@ -156,14 +156,23 @@ registerFolder folder (Hierarchy h) =
             nodeDBWithFolder =
                 Dict.insert folder.id (Folder currentCount folder) h.nodeDB
 
+            -- XXX If our current children count is 0, we add ourselves
+            -- to the child index because it's possible no node will get
+            -- registered as our child.
+            childIndexWithFolder =
+                if currentCount == 0 then
+                    Dict.insert folder.id [] h.childIndex
+                else
+                    h.childIndex
+
             ( newRootNodes, newChildIndex, newNodeDB ) =
                 case folder.parent of
                     Nothing ->
-                        ( folder.id :: h.rootNodes, h.childIndex, nodeDBWithFolder )
+                        ( folder.id :: h.rootNodes, childIndexWithFolder, nodeDBWithFolder )
 
                     Just p ->
                         ( h.rootNodes
-                        , Dict.update p (addChild folder.id) h.childIndex
+                        , Dict.update p (addChild folder.id) childIndexWithFolder
                         , incrementCounts p nodeDBWithFolder
                         )
         in
