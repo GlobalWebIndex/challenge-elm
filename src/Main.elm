@@ -84,7 +84,7 @@ viewCurrentNodes h =
             h
                 |> H.currentPath
                 |> Result.map List.length
-                |> Result.map ((>) 0)
+                |> Result.map (flip (>) 0)
                 |> Result.withDefault False
     in
         case res of
