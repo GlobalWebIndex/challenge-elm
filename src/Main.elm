@@ -2,10 +2,14 @@ module Main exposing (main)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Html.App as Html
 import Result.Extra as Result
 import Hierarchy as H exposing (Hierarchy)
 import Data.Api.Endpoints as Api
+
+
+-- MODEL
 
 
 buildInitialHierarchy : Result String Hierarchy
@@ -43,7 +47,52 @@ init =
     Result.unpack Error (Loaded Nothing) buildInitialHierarchy
 
 
-view : Model -> Html msg
+
+-- UPDATE
+
+
+type Msg
+    = GoDown Int
+    | GoUp Int
+
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        GoDown id ->
+            updateGoDown id model
+
+        GoUp levels ->
+            updateGoUp levels model
+
+
+updateGoUp : Int -> Model -> Model
+updateGoUp levels model =
+    case model of
+        Error _ ->
+            model
+
+        Loaded s h ->
+            Loaded s (H.goup levels h)
+
+
+updateGoDown : Int -> Model -> Model
+updateGoDown id model =
+    case model of
+        Error _ ->
+            model
+
+        Loaded s hierarchy ->
+            hierarchy
+                |> H.godown id
+                |> Result.unpack Error (Loaded s)
+
+
+
+-- VIEW
+
+
+view : Model -> Html Msg
 view model =
     case model of
         Error s ->
@@ -53,7 +102,7 @@ view model =
             viewHierarchyLayout selected hierarchy
 
 
-viewHierarchyLayout : Maybe H.Node -> Hierarchy -> Html msg
+viewHierarchyLayout : Maybe H.Node -> Hierarchy -> Html Msg
 viewHierarchyLayout selected hierachy =
     div
         [ class "container-fluid" ]
@@ -66,7 +115,7 @@ viewHierarchyLayout selected hierachy =
         ]
 
 
-viewHierarchySideBar : Hierarchy -> Html msg
+viewHierarchySideBar : Hierarchy -> Html Msg
 viewHierarchySideBar h =
     div [ class "row" ]
         [ div [ class "col-xs-12" ]
@@ -74,7 +123,7 @@ viewHierarchySideBar h =
         ]
 
 
-viewCurrentNodes : Hierarchy -> List (Html msg)
+viewCurrentNodes : Hierarchy -> List (Html Msg)
 viewCurrentNodes h =
     let
         res =
@@ -102,12 +151,12 @@ viewCurrentNodes h =
                 [ div [ class "alert alert-error" ] [ text msg ] ]
 
 
-viewUp : Html msg
+viewUp : Html Msg
 viewUp =
-    viewFolderEntry "Go Up" "go-up"
+    viewFolderEntry "Go Up" "go-up" (GoUp 1)
 
 
-viewNode : H.Node -> Html msg
+viewNode : H.Node -> Html Msg
 viewNode node =
     case node of
         H.File f ->
@@ -120,11 +169,16 @@ viewNode node =
             viewFolderEntry
                 (f.name ++ " (" ++ (toString count) ++ ")")
                 ""
+                (GoDown f.id)
 
 
-viewFolderEntry : String -> String -> Html msg
-viewFolderEntry label extraClasses =
-    a [ href "#", class ("folder " ++ extraClasses) ]
+viewFolderEntry : String -> String -> Msg -> Html Msg
+viewFolderEntry label extraClasses onPickMsg =
+    a
+        [ href "#"
+        , class ("folder " ++ extraClasses)
+        , onClick onPickMsg
+        ]
         [ div [ class "panel panel-default" ]
             [ span
                 [ class "glyphicon glyphicon-folder-close" ]
@@ -189,5 +243,5 @@ main =
     Html.beginnerProgram
         { model = init
         , view = view
-        , update = identity
+        , update = update
         }
