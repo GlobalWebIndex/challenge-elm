@@ -54,6 +54,7 @@ init =
 type Msg
     = GoDown Int
     | GoUp Int
+    | Select H.Node
 
 
 update : Msg -> Model -> Model
@@ -64,6 +65,9 @@ update msg model =
 
         GoUp levels ->
             updateGoUp levels model
+
+        Select node ->
+            updateSelect node model
 
 
 updateGoUp : Int -> Model -> Model
@@ -86,6 +90,16 @@ updateGoDown id model =
             hierarchy
                 |> H.godown id
                 |> Result.unpack Error (Loaded s)
+
+
+updateSelect : H.Node -> Model -> Model
+updateSelect node model =
+    case model of
+        Error _ ->
+            model
+
+        Loaded _ h ->
+            Loaded (Just node) h
 
 
 
@@ -160,7 +174,11 @@ viewNode : H.Node -> Html Msg
 viewNode node =
     case node of
         H.File f ->
-            a [ href "#", class "audience" ]
+            a
+                [ href "#"
+                , class "audience"
+                , onClick (Select node)
+                ]
                 [ div [ class "panel panel-default" ]
                     [ text f.name ]
                 ]
