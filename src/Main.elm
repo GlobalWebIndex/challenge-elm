@@ -140,7 +140,13 @@ viewHierarchyInfo s h =
         [ div [ class "col-xs-12" ]
             [ viewBreadcrumb h ]
         , div [ class "col-xs-12" ]
+            [ h6 [] [ text "Selected Node" ] ]
+        , div [ class "col-xs-12" ]
             [ pre [] [ text <| toString s ] ]
+        , div [ class "col-xs-12" ]
+            [ h6 [] [ text "Current path" ] ]
+        , div [ class "col-xs-12" ]
+            [ pre [] [ text <| toString <| H.currentPath h ] ]
         ]
 
 
