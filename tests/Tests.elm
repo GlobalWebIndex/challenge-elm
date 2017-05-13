@@ -1,7 +1,7 @@
 module Tests exposing (..)
 
 import Test exposing (..)
-import Tree exposing (..)
+import Tree exposing (Tree, Node(..), ParentId(..), insert, empty)
 import Expect
 
 
@@ -33,6 +33,11 @@ all =
                             oneNodedTree
                                 |> Tree.insert Root "2" "2"
                                 |> Expect.equal [ Node "1" "1" [], Node "2" "2" [] ]
+                    , test "when insterting node with parent id of non-existing node, then ignore insertion" <|
+                        \() ->
+                            oneNodedTree
+                                |> Tree.insert (NodeId "nonexistingId") "2" "2"
+                                |> Expect.equal [ Node "1" "1" [] ]
                     , test "when insterting node with parent id of inserted node, then Tree should have two levels" <|
                         \() ->
                             oneNodedTree
@@ -57,6 +62,18 @@ all =
                             oneNodedTree
                                 |> Tree.insert (NodeId "1") "4" "4"
                                 |> Expect.equal [ Node "1" "1" [ Node "4" "4" [] ], Node "2" "2" [], Node "3" "3" [] ]
+                    , test "when insterting two nodes with same parent id, then Tree should have two levels" <|
+                        \() ->
+                            oneNodedTree
+                                |> Tree.insert (NodeId "2") "4" "4"
+                                |> Tree.insert (NodeId "2") "5" "5"
+                                |> Expect.equal [ Node "1" "1" [], Node "2" "2" [ Node "4" "4" [], Node "5" "5" [] ], Node "3" "3" [] ]
+                    , test "when insterting node with parent id of inner node, then Tree should have three levels" <|
+                        \() ->
+                            oneNodedTree
+                                |> Tree.insert (NodeId "2") "4" "4"
+                                |> Tree.insert (NodeId "4") "5" "5"
+                                |> Expect.equal [ Node "1" "1" [], Node "2" "2" [ Node "4" "4" [ Node "5" "5" [] ] ], Node "3" "3" [] ]
                     ]
             ]
         ]
