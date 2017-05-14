@@ -19,6 +19,7 @@ folderDataDecoder =
         Decode.list folderDecoder
 
 
+decode : Result String (List AudienceFolder)
 decode =
     audienceFoldersJSON
         |> Decode.decodeString folderDataDecoder

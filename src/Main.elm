@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Html exposing (Html)
-import Decoders.AudienceDecoder as AFD exposing (decode)
+import Decoders.AudienceDecoder as AD exposing (decode)
 
 
 -- Import Modules
@@ -15,6 +15,6 @@ import Data.AudienceFolder
 main : Html msg
 main =
     Html.text
-        (AFD.decode
+        (AD.decode
             |> toString
         )
