@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Html exposing (Html)
-import Decoders.AudienceDecoder as AD exposing (decodeFolder, decodeAudiences)
+import Decoders.AudienceDecoder as AD exposing (decodeAudiences)
 
 
 -- Import Modules
