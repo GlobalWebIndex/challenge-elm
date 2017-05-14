@@ -10,7 +10,7 @@ module Tree
 
 
 type alias Id =
-    String
+    Int
 
 
 type ParentId
