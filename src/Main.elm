@@ -2,6 +2,7 @@ module Main exposing (main)
 
 import Html exposing (Html)
 import Html.Attributes exposing (href)
+import Html.Events exposing (onClick)
 import Tree exposing (Tree, Node(..), ParentId(..), insert, empty)
 import Decoders.AudienceFolderDecoder as FD exposing (decodeAudienceFolders)
 import Decoders.AudienceDecoder as AD exposing (decodeAudiences)
@@ -14,8 +15,18 @@ import Data.AudienceFolder exposing (AudienceFolder)
 
 
 type TreeItem
-    = AudienceItem Data.Audience.Audience
-    | Folder Data.AudienceFolder.AudienceFolder
+    = AudienceItem Audience
+    | Folder AudienceFolder
+
+
+type alias Model =
+    { visibleSubtree : Tree TreeItem
+    }
+
+
+model =
+    { visibleSubtree = audiencesTree
+    }
 
 
 audiencesTree : Tree TreeItem
@@ -56,7 +67,7 @@ viewAudience audience children =
 viewFolder folder children =
     if (List.length children) > 0 then
         Html.li []
-            [ Html.a [ href "http://seznam.cz" ]
+            [ Html.a [ href "#", onClick (ShowSubtree children) ]
                 [ Html.text ("[" ++ folder.name ++ "]")
                 ]
             ]
@@ -81,6 +92,30 @@ viewTree tree =
 
 {-| Main file of application
 -}
-main : Html msg
+main : Program Never Model Msg
 main =
-    viewTree audiencesTree
+    Html.beginnerProgram
+        { model = model
+        , update = update
+        , view = view
+        }
+
+
+type Msg
+    = Noop
+    | ShowSubtree (Tree TreeItem)
+
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        Noop ->
+            model
+
+        ShowSubtree subtree ->
+            { model | visibleSubtree = subtree }
+
+
+view : Model -> Html Msg
+view model =
+    viewTree model.visibleSubtree
