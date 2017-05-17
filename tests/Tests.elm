@@ -1,14 +1,50 @@
 module Tests exposing (..)
 
 import Test exposing (..)
-import Tree exposing (Tree, Node(..), ParentId(..), insert, empty)
+import Tree exposing (Tree, Node(..), ParentId(..), insert, empty, findById, flatten)
 import Expect
 
 
 all : Test
 all =
     describe "Tree"
-        [ describe "Insert"
+        [ describe "Find by id"
+            [ test "when searching for node Id 1 in empty tree should be Nothing" <|
+                \() ->
+                    Tree.empty
+                        |> Tree.findById 1
+                        |> Expect.equal Nothing
+            , test "Find by Id Root in tree with one node in Root should return this node" <|
+                \() ->
+                    Tree.empty
+                        |> Tree.insert Root 1 "1"
+                        |> Tree.findById 1
+                        |> Expect.equal (Just (Node 1 "1" []))
+            , test "Find by Id of child in tree with root with two nodes should return correct node" <|
+                \() ->
+                    Tree.empty
+                        |> Tree.insert Root 1 "1"
+                        |> Tree.insert Root 2 "2"
+                        |> Tree.findById 2
+                        |> Expect.equal (Just (Node 2 "2" []))
+            , test "when node is in children then find it" <|
+                \() ->
+                    Tree.empty
+                        |> Tree.insert Root 1 "1"
+                        |> Tree.insert (NodeId 1) 2 "2"
+                        |> Tree.findById 2
+                        |> Expect.equal (Just (Node 2 "2" []))
+            , test "when node with children is in root" <|
+                \() ->
+                    Tree.empty
+                        |> Tree.insert Root 1 "1"
+                        |> Tree.insert (NodeId 1) 2 "2"
+                        |> Tree.insert (NodeId 2) 3 "3"
+                        |> Tree.insert (NodeId 2) 4 "4"
+                        |> Tree.findById 2
+                        |> Expect.equal (Just (Node 2 "2" [ (Node 3 "3" []), (Node 4 "4" []) ]))
+            ]
+        , describe "Insert"
             [ describe "Insertion into empty Tree"
                 [ test "inserted one node with no parent ID, it should be added into root of the Tree" <|
                     \() ->

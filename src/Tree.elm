@@ -6,6 +6,8 @@ module Tree
         , ParentId(..)
         , empty
         , insert
+        , findById
+        , flatten
         )
 
 
@@ -29,6 +31,35 @@ type Node a
 empty : Tree a
 empty =
     []
+
+
+flatten : Tree a -> List (Node a)
+flatten tree =
+    tree
+        |> List.foldl
+            (\node acc ->
+                if (List.length (getChildren node)) == 0 then
+                    acc ++ [ node ]
+                else
+                    acc ++ [ node ] ++ (flatten (getChildren node))
+            )
+            empty
+
+
+getChildren : Node a -> Tree a
+getChildren (Node _ _ children) =
+    children
+
+
+findById : Id -> Tree a -> Maybe (Node a)
+findById id tree =
+    tree
+        |> flatten
+        |> List.filter
+            (\(Node nodeId value children) ->
+                nodeId == id
+            )
+        |> List.head
 
 
 insert : ParentId -> Id -> a -> Tree a -> Tree a
