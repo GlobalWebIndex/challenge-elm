@@ -6,8 +6,10 @@ module Tree
         , ParentId(..)
         , empty
         , insert
-        , findById
+        , findNodeById
         , flatten
+        , getParentId
+        , getSubtree
         )
 
 
@@ -51,8 +53,8 @@ getChildren (Node _ _ children) =
     children
 
 
-findById : Id -> Tree a -> Maybe (Node a)
-findById id tree =
+findNodeById : Id -> Tree a -> Maybe (Node a)
+findNodeById id tree =
     tree
         |> flatten
         |> List.filter
@@ -60,6 +62,26 @@ findById id tree =
                 nodeId == id
             )
         |> List.head
+
+
+getParentId : Id -> Tree a -> ParentId
+getParentId id tree =
+    let
+        filteredNodes =
+            tree
+                |> flatten
+                |> List.filter
+                    (\(Node nodeId value children) ->
+                        List.any (\(Node nodeId _ _) -> nodeId == id) children
+                    )
+                |> List.head
+    in
+        case filteredNodes of
+            Nothing ->
+                Root
+
+            Just (Node nodeId _ _) ->
+                NodeId nodeId
 
 
 insert : ParentId -> Id -> a -> Tree a -> Tree a
@@ -93,3 +115,25 @@ extendSubtree targetId node subtree =
                 else
                     (Node nid nvalue nchildren)
             )
+
+
+getSubtree : ParentId -> Tree a -> Tree a
+getSubtree nodeParentId tree =
+    case nodeParentId of
+        Root ->
+            tree
+
+        NodeId id ->
+            tree
+                |> findNodeById id
+                |> getSubtreeOfNode tree
+
+
+getSubtreeOfNode : Tree a -> Maybe (Node a) -> Tree a
+getSubtreeOfNode tree maybeNode =
+    case maybeNode of
+        Nothing ->
+            tree
+
+        Just (Node _ _ children) ->
+            children
