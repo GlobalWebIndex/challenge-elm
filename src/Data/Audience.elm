@@ -1,4 +1,4 @@
-module Data.Audience exposing (AudienceType(..), Audience, audiencesJSON)
+module Data.Audience exposing (AudienceType(..), Audience, audiencesJSON, decodeAudiences)
 
 {-| Data.Audiences module
 
@@ -7,6 +7,10 @@ This module implements everything related to audience resource.
 # Interface
 @docs AudienceType, Audience, audienceJSON
 -}
+
+import Json.Decode as Decode exposing (Decoder, decodeString, at, list, succeed, fail, field, int, string, maybe, andThen)
+import Json.Decode.Extra as Decode exposing ((|:))
+
 
 -- Type definition
 
@@ -27,6 +31,48 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+
+-- JSON Decoders
+
+
+decodeAudiences : Result String (List Audience)
+decodeAudiences =
+    audiencesJSON
+        |> decodeString audienceDataDecoder
+
+
+audienceDataDecoder : Decoder (List Audience)
+audienceDataDecoder =
+    at [ "data" ] <|
+        list
+            audienceDecoder
+
+
+audienceDecoder : Decoder Audience
+audienceDecoder =
+    succeed Audience
+        |: field "id" int
+        |: field "name" string
+        |: field "type" (string |> andThen audienceTypeDecoder)
+        |: field "folder" (maybe int)
+
+
+audienceTypeDecoder : String -> Decoder AudienceType
+audienceTypeDecoder typeValue =
+    case typeValue of
+        "curated" ->
+            succeed Curated
+
+        "shared" ->
+            succeed Shared
+
+        "user" ->
+            succeed Authored
+
+        _ ->
+            fail ("Unknown type of audience - " ++ typeValue)
 
 
 
