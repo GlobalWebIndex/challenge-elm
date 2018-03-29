@@ -1,15 +1,15 @@
 # Challenge: Elm
 
-Hello! Welcome to Elm Challenge.
+Hello! Welcome to the Elm Challenge.
 
-This repository contains requirements definition of project used for job applications
-on **position of [Elm](elm-lang.org)/[JavaScript](https://www.javascript.com/) developer**.
-This includes two parts test where **only the first part is required**.
-Whole assignment is based on real part of our production app.
-However since there is a lot of domain specific knowledge required for most parts of our system
-and we are aware of the fact that most of this logic might be confusing for newcomers we've tried to
-pick task which doesn't require any specific insight and removed all parts which might be possibly confusing to pick up.
-Thanks to this this project can be used as general challenge to build HTML app in Elm.
+This repository contains requirements definition of a project used for job applications
+on a **position of [Elm](elm-lang.org)/[JavaScript](https://www.javascript.com/) developer**.
+This includes two parts test, where **only the first part is required**.
+Whole assignment is based on a real part of our production app.
+However, since there is a lot of domain specific knowledge required for most parts of our system
+and we are aware of the fact that most of this logic might be confusing to newcomers, we've tried to
+pick a task which doesn't require any specific insight and removed all parts which might be possibly confusing to pick up.
+Thanks to this, this project can be used as a general challenge to build an HTML app in Elm.
 
 ## Position Description
 
@@ -20,55 +20,55 @@ Praised and used by the world largest organizations, PRO Platform enables our cl
 You will sit within our PRO Platform team and will be jointly responsible to push the development of the platform forward.
 Day-to-day this involves new feature engineering, reviewing and discussing code of your colleagues and discussing the design decisions with the wider technical leadership team.
 
-- Ideate, brainstorm and implement new components and features using JavaScript, Elm or Ruby, if you fancy getting your hands on backend code
-- Develop the project codebase, with the focus on long-term maintenance – we look for people who really care about the quality as a day-to-day routine
+- Ideate, brainstorm and implement new components and features using JavaScript, Elm or Ruby, if you fancy getting your hands on backend code.
+- Develop the project codebase, with the focus on long-term maintenance – we look for people who really care about the quality as a day-to-day routine.
 - Think forward and propose innovative approaches, which can push the project to the next level.
-We like to discuss things so you’ll be expected to demonstrate conclusive arguments and get a buy in from the whole team
-- Evaluate external solutions (databases, frameworks, libraries) which might be beneficial to our platform
+We like to discuss things so you’ll be expected to demonstrate conclusive arguments and get a buy in from the whole team.
+- Evaluate external solutions (databases, frameworks, libraries), which might be beneficial to our platform.
 
 ## Basic Instructions
 
-You are required to provide an implementation of component for browsing `Audience`s and `AudienceFolder`s in hierarchical structure.
+You are required to provide an implementation of a component for browsing `Audience`s and `AudienceFolder`s in a hierarchical structure.
 Every `Audience` might have or have not `folder` and every `Folder` might have (but not necessary) its `parent` folder.
-This mean component should display `n` level deep tree. Always one level at the time.
-User can open any sub-folder or go pack to parent of current level.
-All data are provided in JSON format.
+This means the component should display `n`-levels deep tree. Always one level at the time.
+User can open any sub-folder or go back to the parent of the current level.
+All data is provided in a JSON format.
 
-**This is how similar component looks in our production system:**
+**This is how a similar component looks like in our production system:**
 
 ![screenshot](media/screenshot.png)
 
 ## Introduction
 
-There are two models `Audience` and `AudeinceFodlder` defined each with its own API endpoint.
-You'll find all necessary data inside [/src/Data](/src/Data) folder. There are data in plain `JSON` format which represents what API returns.
-Also you will find particular type definitions of each model. Your job is to serialize this data to collection and build interactive browser.
+There are two models: `Audience` and `AudienceFolder`, defined each with its own API endpoint.
+You will find all necessary data inside [/src/Data](/src/Data) folder. There is a data in plain `JSON` format, which represents what API returns.
+You will also find particular type definitions of each model. Your job is to serialize this data into collection and build an interactive browser.
 
 ## General Acceptance Criteria
 
-- Implementation must be done in `Elm` language.
-- You can use any 3rd library you want to.
+- The implementation must be done in the `Elm` language.
+- You can use any 3rd-party library you want.
 - `elm-lang/html` must be used for rendering UI.
-- You are free use `ports` and `subscribtions` in case you want to.
-- You can use [screenshot](/media/screenshot.png) as inspiration for UI or come with any own layout if it's satisfy requirements.
-- All naming including comments and additional documentation must be in English language.
-- Final result must be in form of full git repository with your own implementation.
+- You are free to use `ports` and `subscriptions` in the case you want to.
+- You can use [screenshot](/media/screenshot.png) as an inspiration for the UI or come up with your own layout if it satisfies the requirements.
+- All naming including comments and additional documentation must be in the English language.
+- The final result must be in the form of a full git repository with your own implementation.
 - There are **no time restrictions** for completing this challenge.
-- **(Only) First part is required.**
-- **In case you want to apply for the job but have no time finishing first step soon let us know you're interested anyway.** (We are people too)
+- **(Only) The first part is required.**
+- **In case you want to apply for the job, but have no time to finish the first step soon, let us know you're interested anyway.** (We are people too)
 
 ## Where to Start
 
-If you are interested in applying for this position or just want to challenge yourself (which is also 100% OK for us)
-please continue in following steps:
+If you are interested in applying for this position or just want to challenge yourself (which is also 100% OK for us),
+please continue following the steps:
 
 - Fork this repository under your GitHub account.
-- Complete implementation inside your fork.
+- Complete an implementation inside your fork.
 - Open pull request to [original](https://github.com/GlobalWebIndex/challenge-elm/) repository with your own implementation.
 - Comment your pull request with message containing `READY` or `RDY` to let us know that we can review your code.
 - Comment your PR with any question in case you will need any help (or send us email - see bellow).
 
-**You can also open pull request before you're finished with implementation in case you are willing to discuss anything!**
+**You can also open pull request before you finish the implementation in case you are willing to discuss anything!**
 
 ## Parts
 
@@ -77,14 +77,14 @@ please continue in following steps:
 
 ## Goal
 
-The goal is to test your ability to come up with solution for real world problem which will be part of your day to day responsibility.
-Obviously the first thing what we will look at is to what degree your implementation satisfy original requirements.
-Also we want to see your ability to come up with robust solution and will look on over all code quality.
+The goal is to test your ability to come up with a solution for a real world problem which will be part of your day to day responsibility.
+Obviously the first thing what we will look at is a degree to what your implementation satisfy original requirements.
+Also we want to see your ability to come up with a robust solution and will look on over all code quality.
 
 ## Contacts
 
-In case you want to apply for position in our team please contact `petr@globalwebindex.net`.
-If you have any questions about implementation itself you can send me mail to `marek@globalwebindex.net`
+In case you want to apply for a position in our team, please contact `petr@globalwebindex.net`.
+If you have any questions about implementation itself, you can send me mail to `marek@globalwebindex.net`
 or open issue/PR in this repository so we can discuss any part together.
 
 ## License
