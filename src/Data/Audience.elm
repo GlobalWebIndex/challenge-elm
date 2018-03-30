@@ -1,12 +1,21 @@
-module Data.Audience exposing (AudienceType(..), Audience, audiencesJSON)
+module Data.Audience exposing (Audience, AudienceType(..), audiencesDecoder, audiencesJSON)
 
 {-| Data.Audiences module
 
 This module implements everything related to audience resource.
 
+
 # Interface
+
 @docs AudienceType, Audience, audienceJSON
+
 -}
+
+import Data.DecoderUtils exposing (fromResultRecord, partialDecodeField)
+import Data.Expression exposing (Expression, defaultExpression, expressionDecoder)
+import Json.Decode exposing (..)
+import Json.Decode.Extra exposing ((|:))
+
 
 -- Type definition
 
@@ -24,9 +33,95 @@ type AudienceType
 type alias Audience =
     { id : Int
     , name : String
+    , expression : Expression
     , type_ : AudienceType
+    , category : Maybe String
     , folder : Maybe Int
     }
+
+
+audienceDecoder : Decoder Audience
+audienceDecoder =
+    succeed
+        (\audienceRecord ->
+            let
+                { id, name, expression, curated, shared, category, folder } =
+                    audienceRecord
+
+                audienceType =
+                    if curated == Just True then
+                        Curated
+                    else if shared == Just True then
+                        Shared
+                    else
+                        Authored
+            in
+            Audience id name expression audienceType category folder
+        )
+        |: audienceRecordDecoder
+
+
+type alias AudienceRecord =
+    { id : Int
+    , name : String
+    , expression : Expression
+    , type_ : String
+    , curated : Maybe Bool
+    , shared : Maybe Bool
+    , category : Maybe String
+    , folder : Maybe Int
+    }
+
+
+defaultAudienceRecord : AudienceRecord
+defaultAudienceRecord =
+    AudienceRecord -1 "" defaultExpression "" Nothing Nothing Nothing Nothing
+
+
+feedNameL : (String -> AudienceRecord -> Decoder AudienceRecord) -> List ( String, Value ) -> AudienceRecord
+feedNameL decoder elements =
+    List.foldl (fromResultRecord decoder) defaultAudienceRecord elements
+
+
+audienceRecordDecoder : Decoder AudienceRecord
+audienceRecordDecoder =
+    map (feedNameL decodeField) partialDecodeField
+
+
+decodeField : String -> AudienceRecord -> Decoder AudienceRecord
+decodeField name record =
+    case name of
+        "id" ->
+            succeed (\value -> { record | id = value }) |: int
+
+        "name" ->
+            succeed (\value -> { record | name = value }) |: string
+
+        "expression" ->
+            succeed (\value -> { record | expression = value }) |: expressionDecoder
+
+        "type" ->
+            succeed (\value -> { record | type_ = value }) |: string
+
+        "curated" ->
+            succeed (\value -> { record | curated = value }) |: nullable bool
+
+        "shared" ->
+            succeed (\value -> { record | shared = value }) |: nullable bool
+
+        "category" ->
+            succeed (\value -> { record | category = value }) |: maybe string
+
+        "folder" ->
+            succeed (\value -> { record | folder = value }) |: maybe int
+
+        _ ->
+            fail <| "Unhandled field"
+
+
+audiencesDecoder : Decoder (List Audience)
+audiencesDecoder =
+    field "data" (list audienceDecoder)
 
 
 
@@ -43,6 +138,7 @@ This is how we usually deal with making non-breaking continuous changes
 from old version of API to new one.
 
 You're free to use any strategy to decode JSON.
+
 -}
 audiencesJSON : String
 audiencesJSON =

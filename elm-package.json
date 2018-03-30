@@ -8,8 +8,13 @@
     ],
     "exposed-modules": [],
     "dependencies": {
+        "HolyMeekrob/elm-font-awesome-5": "1.1.0 <= v < 2.0.0",
+        "elm-community/json-extra": "2.7.0 <= v < 3.0.0",
         "elm-lang/core": "5.1.1 <= v < 6.0.0",
-        "elm-lang/html": "2.0.0 <= v < 3.0.0"
+        "elm-lang/html": "2.0.0 <= v < 3.0.0",
+        "mcordova47/elm-natural-ordering": "1.0.3 <= v < 2.0.0",
+        "rtfeldman/elm-css": "13.1.1 <= v < 14.0.0",
+        "rtfeldman/elm-css-util": "1.0.2 <= v < 2.0.0"
     },
     "elm-version": "0.18.0 <= v < 0.19.0"
 }
