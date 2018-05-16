@@ -1,12 +1,19 @@
-module Data.Audience exposing (AudienceType(..), Audience, audiencesJSON)
+module Data.Audience exposing (AudienceType(..), Audience, audiencesJSON, audiencesDecoder)
 
 {-| Data.Audiences module
 
 This module implements everything related to audience resource.
 
+
 # Interface
+
 @docs AudienceType, Audience, audienceJSON
+
 -}
+
+import Json.Decode exposing (Decoder)
+import Json.Decode.Pipeline exposing (..)
+
 
 -- Type definition
 
@@ -29,6 +36,40 @@ type alias Audience =
     }
 
 
+audienceTypeDecoder : Decoder AudienceType
+audienceTypeDecoder =
+    Json.Decode.string
+        |> Json.Decode.andThen
+            (\string ->
+                case string of
+                    "user" ->
+                        Json.Decode.succeed Authored
+
+                    "shared" ->
+                        Json.Decode.succeed Shared
+
+                    "curated" ->
+                        Json.Decode.succeed Curated
+
+                    _ ->
+                        Json.Decode.fail ("Invalid AudienceType: " ++ string)
+            )
+
+
+audienceDecoder : Decoder Audience
+audienceDecoder =
+    decode Audience
+        |> required "id" Json.Decode.int
+        |> required "name" Json.Decode.string
+        |> required "type" audienceTypeDecoder
+        |> required "folder" (Json.Decode.nullable Json.Decode.int)
+
+
+audiencesDecoder : Decoder (List Audience)
+audiencesDecoder =
+    Json.Decode.at [ "data" ] (Json.Decode.list audienceDecoder)
+
+
 
 -- Fixtures
 
@@ -43,6 +84,7 @@ This is how we usually deal with making non-breaking continuous changes
 from old version of API to new one.
 
 You're free to use any strategy to decode JSON.
+
 -}
 audiencesJSON : String
 audiencesJSON =

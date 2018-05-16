@@ -1,0 +1,25 @@
+.container {
+  margin: 10px;
+  border: 1px solid green;
+  width: 400px;
+  padding: 8px;
+}
+
+.container li {
+  list-style: none;
+  padding: 2px;
+}
+
+.container ul {
+  padding: 0px 10px;
+}
+
+.folders {
+  margin: 5px;
+  border: 2px solid black;
+}
+
+.data {
+  margin: 5px;
+  border: 2px solid purple;
+}
