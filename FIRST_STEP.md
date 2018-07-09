@@ -28,7 +28,7 @@ These are the things you might consider thinking about before you start with you
 
 - How to make `JSON` parsing scalable?
     - Do you know about [applicatives](https://toast.al/posts/2016-08-12-elm-applicatives-and-json-decoders.html)?
-- Is there any cleaver transformation of data that can be used as input of browser itself?
+- Is there any clever transformation of data that can be used as input of browser itself?
     - What data-structures can be helpful if any?
     - Do you prefer working with RoseTree or List? Why? (you can leave comment in your code)
 - Which parts can be decoupled for possible re-use?
@@ -40,4 +40,4 @@ Please don't be afraid to ask (using email or by opening issue in this repositor
 can be improved in this documents or if you're just simply stuck with anything.
 We are happy to provide any help to degree we are able to. Also have in mind that there are no time restrictions for completing this challenge.
 Take as many time as you wish to completing this. *In the end the most important bit is to challenge your problem solving thinking*.
-And of course **good look with this**! :rocket:
+And of course **good luck with this**! :rocket:
