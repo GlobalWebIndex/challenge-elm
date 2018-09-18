@@ -1,4 +1,11 @@
-module Data.Audience exposing (AudienceType(..), Audience, audiencesJSON)
+module Data.Audience
+    exposing
+        ( Audience
+        , AudienceType(..)
+        , audiences
+        , audiencesDecoder
+        , audiencesJSON
+        )
 
 {-| Data.Audiences module
 
@@ -7,6 +14,9 @@ This module implements everything related to audience resource.
 # Interface
 @docs AudienceType, Audience, audienceJSON
 -}
+
+import Json.Decode as Decode exposing (Decoder)
+
 
 -- Type definition
 
@@ -27,6 +37,52 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+audiencesDecoder : Decoder (List Audience)
+audiencesDecoder =
+    Decode.field "data" <| Decode.list audienceDecoder
+
+
+audienceDecoder : Decoder Audience
+audienceDecoder =
+    Decode.map4 Audience
+        (Decode.field "id" Decode.int)
+        (Decode.field "name" Decode.string)
+        (Decode.field "type" audienceTypeDecoder)
+        (Decode.field "folder" <| Decode.nullable Decode.int)
+
+
+audienceTypeDecoder : Decoder AudienceType
+audienceTypeDecoder =
+    Decode.string
+        |> Decode.andThen
+            (\str ->
+                case str of
+                    "user" ->
+                        -- None of the objects in the provided JSON has "type": "authored".
+                        -- Assuming Authored corresponds to "type": "user"
+                        Decode.succeed Authored
+
+                    "shared" ->
+                        Decode.succeed Shared
+
+                    "curated" ->
+                        Decode.succeed Curated
+
+                    _ ->
+                        Decode.fail <| "Invalid AudienceType : " ++ str
+            )
+
+
+{-| Taking advantage of hardcoded data.
+If we were to retrieve the data from the backend, we'd have to manage possible errors,
+store errors in the model to possibly display them in the UI etc., perhaps using remote-data package
+-}
+audiences : List Audience
+audiences =
+    Decode.decodeString audiencesDecoder audiencesJSON
+        |> Result.withDefault []
 
 
 
