@@ -3,8 +3,8 @@
 Hello! Welcome to the Elm Challenge.
 
 This repository contains requirements definition of a project used for job applications
-on a **position of [Elm](elm-lang.org)/[JavaScript](https://www.javascript.com/) developer**.
-This includes two parts test, where **only the first part is required**.
+on a **position of [Elm](https://elm-lang.org/)/[JavaScript](https://www.javascript.com/) developer**.
+The challenge consists of two parts, where **only the first part is required**.
 Whole assignment is based on a real part of our production app.
 However, since there is a lot of domain specific knowledge required for most parts of our system
 and we are aware of the fact that most of this logic might be confusing to newcomers, we've tried to
@@ -15,9 +15,9 @@ Thanks to this, this project can be used as a general challenge to build an HTML
 
 In its essence, GlobalWebIndex is a data company and our primary way how we deliver all our datasets to clients is PRO Platform – our proprietary web interface for our analytical engine.
 
-Praised and used by the world largest organizations, PRO Platform enables our clients to cut through our data using custom audiences, segmentations and modular charting library.
+Praised and used by the world's largest organizations, PRO Platform enables our clients to cut through our data using custom audiences, segmentations and modular charting library.
 
-You will sit within our PRO Platform team and will be jointly responsible to push the development of the platform forward.
+You will be part of our PRO Platform team and will be jointly responsible for pushing the development of the platform forward.
 Day-to-day this involves new feature engineering, reviewing and discussing code of your colleagues and discussing the design decisions with the wider technical leadership team.
 
 - Ideate, brainstorm and implement new components and features using JavaScript, Elm or Ruby, if you fancy getting your hands on backend code.
@@ -29,7 +29,7 @@ We like to discuss things so you’ll be expected to demonstrate conclusive argu
 ## Basic Instructions
 
 You are required to provide an implementation of a component for browsing `Audience`s and `AudienceFolder`s in a hierarchical structure.
-Every `Audience` might have or have not `folder` and every `Folder` might have (but not necessary) its `parent` folder.
+Every `Audience` might or might not have a parent `folder` and every `Folder` might have (but not necessarily) its `parent` folder.
 This means the component should display `n`-levels deep tree. Always one level at the time.
 User can open any sub-folder or go back to the parent of the current level.
 All data is provided in a JSON format.
@@ -41,17 +41,17 @@ All data is provided in a JSON format.
 ## Introduction
 
 There are two models: `Audience` and `AudienceFolder`, defined each with its own API endpoint.
-You will find all necessary data inside [/src/Data](/src/Data) folder. There is a data in plain `JSON` format, which represents what API returns.
-You will also find particular type definitions of each model. Your job is to serialize this data into collection and build an interactive browser.
+You will find all the necessary data inside [/src/Data](/src/Data) folder. There is data in plain `JSON` format, which represents what API returns.
+You will also find particular type definitions of each model. Your job is to deserialize this data into collection and build an interactive browser.
 
 ## General Acceptance Criteria
 
 - The implementation must be done in the `Elm` language.
 - You can use any 3rd-party library you want.
 - `elm-lang/html` must be used for rendering UI.
-- You are free to use `ports` and `subscriptions` in the case you want to.
+- You are free to use `ports` and `subscriptions` in case you want to.
 - You can use [screenshot](/media/screenshot.png) as an inspiration for the UI or come up with your own layout if it satisfies the requirements.
-- All naming including comments and additional documentation must be in the English language.
+- All naming including comments and additional documentation must be in English.
 - The final result must be in the form of a full git repository with your own implementation.
 - There are **no time restrictions** for completing this challenge.
 - **(Only) The first part is required.**
@@ -66,7 +66,7 @@ please continue following the steps:
 - Complete an implementation inside your fork.
 - Open pull request to [original](https://github.com/GlobalWebIndex/challenge-elm/) repository with your own implementation.
 - Comment your pull request with message containing `READY` or `RDY` to let us know that we can review your code.
-- Comment your PR with any question in case you will need any help (or send us email - see bellow).
+- Comment your PR with any question in case you need any help (or send us email - see bellow).
 
 **You can also open pull request before you finish the implementation in case you are willing to discuss anything!**
 
@@ -78,7 +78,7 @@ please continue following the steps:
 ## Goal
 
 The goal is to test your ability to come up with a solution for a real world problem which will be part of your day to day responsibility.
-Obviously the first thing what we will look at is a degree to what your implementation satisfy original requirements.
+Obviously the first thing what we will look at is a degree to what your implementation satisfies original requirements.
 Also we want to see your ability to come up with a robust solution and will look on over all code quality.
 
 ## Contacts
