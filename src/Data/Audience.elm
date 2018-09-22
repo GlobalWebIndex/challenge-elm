@@ -1,12 +1,18 @@
-module Data.Audience exposing (AudienceType(..), Audience, audiencesJSON)
+module Data.Audience exposing (Audience, AudienceType(..), audiencesDecoder, audiencesJSON)
 
 {-| Data.Audiences module
 
 This module implements everything related to audience resource.
 
+
 # Interface
+
 @docs AudienceType, Audience, audienceJSON
+
 -}
+
+import Json.Decode as JD exposing (Decoder)
+
 
 -- Type definition
 
@@ -43,6 +49,7 @@ This is how we usually deal with making non-breaking continuous changes
 from old version of API to new one.
 
 You're free to use any strategy to decode JSON.
+
 -}
 audiencesJSON : String
 audiencesJSON =
@@ -5917,3 +5924,46 @@ audiencesJSON =
         ]
     }
     """
+
+
+
+-- Decoders. Fairly trivial, except for the `audienceTypeDecoder`.
+
+
+audiencesDecoder : Decoder (List Audience)
+audiencesDecoder =
+    JD.field "data" (JD.list audienceDecoder)
+
+
+audienceDecoder : Decoder Audience
+audienceDecoder =
+    JD.map4 Audience
+        (JD.field "id" JD.int)
+        (JD.field "name" JD.string)
+        (JD.field "type" audienceTypeDecoder)
+        (JD.field "folder" (JD.maybe JD.int))
+
+
+{-| I went with looking at the "type" field, as that seemed to have all the
+needed info all in itself. I might be wrong with my reading of the backend
+developers' minds :) But it seems to be the "current" intended way to consume
+the API.
+-}
+audienceTypeDecoder : Decoder AudienceType
+audienceTypeDecoder =
+    JD.string
+        |> JD.andThen
+            (\type_ ->
+                case type_ of
+                    "user" ->
+                        JD.succeed Authored
+
+                    "curated" ->
+                        JD.succeed Curated
+
+                    "shared" ->
+                        JD.succeed Shared
+
+                    _ ->
+                        JD.fail "Unknown AudienceType"
+            )
