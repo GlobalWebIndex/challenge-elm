@@ -11,7 +11,7 @@ This will split original tree of `Audience`s to three independent trees user can
 ## Requirements
 
 There are three categories of audiences we want to separate in data set.
-User should be able to select one of these at the time and see only audiences which are member of this category.
+User should be able to select one of these at time and see only audiences which are member of this category.
 Categories are:
 
 - Authored Audiences - audiences created by user herself.
@@ -19,12 +19,12 @@ Categories are:
   - In this case structure is flat.
 - Curated Audiences - pre-build audiences provided to all users.
 
-### This is requirements for this step:
+### These are the requirements for this step:
 
 - [ ] You must not change any of pre-defined types and fixtures.
     - However you can use existing files for your implementation.
 - [ ] Add 3 buttons - one for every category of audiences.
-- [ ] Clicking on each button activate particular category of audience.
+- [ ] Clicking on each button activates particular category of audience.
 - [ ] By default `Authored` audiences are filtered.
 - [ ] There must by at least one category selected at the time.
 - [ ] Every-time user changes category she sees its root level.
