@@ -1,11 +1,17 @@
-module Data.Audience exposing (AudienceType(..), Audience, audiencesJSON)
+module Data.Audience exposing
+    ( AudienceType(..), Audience
+    , audiencesJSON
+    )
 
 {-| Data.Audiences module
 
 This module implements everything related to audience resource.
 
+
 # Interface
+
 @docs AudienceType, Audience, audienceJSON
+
 -}
 
 -- Type definition
@@ -43,6 +49,7 @@ This is how we usually deal with making non-breaking continuous changes
 from old version of API to new one.
 
 You're free to use any strategy to decode JSON.
+
 -}
 audiencesJSON : String
 audiencesJSON =

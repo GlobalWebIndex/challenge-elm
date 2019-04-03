@@ -4,14 +4,17 @@ module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
 
 This module implements everything related to audience folder resource.
 
+
 # Interface
+
 @docs AudienceFolder, audienceFoldersJSON
+
 -}
 
 -- Type definition
 
 
-{-| Basic type of Audience record
+{-| Basic type of AudienceFolder record
 -}
 type alias AudienceFolder =
     { id : Int
