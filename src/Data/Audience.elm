@@ -41,7 +41,7 @@ type alias Audience =
 
 
 
--- Parser
+-- Decoder
 
 
 decodeAudienceType : String -> Decoder AudienceType
@@ -79,7 +79,7 @@ audienceDecoder =
 
 audiencesDecoder : Decoder (List Audience)
 audiencesDecoder =
-    D.at [ "data" ] <| D.list audienceDecoder
+    field "data" <| D.list audienceDecoder
 
 
 
