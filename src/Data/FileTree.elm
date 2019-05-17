@@ -1,4 +1,4 @@
-module Data.FileTree exposing (FileTree(..), FolderName, filterFiles, mapFolders, reverse, sortWith, toList)
+module Data.FileTree exposing (FileForest, FileTree(..), FileTreeFocused, FolderName, FolderWithHole(..), filterFiles, focus, mapFiles, mapFolders, reverse, sortWith, stepDown, stepUp, toList)
 
 ---------------------
 -- FileTree data type
