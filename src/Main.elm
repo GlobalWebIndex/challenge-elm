@@ -1,10 +1,29 @@
-module Main exposing (audienceFolders, audiences, main, mkFileTree, mkFileTreeHelper, splitFilter)
+module Main exposing (audienceFolders, audiences, main, mkFileSystem, mkFileSystemHelper, splitFilter)
 
 import Data.Audience exposing (Audience, audiencesDecoder, audiencesJSON)
 import Data.AudienceFolder exposing (AudienceFolder, audienceFoldersDecoder, audienceFoldersJSON)
-import Data.FileTree as FT exposing (FileTree(..))
+import Data.FileSystem as FT exposing (FileSystem(..), sortWith)
 import Html exposing (Html)
 import Json.Decode exposing (decodeString)
+
+
+sortFilesAndFoldersAlphabetically : FileSystem Audience -> FileSystem Audience
+sortFilesAndFoldersAlphabetically =
+    sortWith <|
+        \fs1 ->
+            \fs2 ->
+                case ( fs1, fs2 ) of
+                    ( Folder _ _, File _ ) ->
+                        GT
+
+                    ( File _, Folder _ _ ) ->
+                        LT
+
+                    ( Folder name1 _, Folder name2 _ ) ->
+                        compare name1 name2
+
+                    ( File file1, File file2 ) ->
+                        compare file1.name file2.name
 
 
 audienceFolders =
@@ -15,9 +34,9 @@ audiences =
     Result.withDefault [] <| decodeString audiencesDecoder audiencesJSON
 
 
-mkFileTree : List AudienceFolder -> List Audience -> FileTree Audience
-mkFileTree folders files =
-    mkFileTreeHelper
+mkFileSystem : List AudienceFolder -> List Audience -> FileSystem Audience
+mkFileSystem folders files =
+    mkFileSystemHelper
         folders
         (\af -> af.parent == Nothing)
         files
@@ -25,14 +44,14 @@ mkFileTree folders files =
         (Folder "ROOT" [])
 
 
-mkFileTreeHelper :
+mkFileSystemHelper :
     List AudienceFolder
     -> (AudienceFolder -> Bool)
     -> List Audience
     -> (Audience -> Bool)
-    -> FileTree Audience
-    -> FileTree Audience
-mkFileTreeHelper folders folderFilter files fileFilter tree =
+    -> FileSystem Audience
+    -> FileSystem Audience
+mkFileSystemHelper folders folderFilter files fileFilter tree =
     case tree of
         File x ->
             File x
@@ -50,7 +69,7 @@ mkFileTreeHelper folders folderFilter files fileFilter tree =
                 (content
                     ++ List.map
                         (\subFolder ->
-                            mkFileTreeHelper
+                            mkFileSystemHelper
                                 restFolders
                                 (\af -> af.parent == Just subFolder.id)
                                 restFiles

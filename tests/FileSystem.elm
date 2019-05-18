@@ -1,29 +1,14 @@
-module Example exposing (suite)
+module FileSystem exposing (suite)
 
-import Data.FileTree exposing (..)
+import Data.FileSystem exposing (..)
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
 import Test exposing (..)
 
 
-fileTree : FileTree Int
-fileTree =
-    Folder "ROOT"
-        [ Folder "A"
-            [ File 1
-            , Folder "B"
-                [ File 2
-                , File 3
-                ]
-            ]
-        , File 3
-        , Folder "C" [ File 4 ]
-        ]
-
-
 suite : Test
 suite =
-    describe "Data.FileTree"
+    describe "Data.FileSystem"
         [ describe "toList"
             [ test "flattening naked file" <|
                 \_ ->
@@ -103,7 +88,7 @@ suite =
                     Expect.equal
                         (mapFiles (\_ -> 0) (Folder "empty" [ File 1, File 2 ]))
                         (Folder "empty" [ File 0, File 0 ])
-            , test "mapping complex FileTree" <|
+            , test "mapping complex FileSystem" <|
                 \_ ->
                     Expect.equal
                         (mapFiles (\_ -> 0) <|
@@ -159,6 +144,47 @@ suite =
                                     ]
                                 , File 1
                                 ]
+                            ]
+                        )
+            ]
+        , describe "sortFoldersAlphabetically"
+            [ test "sorting naked file" <|
+                \_ ->
+                    Expect.equal
+                        (sortFoldersAlphabetically <| File 1)
+                        (File 1)
+            , test "complex folders" <|
+                \_ ->
+                    Expect.equal
+                        (sortFoldersAlphabetically <|
+                            Folder "ROOT"
+                                [ Folder "B" []
+                                , Folder "Aa" [ File 2, File 1 ]
+                                , Folder "Ab"
+                                    [ File 2
+                                    , Folder "X"
+                                        [ Folder "ij" []
+                                        , Folder "ik" []
+                                        , Folder "i" []
+                                        ]
+                                    ]
+                                , Folder "D" []
+                                , Folder "C" []
+                                ]
+                        )
+                        (Folder "ROOT"
+                            [ Folder "Aa" [ File 2, File 1 ]
+                            , Folder "Ab"
+                                [ File 2
+                                , Folder "X"
+                                    [ Folder "i" []
+                                    , Folder "ij" []
+                                    , Folder "ik" []
+                                    ]
+                                ]
+                            , Folder "B" []
+                            , Folder "C" []
+                            , Folder "D" []
                             ]
                         )
             ]

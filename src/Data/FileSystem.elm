@@ -1,10 +1,10 @@
-module Data.FileTree exposing (FileForest, FileTree(..), FileTreeFocused, FolderName, FolderWithHole(..), filterFiles, focus, mapFiles, mapFolders, reverse, sortWith, stepDown, stepUp, toList)
+module Data.FileSystem exposing (FileForest, FileSystem(..), FileSystemFocused, FolderName, FolderWithHole(..), filterFiles, focus, mapFiles, mapFolders, reverse, sortFoldersAlphabetically, sortWith, stepDown, stepUp, toList)
 
 ---------------------
--- FileTree data type
+-- FileSystem data type
 ---------------------
 
-import Data.ListFocused exposing (ListWithHole(..), focusIn)
+import Data.Focused.List exposing (ListWithHole(..), focusIn)
 import List.Extra exposing (uncons)
 
 
@@ -12,16 +12,16 @@ type alias FolderName =
     String
 
 
-type FileTree file
+type FileSystem file
     = File file
     | Folder FolderName (FileForest file)
 
 
 type alias FileForest a =
-    List (FileTree a)
+    List (FileSystem a)
 
 
-toList : FileTree file -> List file
+toList : FileSystem file -> List file
 toList tree =
     case tree of
         Folder name content ->
@@ -31,7 +31,7 @@ toList tree =
             [ file ]
 
 
-filterFiles : (a -> Bool) -> FileTree a -> FileTree a
+filterFiles : (a -> Bool) -> FileSystem a -> FileSystem a
 filterFiles check =
     mapFolders <|
         List.filter
@@ -45,7 +45,7 @@ filterFiles check =
             )
 
 
-mapFiles : (a -> b) -> FileTree a -> FileTree b
+mapFiles : (a -> b) -> FileSystem a -> FileSystem b
 mapFiles f tree =
     case tree of
         File x ->
@@ -55,7 +55,7 @@ mapFiles f tree =
             Folder name (List.map (mapFiles f) content)
 
 
-mapFolders : (List (FileTree a) -> List (FileTree a)) -> FileTree a -> FileTree a
+mapFolders : (List (FileSystem a) -> List (FileSystem a)) -> FileSystem a -> FileSystem a
 mapFolders f tree =
     case tree of
         File file ->
@@ -65,19 +65,38 @@ mapFolders f tree =
             Folder name <| f <| List.map (mapFolders f) content
 
 
-reverse : FileTree a -> FileTree a
+reverse : FileSystem a -> FileSystem a
 reverse =
     mapFolders List.reverse
 
 
-sortWith : (FileTree a -> FileTree a -> Order) -> FileTree a -> FileTree a
+sortWith : (FileSystem a -> FileSystem a -> Order) -> FileSystem a -> FileSystem a
 sortWith sorter =
     mapFolders (List.sortWith sorter)
 
 
+sortFoldersAlphabetically : FileSystem a -> FileSystem a
+sortFoldersAlphabetically =
+    sortWith <|
+        \fs1 ->
+            \fs2 ->
+                case ( fs1, fs2 ) of
+                    ( Folder _ _, File _ ) ->
+                        GT
+
+                    ( File _, Folder _ _ ) ->
+                        LT
+
+                    ( Folder name1 _, Folder name2 _ ) ->
+                        compare name1 name2
+
+                    ( File _, File _ ) ->
+                        EQ
+
+
 
 -----------------------------
--- Focused FileTree data type
+-- Focused FileSystem data type
 -----------------------------
 
 
@@ -85,11 +104,11 @@ type FolderWithHole a
     = FolderWithHole FolderName (FileForest a) (FileForest a)
 
 
-type alias FileTreeFocused a =
-    ( List (FolderWithHole a), FileTree a )
+type alias FileSystemFocused a =
+    ( List (FolderWithHole a), FileSystem a )
 
 
-focus : FileTree a -> Maybe (FileTreeFocused a)
+focus : FileSystem a -> Maybe (FileSystemFocused a)
 focus tree =
     case tree of
         File _ ->
@@ -99,7 +118,7 @@ focus tree =
             Just ( [], tree )
 
 
-stepUp : FileTreeFocused a -> Maybe (FileTreeFocused a)
+stepUp : FileSystemFocused a -> Maybe (FileSystemFocused a)
 stepUp focTree =
     case focTree of
         ( [], _ ) ->
@@ -109,7 +128,7 @@ stepUp focTree =
             Just ( crumbs, Folder name <| leftOfHole ++ [ tree ] ++ rightOfHole )
 
 
-stepDown : Int -> FileTreeFocused a -> Maybe (FileTreeFocused a)
+stepDown : Int -> FileSystemFocused a -> Maybe (FileSystemFocused a)
 stepDown n ( crumbs, tree ) =
     case tree of
         File _ ->

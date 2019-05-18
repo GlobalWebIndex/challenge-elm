@@ -14,6 +14,7 @@ This module implements everything related to audience resource.
 
 -}
 
+import Data.FileSystem exposing (sortWith)
 import Json.Decode as D exposing (Decoder, field, maybe, nullable, succeed)
 import Json.Decode.Applicative exposing (with)
 

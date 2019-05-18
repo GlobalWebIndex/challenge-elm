@@ -1,4 +1,4 @@
-module Data.ListFocused exposing (ListFocused, ListWithHole(..), expFunc, focus, focusIn, stepLeft, stepRight, walkLeft, walkRight)
+module Data.Focused.List exposing (ListFocused, ListWithHole(..), expFunc, focus, focusIn, stepLeft, stepRight, walkLeft, walkRight)
 
 
 type ListWithHole a
