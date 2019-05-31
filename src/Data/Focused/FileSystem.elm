@@ -5,7 +5,7 @@ import Data.Focused.List exposing (ListWithHole(..), focusAt)
 
 
 type FolderWithHole a
-    = FolderWithHole FolderName (FileForest a) (FileForest a)
+    = FolderWithHole FolderName (List (FileSystem a)) (List (FileSystem a))
 
 
 type alias FileSystemFocused a =

@@ -5,9 +5,6 @@ module Json.Decode.Applicative exposing (apply, with)
 This module implements typeclass applicative (apply : m (a -> b) -> a -> b)
 for Decoder functor based on the monadic return (succeed) and bind (andThen)
 
-It is a standard canonical way, see
-<https://hackage.haskell.org/package/base-4.12.0.0/docs/src/GHC.Base.html#ap>
-
 -}
 
 import Json.Decode exposing (Decoder, andThen, succeed)
