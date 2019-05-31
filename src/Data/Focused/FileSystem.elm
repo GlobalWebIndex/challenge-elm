@@ -1,8 +1,7 @@
 module Data.Focused.FileSystem exposing (FileSystemFocused, FolderWithHole(..), focus, stepDown, stepUp)
 
 import Data.FileSystem exposing (..)
-import Data.Focused.List exposing (ListWithHole(..), focusIn)
-import List.Extra exposing (uncons)
+import Data.Focused.List exposing (ListWithHole(..), focusAt)
 
 
 type FolderWithHole a
@@ -17,7 +16,7 @@ focus : FileSystem a -> Maybe (FileSystemFocused a)
 focus tree =
     case tree of
         File _ ->
-            Nothing
+            Just ( [], tree )
 
         Folder _ _ ->
             Just ( [], tree )
@@ -40,13 +39,10 @@ stepDown n ( crumbs, tree ) =
             Nothing
 
         Folder name forest ->
-            let
-                focusedForest =
-                    focusIn n forest
-            in
-            case focusedForest of
-                Nothing ->
-                    Nothing
-
-                Just ( ListWithHole left right, focusedTree ) ->
-                    Just ( FolderWithHole name left right :: crumbs, focusedTree )
+            focusAt n forest
+                |> Maybe.map
+                    (\focusedForest ->
+                        case focusedForest of
+                            ( ListWithHole left right, focusedTree ) ->
+                                ( FolderWithHole name left right :: crumbs, focusedTree )
+                    )

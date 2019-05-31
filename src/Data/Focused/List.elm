@@ -1,4 +1,4 @@
-module Data.Focused.List exposing (ListFocused, ListWithHole(..), expFunc, focus, focusIn, stepLeft, stepRight, walkLeft, walkRight)
+module Data.Focused.List exposing (ListFocused, ListWithHole(..), expFunc, focus, focusAt, stepLeft, stepRight, walkLeft, walkRight)
 
 
 type ListWithHole a
@@ -39,23 +39,41 @@ stepRight ( ListWithHole leftOfHole rightOfHole, focused ) =
             Just ( ListWithHole (leftOfHole ++ [ focused ]) xs, x )
 
 
+
+-- it would be more suiting to use Nat instead of Int int the following functions
+-- but I suspect that it is not usually used in the Elm community and the need to always
+-- import it and use Nat.fromInt when providing arguments is probably not worth it
+
+
 walkLeft : Int -> ListFocused a -> Maybe (ListFocused a)
 walkLeft n lf =
-    expFunc n (Maybe.andThen stepLeft) (Just lf)
+    if n < 0 then
+        walkRight -n lf
+
+    else
+        expFunc n (Maybe.andThen stepLeft) (Just lf)
 
 
 walkRight : Int -> ListFocused a -> Maybe (ListFocused a)
 walkRight n lf =
-    expFunc n (Maybe.andThen stepRight) (Just lf)
+    if n < 0 then
+        walkLeft -n lf
+
+    else
+        expFunc n (Maybe.andThen stepRight) (Just lf)
 
 
-focusIn : Int -> List a -> Maybe (ListFocused a)
-focusIn n =
-    focus >> Maybe.andThen (walkRight n)
+focusAt : Int -> List a -> Maybe (ListFocused a)
+focusAt n =
+    if n < 0 then
+        \_ -> Nothing
+
+    else
+        focus >> Maybe.andThen (walkRight n)
 
 
 
--- rename
+-- TODO: rename expFunc and move elsewhere
 
 
 expFunc : Int -> (a -> a) -> a -> a
