@@ -12,14 +12,14 @@ type alias FileSystemFocused a =
     ( List (FolderWithHole a), FileSystem a )
 
 
-focus : FileSystem a -> Maybe (FileSystemFocused a)
+focus : FileSystem a -> FileSystemFocused a
 focus tree =
     case tree of
         File _ ->
-            Just ( [], tree )
+            ( [], tree )
 
         Folder _ _ ->
-            Just ( [], tree )
+            ( [], tree )
 
 
 stepUp : FileSystemFocused a -> Maybe (FileSystemFocused a)

@@ -94,12 +94,13 @@ mkFileSystem transforms BE data into FileSystem of Audiences
 -}
 mkFileSystem : List AudienceFolder -> List Audience -> FileSystem Audience
 mkFileSystem folders files =
-    mkFileSystemHelper
-        folders
-        (\af -> af.parent == Nothing)
-        files
-        (\a -> a.folder == Nothing)
-        (Folder "ROOT" [])
+    sortFilesAndFoldersAlphabetically <|
+        mkFileSystemHelper
+            folders
+            (\af -> af.parent == Nothing)
+            files
+            (\a -> a.folder == Nothing)
+            (Folder "ROOT" [])
 
 
 mkFileSystemHelper :
@@ -137,3 +138,22 @@ mkFileSystemHelper folders folderFilter files fileFilter tree =
                         subFolders
                     ++ List.map File subFiles
                 )
+
+
+sortFilesAndFoldersAlphabetically : FileSystem Audience -> FileSystem Audience
+sortFilesAndFoldersAlphabetically =
+    sortWith <|
+        \fs1 ->
+            \fs2 ->
+                case ( fs1, fs2 ) of
+                    ( Folder _ _, File _ ) ->
+                        LT
+
+                    ( File _, Folder _ _ ) ->
+                        GT
+
+                    ( Folder name1 _, Folder name2 _ ) ->
+                        compare name1 name2
+
+                    ( File file1, File file2 ) ->
+                        compare file1.name file2.name
