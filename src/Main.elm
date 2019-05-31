@@ -7,37 +7,31 @@ module Main exposing (Model, Msg(..), audienceFoldersParsed, audiencesParsed, in
 
 import Browser
 import Css as C exposing (border3, px, rgb, solid)
-import Data.Audience exposing (Audience, audiencesDecoder, audiencesJSON)
+import Data.Audience exposing (Audience, AudienceType(..), audiencesDecoder, audiencesJSON)
 import Data.AudienceFolder exposing (AudienceFolder, audienceFoldersDecoder, audienceFoldersJSON)
 import Data.FileSystem exposing (mkFileSystem)
 import Data.Focused.FileSystem exposing (FileSystemFocused, focus)
-import Html exposing (Html)
+import Html exposing (Html, text)
 import Json.Decode as Json exposing (decodeString)
 import View.AudienceBrowser as AudienceBrowser exposing (Msg(..), audienceBrowser)
 
 
+
+-- MODEL
+
+
 type alias Model =
-    { audienceBrowserModel : AudienceBrowser.Model }
-
-
-type Msg
-    = NoOp
-    | AudienceBrowserMsg AudienceBrowser.Msg
-
-
-type OtherMsg
-    = Up
-    | Down
+    Result String AudienceBrowser.Model
 
 
 
 -- INIT
 
 
-init : Model
+init : flags -> ( Model, Cmd msg )
 init =
-    { audienceBrowserModel =
-        case ( audienceFoldersParsed, audiencesParsed ) of
+    \_ ->
+        ( case ( audienceFoldersParsed, audiencesParsed ) of
             ( Err errMsg, Ok _ ) ->
                 Err errMsg
 
@@ -48,8 +42,12 @@ init =
                 Err <| errMsg1 ++ errMsg2
 
             ( Ok audienceFolders, Ok audiences ) ->
-                Ok <| focus (mkFileSystem audienceFolders audiences)
-    }
+                Ok <|
+                    { focusedFileSystem = focus (mkFileSystem audienceFolders audiences)
+                    , filter = Authored
+                    }
+        , Cmd.none
+        )
 
 
 audienceFoldersParsed : Result String (List AudienceFolder)
@@ -70,19 +68,27 @@ audiencesParsed =
 -- UPDATE
 
 
-update : Msg -> Model -> Model
-update msg model =
-    case msg of
-        NoOp ->
-            model
+type Msg
+    = NoOp
+    | AudienceBrowserMsg AudienceBrowser.Msg
 
-        AudienceBrowserMsg abmsg ->
-            { model
-                | audienceBrowserModel =
-                    AudienceBrowser.update
-                        abmsg
-                        model.audienceBrowserModel
-            }
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case model of
+        Err _ ->
+            ( model, Cmd.none )
+
+        Ok browserModel ->
+            case msg of
+                NoOp ->
+                    ( model, Cmd.none )
+
+                AudienceBrowserMsg abmsg ->
+                    (Tuple.mapSecond (Cmd.map AudienceBrowserMsg) << Tuple.mapFirst Ok) <|
+                        AudienceBrowser.update
+                            abmsg
+                            browserModel
 
 
 
@@ -91,8 +97,13 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    Html.map AudienceBrowserMsg <|
-        audienceBrowser model.audienceBrowserModel
+    case model of
+        Err errMsg ->
+            text errMsg
+
+        Ok browserModel ->
+            Html.map AudienceBrowserMsg <|
+                audienceBrowser browserModel
 
 
 
@@ -101,8 +112,9 @@ view model =
 
 main : Program () Model Msg
 main =
-    Browser.sandbox
+    Browser.element
         { init = init
         , view = view
         , update = update
+        , subscriptions = \_ -> Sub.none
         }

@@ -1,13 +1,15 @@
 module View.AudienceBrowser exposing (Model, Msg(..), audienceBrowser, showAudience, showFilesAndFolders, showFolder, update)
 
-import Data.Audience exposing (Audience)
+import Browser.Dom exposing (setViewportOf)
+import Css as Css exposing (..)
+import Data.Audience exposing (Audience, AudienceType)
 import Data.FileSystem exposing (FileSystem(..), sortWith)
 import Data.Focused.FileSystem as FFS exposing (FileSystemFocused)
 import Html exposing (Html)
-import Html.Attributes exposing (style)
-import Html.Styled as H exposing (button, div, text)
-import Html.Styled.Attributes as A exposing (autofocus, hidden, id, src, tabindex)
+import Html.Styled as H exposing (button, div, img, text)
+import Html.Styled.Attributes as A exposing (css)
 import Html.Styled.Events as E exposing (keyCode, on, onClick)
+import Task
 
 
 
@@ -15,7 +17,9 @@ import Html.Styled.Events as E exposing (keyCode, on, onClick)
 
 
 type alias Model =
-    Result String (FileSystemFocused Audience)
+    { focusedFileSystem : FileSystemFocused Audience
+    , filter : AudienceType
+    }
 
 
 
@@ -25,26 +29,48 @@ type alias Model =
 type Msg
     = StepDown Int
     | StepUp
+    | NoOp
 
 
 
 -- UPDATE
 
 
-update : Msg -> Model -> Model
-update msg focusedFileSystemResult =
-    case focusedFileSystemResult of
-        Err _ ->
-            focusedFileSystemResult
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    let
+        { filter, focusedFileSystem } =
+            model
+    in
+    case msg of
+        NoOp ->
+            ( model, Cmd.none )
 
-        Ok focusedFileSystem ->
-            case msg of
-                StepDown n ->
-                    Result.fromMaybe "ERROR: Only folders can be opened" <|
-                        FFS.stepDown n focusedFileSystem
+        StepDown n ->
+            ( { model
+                | focusedFileSystem =
+                    maybeUpdate (FFS.stepDown n) focusedFileSystem
+              }
+            , scroolAudienceBrowserToTop
+            )
 
-                StepUp ->
-                    (Ok << Maybe.withDefault focusedFileSystem) <| FFS.stepUp focusedFileSystem
+        StepUp ->
+            ( { model
+                | focusedFileSystem =
+                    maybeUpdate FFS.stepUp focusedFileSystem
+              }
+            , scroolAudienceBrowserToTop
+            )
+
+
+scroolAudienceBrowserToTop : Cmd Msg
+scroolAudienceBrowserToTop =
+    Task.attempt (always NoOp) (setViewportOf "fileAndFoldersContainer" 0 0)
+
+
+maybeUpdate : (a -> Maybe a) -> a -> a
+maybeUpdate updater value =
+    Maybe.withDefault value <| Maybe.andThen updater (Just value)
 
 
 
@@ -52,46 +78,260 @@ update msg focusedFileSystemResult =
 
 
 audienceBrowser : Model -> Html Msg
-audienceBrowser resultFileSystem =
+audienceBrowser model =
     H.toUnstyled <|
-        case resultFileSystem of
-            Err errorMsg ->
-                text errorMsg
+        let
+            ( fragments, focusedFolder ) =
+                model.focusedFileSystem
 
-            Ok focusedFS ->
-                let
-                    foldersAndFilesToShow =
-                        Tuple.second focusedFS
-                in
-                case focusedFS of
-                    ( _, Folder name folderContent ) ->
-                        div [] <| button [ onClick StepUp ] [ text "Up" ] :: showFilesAndFolders folderContent
+            isRoot =
+                fragments == []
+        in
+        case focusedFolder of
+            File _ ->
+                text "ERROR: You can only look inside of folder not file"
 
-                    ( _, File audience ) ->
-                        text "ERROR: Cannot get inside of a file"
+            Folder name folderContent ->
+                div
+                    [ css
+                        [ displayFlex
+                        , flexDirection column
+                        , maxWidth browserWidth
+                        , border3 (px 2) solid colors.lightGrey
+                        , borderRadius (px 5)
+                        , padding (px 2)
+                        , fontFamily sansSerif
+                        , fontSize (px 11)
+                        ]
+                    ]
+                <|
+                    [ folderName isRoot name
+                    , showFilesAndFolders isRoot model.filter folderContent
+                    , filterButtons model.filter
+                    ]
+
+
+folderName : Bool -> String -> H.Html Msg
+folderName isRoot name =
+    div
+        [ css
+            [ displayFlex
+            , justifyContent center
+            , color colors.grey
+            , fontSize (px 17)
+            , fontWeight bold
+            , paddingTop (px 7)
+            , paddingBottom (px 7)
+            , borderBottom3 (px 2) solid colors.lightGrey
+            ]
+        ]
+        [ text <|
+            if isRoot then
+                "Audiences Browser"
+
+            else
+                name
+        ]
+
+
+upFolderButton : Bool -> H.Html Msg
+upFolderButton isHidden =
+    div
+        [ onClick StepUp
+        , css <|
+            [ fileFolderStyle.other
+            , paddingLeft <| px fileFolderStyle.textLeftPadding
+            , color colors.link
+            , border3 (px 1) solid colors.link
+            , displayFlex
+            , alignItems center
+            , backgroundColor colors.white
+            , width (px 195)
+            , height (px 14)
+            , position sticky
+            , top (px 0)
+            ]
+                ++ (if isHidden then
+                        [ visibility hidden ]
+
+                    else
+                        []
+                   )
+        ]
+        [ webIcon fileFolderStyle.iconSize fileFolderStyle.iconSize "https://img.icons8.com/material-outlined/48/000000/up3.png"
+        , div [ css [ paddingLeft (px fileFolderStyle.textLeftPadding) ] ] [ text " Go back" ]
+        ]
+
+
+filterButtons : AudienceType -> H.Html Msg
+filterButtons audienceType =
+    let
+        iconSize =
+            25
+    in
+    div
+        [ css
+            [ displayFlex
+            , justifyContent spaceAround
+            , marginTop (px 4)
+            ]
+        ]
+        [ filterButton "Authored" <| webIcon iconSize iconSize "https://img.icons8.com/material-outlined/48/000000/user.png"
+        , separator
+        , filterButton "Shared" <| webIcon iconSize iconSize "https://img.icons8.com/material-outlined/48/000000/share.png"
+        , separator
+        , filterButton "Default" <| webIcon iconSize iconSize "https://img.icons8.com/material-outlined/48/000000/conference-call.png"
+        ]
+
+
+separator =
+    div
+        [ css
+            [ width (px 2)
+            , backgroundColor colors.lightGrey
+            ]
+        ]
+        []
+
+
+filterButton name icon =
+    div
+        [ css
+            [ displayFlex
+            , flexDirection column
+            , alignItems center
+            , fontSize (px 10)
+            , fontFamily sansSerif
+            , color colors.link
+            ]
+        ]
+        [ icon
+        , text name
+        ]
+
+
+webIcon : Float -> Float -> String -> H.Html Msg
+webIcon w h url =
+    img
+        [ A.src url
+        , css
+            [ width (px w)
+            , height (px h)
+            ]
+        ]
+        []
 
 
 showAudience : Audience -> H.Html Msg
 showAudience audience =
-    case audience of
-        { id, name, type_ } ->
-            div [] [ text name ]
+    let
+        { name } =
+            audience
+    in
+    div
+        [ css
+            [ fileFolderStyle.other
+            , paddingLeft <| px <| 2 * fileFolderStyle.textLeftPadding + fileFolderStyle.iconSize
+            , backgroundColor colors.fileBGC
+            , border3 (px 1) solid colors.fileBGC
+            ]
+        ]
+        [ text name ]
 
 
 showFolder : Int -> String -> H.Html Msg
-showFolder position name =
-    div [ onClick <| StepDown position ] [ text <| String.fromInt position ++ " - " ++ name ]
+showFolder index name =
+    div
+        [ onClick <| StepDown index
+        , css
+            [ fileFolderStyle.other
+            , backgroundColor colors.folderBGC
+            , paddingLeft <| px fileFolderStyle.textLeftPadding
+            , displayFlex
+            , alignItems center
+            , border3 (px 1) solid colors.folderBGC
+            ]
+        ]
+        [ div [ css [ position relative, top (px 0.1) ] ]
+            [ webIcon fileFolderStyle.iconSize fileFolderStyle.iconSize "https://img.icons8.com/ultraviolet/48/000000/folder-invoices.png" ]
+        , div [ css [ paddingLeft <| px fileFolderStyle.textLeftPadding ] ]
+            [ text name ]
+        ]
 
 
-showFilesAndFolders : List (FileSystem Audience) -> List (H.Html Msg)
-showFilesAndFolders =
-    List.indexedMap
-        (\position ->
-            \fileOrFolder ->
-                case fileOrFolder of
-                    File audience ->
-                        showAudience audience
+showFilesAndFolders : Bool -> AudienceType -> List (FileSystem Audience) -> H.Html Msg
+showFilesAndFolders isRoot audienceType folderContent =
+    div
+        [ css <|
+            [ maxHeight browserHeight
+            , overflowY scroll
+            , overflowX hidden
+            , borderBottom3 (px 2) solid colors.lightGrey
+            ]
+        , A.id "fileAndFoldersContainer"
+        ]
+    <|
+        (if isRoot then
+            text ""
 
-                    Folder name _ ->
-                        showFolder position name
+         else
+            upFolderButton isRoot
         )
+            :: List.indexedMap
+                (\position ->
+                    \fileOrFolder ->
+                        case fileOrFolder of
+                            File audience ->
+                                showAudience audience
+
+                            Folder name _ ->
+                                showFolder position name
+                )
+                (List.filter
+                    (\fs ->
+                        case fs of
+                            File { type_ } ->
+                                True
+
+                            Folder _ _ ->
+                                True
+                    )
+                    folderContent
+                )
+
+
+browserWidth =
+    px 215
+
+
+browserHeight =
+    px 500
+
+
+folderIconSize =
+    16
+
+
+fileFolderStyle =
+    { iconSize = 16
+    , textLeftPadding = 6
+    , other =
+        batch
+            [ marginTop (px 2)
+            , borderRadius (px 2)
+            , color colors.white
+            , paddingTop (px 13)
+            , paddingBottom (px 13)
+            ]
+    }
+
+
+colors =
+    { white = rgb 255 255 255
+    , black = rgb 0 0 0
+    , grey = rgb 85 85 85
+    , lightGrey = rgb 219 219 219
+    , link = rgb 40 65 186
+    , folderBGC = rgb 40 65 186
+    , fileBGC = rgb 128 147 242
+    }
