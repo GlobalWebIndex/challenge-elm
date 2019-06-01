@@ -1,4 +1,16 @@
-module Data.FileSystem exposing (FileSystem(..), FolderName, filterFiles, flatten, mapFiles, mapFolders, mkFileSystem, mkFileSystemHelper, reverse, sortFilesAndFoldersAlphabetically, sortFoldersAlphabetically, sortWith, toList)
+module Data.FileSystem exposing
+    ( FileSystem(..)
+    , FolderName
+    , filterFiles
+    , flatten
+    , mapFiles
+    , mkFileSystem
+    , reverse
+    , sortAudienceFilesAndFoldersAlphabetically
+    , sortFoldersAlphabetically
+    , sortWith
+    , toList
+    )
 
 import Data.Audience exposing (Audience)
 import Data.AudienceFolder exposing (AudienceFolder)
@@ -109,7 +121,7 @@ mkFileSystem transforms BE data into FileSystem of Audiences
 -}
 mkFileSystem : List AudienceFolder -> List Audience -> FileSystem Audience
 mkFileSystem folders files =
-    sortFilesAndFoldersAlphabetically <|
+    sortAudienceFilesAndFoldersAlphabetically <|
         mkFileSystemHelper
             folders
             (\af -> af.parent == Nothing)
@@ -155,8 +167,8 @@ mkFileSystemHelper folders folderFilter files fileFilter tree =
                 )
 
 
-sortFilesAndFoldersAlphabetically : FileSystem Audience -> FileSystem Audience
-sortFilesAndFoldersAlphabetically =
+sortAudienceFilesAndFoldersAlphabetically : FileSystem Audience -> FileSystem Audience
+sortAudienceFilesAndFoldersAlphabetically =
     sortWith <|
         \fs1 ->
             \fs2 ->

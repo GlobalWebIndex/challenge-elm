@@ -1,19 +1,13 @@
-module Main exposing (Model, Msg(..), audienceFoldersParsed, audiencesParsed, init, main, update, view)
-
-{--import Html.Attributes exposing (style) --}
-{--import Html.Styled as H exposing (button, div, text) --}
-{--import Html.Styled.Attributes as A exposing (autofocus, hidden, id, src, tabindex) --}
-{--import Html.Styled.Events as E exposing (keyCode, on, onClick) --}
+module Main exposing (main, view)
 
 import Browser
-import Css as C exposing (border3, px, rgb, solid)
 import Data.Audience exposing (Audience, AudienceType(..), audiencesDecoder, audiencesJSON)
 import Data.AudienceFolder exposing (AudienceFolder, audienceFoldersDecoder, audienceFoldersJSON)
 import Data.FileSystem exposing (mkFileSystem)
 import Data.Focused.FileSystem exposing (FileSystemFocused, focus)
 import Html exposing (Html, text)
 import Json.Decode as Json exposing (decodeString)
-import View.AudienceBrowser as AudienceBrowser exposing (Msg(..), audienceBrowser)
+import View.AudienceBrowser as AudienceBrowser exposing (audienceBrowser)
 
 
 

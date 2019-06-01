@@ -6,9 +6,9 @@ import Data.Audience exposing (Audience, AudienceType(..))
 import Data.FileSystem exposing (FileSystem(..), filterFiles, flatten, sortWith, toList)
 import Data.Focused.FileSystem as FSF exposing (FileSystemFocused)
 import Html exposing (Html)
-import Html.Styled as H exposing (button, div, img, text)
+import Html.Styled as H exposing (div, img, text)
 import Html.Styled.Attributes as A exposing (css)
-import Html.Styled.Events as E exposing (keyCode, on, onClick)
+import Html.Styled.Events as E
 import Task
 
 
@@ -159,7 +159,7 @@ folderName isRoot name =
 upFolderButton : Bool -> H.Html Msg
 upFolderButton isHidden =
     div
-        [ onClick StepUp
+        [ E.onClick StepUp
         , css <|
             [ fileFolderStyle.other
             , paddingLeft <| px fileFolderStyle.textLeftPadding
@@ -250,7 +250,7 @@ filterButton buttonType chosenType icon =
                    , padding (px 5)
                    , width (px 50)
                    ]
-        , onClick <| ChangeFilter buttonType
+        , E.onClick <| ChangeFilter buttonType
         ]
         [ icon
         , text <| labelifyAudienceType buttonType
@@ -289,7 +289,7 @@ showAudience audience =
 showFolder : Int -> String -> Int -> H.Html Msg
 showFolder index name filesCount =
     div
-        [ onClick <| StepDown index
+        [ E.onClick <| StepDown index
         , css
             [ fileFolderStyle.other
             , backgroundColor colors.folderBGC
