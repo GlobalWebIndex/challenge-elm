@@ -15,59 +15,53 @@ suite =
                 \_ ->
                     Expect.equal
                         (focus <| File 1)
-                        (Just ( [], File 1 ))
+                        ( [], File 1 )
             , test "focusing folder" <|
                 \_ ->
                     Expect.equal
                         (focus <| Folder "ROOT" [])
-                        (Just ( [], Folder "ROOT" [] ))
+                        ( [], Folder "ROOT" [] )
             ]
         , describe "stepDown"
             [ test "stepping down into File" <|
                 \_ ->
                     Expect.equal
-                        (Maybe.andThen (stepDown 0) (focus (Folder "ROOT" [ File 0, File 1 ])))
+                        (stepDown 0 <| focus (Folder "ROOT" [ File 0, File 1 ]))
                         (Just ( [ FolderWithHole "ROOT" [] [ File 1 ] ], File 0 ))
             , test "cannot step down with negative index" <|
                 \_ ->
                     Expect.equal
-                        (Maybe.andThen
-                            (stepDown -1)
-                            (focus
+                        (stepDown -1 <|
+                            focus
                                 (Folder "ROOT"
                                     [ Folder "A" []
                                     , Folder "B" []
                                     ]
                                 )
-                            )
                         )
                         Nothing
             , test "cannot step down with index larger than focused folder length" <|
                 \_ ->
                     Expect.equal
-                        (Maybe.andThen
-                            (stepDown 2)
-                            (focus
+                        (stepDown 2 <|
+                            focus
                                 (Folder "ROOT"
                                     [ Folder "A" []
                                     , Folder "B" []
                                     ]
                                 )
-                            )
                         )
                         Nothing
             , test "stepping down into 0th folder" <|
                 \_ ->
                     Expect.equal
-                        (Maybe.andThen
-                            (stepDown 0)
-                            (focus
+                        (stepDown 0 <|
+                            focus
                                 (Folder "ROOT"
                                     [ Folder "A" []
                                     , Folder "B" []
                                     ]
                                 )
-                            )
                         )
                         (Just ( [ FolderWithHole "ROOT" [] [ Folder "B" [] ] ], Folder "A" [] ))
             ]
