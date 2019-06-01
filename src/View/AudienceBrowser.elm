@@ -101,7 +101,6 @@ audienceBrowser model =
                         , borderRadius (px 5)
                         , padding (px 2)
                         , fontFamily sansSerif
-                        , fontSize (px 11)
                         ]
                     ]
                 <|
@@ -118,7 +117,7 @@ folderName isRoot name =
             [ displayFlex
             , justifyContent center
             , color colors.grey
-            , fontSize (px 17)
+            , fontSize (px 14)
             , fontWeight bold
             , paddingTop (px 7)
             , paddingBottom (px 7)
@@ -142,7 +141,7 @@ upFolderButton isHidden =
             [ fileFolderStyle.other
             , paddingLeft <| px fileFolderStyle.textLeftPadding
             , color colors.link
-            , border3 (px 1) solid colors.link
+            , border3 (px 1) solid colors.grey
             , displayFlex
             , alignItems center
             , backgroundColor colors.white
@@ -150,6 +149,7 @@ upFolderButton isHidden =
             , height (px 14)
             , position sticky
             , top (px 0)
+            , cursor pointer
             ]
                 ++ (if isHidden then
                         [ visibility hidden ]
@@ -236,7 +236,7 @@ showAudience audience =
             , border3 (px 1) solid colors.fileBGC
             ]
         ]
-        [ text name ]
+        [ ellipsifiedText name ]
 
 
 showFolder : Int -> String -> H.Html Msg
@@ -250,12 +250,13 @@ showFolder index name =
             , displayFlex
             , alignItems center
             , border3 (px 1) solid colors.folderBGC
+            , cursor pointer
             ]
         ]
         [ div [ css [ position relative, top (px 0.1) ] ]
             [ webIcon fileFolderStyle.iconSize fileFolderStyle.iconSize "https://img.icons8.com/ultraviolet/48/000000/folder-invoices.png" ]
         , div [ css [ paddingLeft <| px fileFolderStyle.textLeftPadding ] ]
-            [ text name ]
+            [ ellipsifiedText name ]
         ]
 
 
@@ -300,6 +301,32 @@ showFilesAndFolders isRoot audienceType folderContent =
                 )
 
 
+ellipsifiedText : String -> H.Html Msg
+ellipsifiedText txt =
+    let
+        maxLength =
+            25
+
+        shouldEllipsify =
+            String.length txt > maxLength
+    in
+    div
+        [ A.title <|
+            if shouldEllipsify then
+                txt
+
+            else
+                ""
+        ]
+        [ text <|
+            if shouldEllipsify then
+                String.left maxLength txt ++ "..."
+
+            else
+                txt
+        ]
+
+
 browserWidth =
     px 215
 
@@ -322,6 +349,7 @@ fileFolderStyle =
             , color colors.white
             , paddingTop (px 13)
             , paddingBottom (px 13)
+            , fontSize (px 11)
             ]
     }
 
