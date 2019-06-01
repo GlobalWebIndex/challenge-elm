@@ -63,8 +63,7 @@ audiencesParsed =
 
 
 type Msg
-    = NoOp
-    | AudienceBrowserMsg AudienceBrowser.Msg
+    = AudienceBrowserMsg AudienceBrowser.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -75,9 +74,6 @@ update msg model =
 
         Ok browserModel ->
             case msg of
-                NoOp ->
-                    ( model, Cmd.none )
-
                 AudienceBrowserMsg abmsg ->
                     (Tuple.mapSecond (Cmd.map AudienceBrowserMsg) << Tuple.mapFirst Ok) <|
                         AudienceBrowser.update
