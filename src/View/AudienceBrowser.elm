@@ -168,7 +168,7 @@ upFolderButton isHidden =
             , displayFlex
             , alignItems center
             , backgroundColor colors.white
-            , width (px 195)
+            , width <| calc (pct 100) minus scrollBarWidth
             , height (px 14)
             , position sticky
             , top (px 0)
@@ -325,6 +325,7 @@ showFilesAndFolders isRoot folderContent =
             , overflowY scroll
             , overflowX hidden
             , borderBottom3 (px 2) solid colors.lightGrey
+            , position relative
             ]
         , A.id "fileAndFoldersContainer"
         ]
@@ -393,6 +394,10 @@ browserHeight =
 
 folderIconSize =
     16
+
+
+scrollBarWidth =
+    px 8
 
 
 fileFolderStyle =
