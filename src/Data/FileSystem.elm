@@ -1,4 +1,4 @@
-module Data.FileSystem exposing (FileSystem(..), FolderName, filterFiles, mapFiles, mapFolders, mkFileSystem, mkFileSystemHelper, reverse, sortFoldersAlphabetically, sortWith, toList)
+module Data.FileSystem exposing (FileSystem(..), FolderName, filterFiles, flatten, mapFiles, mapFolders, mkFileSystem, mkFileSystemHelper, reverse, sortFilesAndFoldersAlphabetically, sortFoldersAlphabetically, sortWith, toList)
 
 import Data.Audience exposing (Audience)
 import Data.AudienceFolder exposing (AudienceFolder)
@@ -22,6 +22,21 @@ toList tree =
 
         File file ->
             [ file ]
+
+
+{-| Data.FileSystem.flatten
+
+merges all files into the root folder
+
+-}
+flatten : FileSystem file -> FileSystem file
+flatten tree =
+    case tree of
+        File _ ->
+            tree
+
+        Folder name contents ->
+            Folder name (List.map File <| toList tree)
 
 
 filterFiles : (a -> Bool) -> FileSystem a -> FileSystem a

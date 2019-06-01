@@ -1,4 +1,4 @@
-module Data.Focused.FileSystem exposing (FileSystemFocused, FolderWithHole(..), focus, stepDown, stepUp)
+module Data.Focused.FileSystem exposing (FileSystemFocused, FolderWithHole(..), defocus, focus, stepDown, stepUp)
 
 import Data.FileSystem exposing (..)
 import Data.Focused.List exposing (ListWithHole(..), focusAt)
@@ -22,18 +22,28 @@ focus tree =
             ( [], tree )
 
 
+defocus : FileSystemFocused a -> FileSystem a
+defocus fsFocused =
+    case fsFocused of
+        ( [], tree ) ->
+            tree
+
+        ( (FolderWithHole name left right) :: fragments, tree ) ->
+            defocus ( fragments, Folder name <| left ++ [ tree ] ++ right )
+
+
 stepUp : FileSystemFocused a -> Maybe (FileSystemFocused a)
 stepUp focTree =
     case focTree of
         ( [], _ ) ->
             Nothing
 
-        ( (FolderWithHole name leftOfHole rightOfHole) :: crumbs, tree ) ->
-            Just ( crumbs, Folder name <| leftOfHole ++ [ tree ] ++ rightOfHole )
+        ( (FolderWithHole name leftOfHole rightOfHole) :: fragments, tree ) ->
+            Just ( fragments, Folder name <| leftOfHole ++ [ tree ] ++ rightOfHole )
 
 
 stepDown : Int -> FileSystemFocused a -> Maybe (FileSystemFocused a)
-stepDown n ( crumbs, tree ) =
+stepDown n ( fragments, tree ) =
     case tree of
         File _ ->
             Nothing
@@ -44,5 +54,5 @@ stepDown n ( crumbs, tree ) =
                     (\focusedForest ->
                         case focusedForest of
                             ( ListWithHole left right, focusedTree ) ->
-                                ( FolderWithHole name left right :: crumbs, focusedTree )
+                                ( FolderWithHole name left right :: fragments, focusedTree )
                     )

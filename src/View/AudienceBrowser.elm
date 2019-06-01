@@ -2,9 +2,9 @@ module View.AudienceBrowser exposing (Model, Msg(..), audienceBrowser, showAudie
 
 import Browser.Dom exposing (setViewportOf)
 import Css as Css exposing (..)
-import Data.Audience exposing (Audience, AudienceType)
-import Data.FileSystem exposing (FileSystem(..), sortWith)
-import Data.Focused.FileSystem as FFS exposing (FileSystemFocused)
+import Data.Audience exposing (Audience, AudienceType(..))
+import Data.FileSystem exposing (FileSystem(..), filterFiles, flatten, sortWith, toList)
+import Data.Focused.FileSystem as FSF exposing (FileSystemFocused)
 import Html exposing (Html)
 import Html.Styled as H exposing (button, div, img, text)
 import Html.Styled.Attributes as A exposing (css)
@@ -29,6 +29,7 @@ type alias Model =
 type Msg
     = StepDown Int
     | StepUp
+    | ChangeFilter AudienceType
     | NoOp
 
 
@@ -49,7 +50,7 @@ update msg model =
         StepDown n ->
             ( { model
                 | focusedFileSystem =
-                    maybeUpdate (FFS.stepDown n) focusedFileSystem
+                    maybeUpdate (FSF.stepDown n) focusedFileSystem
               }
             , scroolAudienceBrowserToTop
             )
@@ -57,7 +58,15 @@ update msg model =
         StepUp ->
             ( { model
                 | focusedFileSystem =
-                    maybeUpdate FFS.stepUp focusedFileSystem
+                    maybeUpdate FSF.stepUp focusedFileSystem
+              }
+            , scroolAudienceBrowserToTop
+            )
+
+        ChangeFilter type_ ->
+            ( { focusedFileSystem = (FSF.focus << FSF.defocus) focusedFileSystem
+              , filter =
+                    type_
               }
             , scroolAudienceBrowserToTop
             )
@@ -84,10 +93,24 @@ audienceBrowser model =
             ( fragments, focusedFolder ) =
                 model.focusedFileSystem
 
+            filter =
+                model.filter
+
+            filteredFocusedFolder =
+                let
+                    filtered =
+                        filterFiles (\audience -> True) focusedFolder
+                in
+                if filter == Shared then
+                    flatten filtered
+
+                else
+                    filtered
+
             isRoot =
                 fragments == []
         in
-        case focusedFolder of
+        case filteredFocusedFolder of
             File _ ->
                 text "ERROR: You can only look inside of folder not file"
 
@@ -105,7 +128,7 @@ audienceBrowser model =
                     ]
                 <|
                     [ folderName isRoot name
-                    , showFilesAndFolders isRoot model.filter folderContent
+                    , showFilesAndFolders isRoot folderContent
                     , filterButtons model.filter
                     ]
 
@@ -176,12 +199,24 @@ filterButtons audienceType =
             , marginTop (px 4)
             ]
         ]
-        [ filterButton "Authored" <| webIcon iconSize iconSize "https://img.icons8.com/material-outlined/48/000000/user.png"
+        [ filterButton Authored audienceType <| webIcon iconSize iconSize "https://img.icons8.com/material-outlined/48/000000/user.png"
         , separator
-        , filterButton "Shared" <| webIcon iconSize iconSize "https://img.icons8.com/material-outlined/48/000000/share.png"
+        , filterButton Shared audienceType <| webIcon iconSize iconSize "https://img.icons8.com/material-outlined/48/000000/share.png"
         , separator
-        , filterButton "Default" <| webIcon iconSize iconSize "https://img.icons8.com/material-outlined/48/000000/conference-call.png"
+        , filterButton Curated audienceType <| webIcon iconSize iconSize "https://img.icons8.com/material-outlined/48/000000/conference-call.png"
         ]
+
+
+labelifyAudienceType type_ =
+    case type_ of
+        Authored ->
+            "Authored "
+
+        Shared ->
+            "Shared "
+
+        Curated ->
+            "Curated"
 
 
 separator =
@@ -194,19 +229,31 @@ separator =
         []
 
 
-filterButton name icon =
+filterButton : AudienceType -> AudienceType -> H.Html Msg -> H.Html Msg
+filterButton buttonType chosenType icon =
     div
-        [ css
-            [ displayFlex
-            , flexDirection column
-            , alignItems center
-            , fontSize (px 10)
-            , fontFamily sansSerif
-            , color colors.link
-            ]
+        [ css <|
+            (if buttonType == chosenType then
+                [ border3 (px 1) solid colors.link, textDecoration underline ]
+
+             else
+                []
+            )
+                ++ [ displayFlex
+                   , flexDirection column
+                   , alignItems center
+                   , fontSize (px 10)
+                   , fontFamily sansSerif
+                   , color colors.link
+                   , cursor pointer
+                   , borderRadius (px 2)
+                   , padding (px 5)
+                   , width (px 50)
+                   ]
+        , onClick <| ChangeFilter buttonType
         ]
         [ icon
-        , text name
+        , text <| labelifyAudienceType buttonType
         ]
 
 
@@ -239,8 +286,8 @@ showAudience audience =
         [ ellipsifiedText name ]
 
 
-showFolder : Int -> String -> H.Html Msg
-showFolder index name =
+showFolder : Int -> String -> Int -> H.Html Msg
+showFolder index name filesCount =
     div
         [ onClick <| StepDown index
         , css
@@ -249,19 +296,29 @@ showFolder index name =
             , paddingLeft <| px fileFolderStyle.textLeftPadding
             , displayFlex
             , alignItems center
+            , justifyContent spaceBetween
             , border3 (px 1) solid colors.folderBGC
             , cursor pointer
             ]
         ]
-        [ div [ css [ position relative, top (px 0.1) ] ]
-            [ webIcon fileFolderStyle.iconSize fileFolderStyle.iconSize "https://img.icons8.com/ultraviolet/48/000000/folder-invoices.png" ]
-        , div [ css [ paddingLeft <| px fileFolderStyle.textLeftPadding ] ]
-            [ ellipsifiedText name ]
+        [ div [ css [ displayFlex, alignItems center ] ]
+            [ div [ css [ position relative, top (px 0.1) ] ]
+                [ webIcon fileFolderStyle.iconSize fileFolderStyle.iconSize "https://img.icons8.com/ultraviolet/48/000000/folder-invoices.png" ]
+            , div [ css [ paddingLeft <| px fileFolderStyle.textLeftPadding ] ]
+                [ ellipsifiedText name ]
+            ]
+        , div
+            [ css
+                [ color colors.lightGrey
+                , marginRight <| px fileFolderStyle.textLeftPadding
+                ]
+            ]
+            [ text <| "(" ++ String.fromInt filesCount ++ ")" ]
         ]
 
 
-showFilesAndFolders : Bool -> AudienceType -> List (FileSystem Audience) -> H.Html Msg
-showFilesAndFolders isRoot audienceType folderContent =
+showFilesAndFolders : Bool -> List (FileSystem Audience) -> H.Html Msg
+showFilesAndFolders isRoot folderContent =
     div
         [ css <|
             [ maxHeight browserHeight
@@ -285,20 +342,19 @@ showFilesAndFolders isRoot audienceType folderContent =
                             File audience ->
                                 showAudience audience
 
-                            Folder name _ ->
-                                showFolder position name
-                )
-                (List.filter
-                    (\fs ->
-                        case fs of
-                            File { type_ } ->
-                                True
+                            Folder name contents ->
+                                let
+                                    filesCount =
+                                        List.length <| toList fileOrFolder
+                                in
+                                -- i dont show folders that contain no files at all
+                                if filesCount > 0 then
+                                    showFolder position name filesCount
 
-                            Folder _ _ ->
-                                True
-                    )
-                    folderContent
+                                else
+                                    text ""
                 )
+                folderContent
 
 
 ellipsifiedText : String -> H.Html Msg
