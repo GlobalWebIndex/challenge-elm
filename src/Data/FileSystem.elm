@@ -80,7 +80,7 @@ updateFolders f tree =
             File file
 
         Folder name content ->
-            Folder name <| f <| List.map (updateFolders f) content
+            Folder name <| List.map (updateFolders f) (f content)
 
 
 reverse : FileSystem a -> FileSystem a
