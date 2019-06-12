@@ -23,25 +23,24 @@ type alias Model =
 
 
 init : flags -> ( Model, Cmd msg )
-init =
-    \_ ->
-        ( case ( audienceFoldersParsed, audiencesParsed ) of
-            ( Err errMsg, Ok _ ) ->
-                Err errMsg
+init _ =
+    ( case ( audienceFoldersParsed, audiencesParsed ) of
+        ( Err errMsg, Ok _ ) ->
+            Err errMsg
 
-            ( Ok _, Err errMsg ) ->
-                Err errMsg
+        ( Ok _, Err errMsg ) ->
+            Err errMsg
 
-            ( Err errMsg1, Err errMsg2 ) ->
-                Err <| errMsg1 ++ errMsg2
+        ( Err errMsg1, Err errMsg2 ) ->
+            Err <| errMsg1 ++ errMsg2
 
-            ( Ok audienceFolders, Ok audiences ) ->
-                Ok <|
-                    { focusedFileSystem = focus (makeFileSystem audienceFolders audiences)
-                    , filter = Authored
-                    }
-        , Cmd.none
-        )
+        ( Ok audienceFolders, Ok audiences ) ->
+            Ok <|
+                { focusedFileSystem = focus (makeFileSystem audienceFolders audiences)
+                , filter = Authored
+                }
+    , Cmd.none
+    )
 
 
 audienceFoldersParsed : Result String (List AudienceFolder)
