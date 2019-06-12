@@ -149,17 +149,16 @@ makeFileSystemHelper folders folderFilter files fileFilter tree =
 sortAudienceFilesAndFoldersAlphabetically : FileSystem Audience -> FileSystem Audience
 sortAudienceFilesAndFoldersAlphabetically =
     sortWith <|
-        \fs1 ->
-            \fs2 ->
-                case ( fs1, fs2 ) of
-                    ( Folder _ _, File _ ) ->
-                        LT
+        \fs1 fs2 ->
+            case ( fs1, fs2 ) of
+                ( Folder _ _, File _ ) ->
+                    LT
 
-                    ( File _, Folder _ _ ) ->
-                        GT
+                ( File _, Folder _ _ ) ->
+                    GT
 
-                    ( Folder name1 _, Folder name2 _ ) ->
-                        compare name1 name2
+                ( Folder name1 _, Folder name2 _ ) ->
+                    compare name1 name2
 
-                    ( File file1, File file2 ) ->
-                        compare file1.name file2.name
+                ( File file1, File file2 ) ->
+                    compare file1.name file2.name
