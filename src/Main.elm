@@ -3,7 +3,7 @@ module Main exposing (main, view)
 import Browser
 import Data.Audience exposing (Audience, AudienceType(..), audiencesDecoder, audiencesJSON)
 import Data.AudienceFolder exposing (AudienceFolder, audienceFoldersDecoder, audienceFoldersJSON)
-import Data.FileSystem exposing (mkFileSystem)
+import Data.FileSystem exposing (makeFileSystem)
 import Data.Focused.FileSystem exposing (FileSystemFocused, focus)
 import Html exposing (Html, text)
 import Json.Decode as Json exposing (decodeString)
@@ -37,7 +37,7 @@ init =
 
             ( Ok audienceFolders, Ok audiences ) ->
                 Ok <|
-                    { focusedFileSystem = focus (mkFileSystem audienceFolders audiences)
+                    { focusedFileSystem = focus (makeFileSystem audienceFolders audiences)
                     , filter = Authored
                     }
         , Cmd.none

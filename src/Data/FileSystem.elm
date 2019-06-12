@@ -3,8 +3,8 @@ module Data.FileSystem exposing
     , FolderName
     , filterFiles
     , flatten
+    , makeFileSystem
     , mapFiles
-    , mkFileSystem
     , reverse
     , sortAudienceFilesAndFoldersAlphabetically
     , sortFoldersAlphabetically
@@ -116,13 +116,13 @@ sortFoldersAlphabetically =
 
 {-| Interface with BE Audience & AudienceFolder
 
-mkFileSystem transforms BE data into FileSystem of Audiences
+makeFileSystem transforms BE data into FileSystem of Audiences
 
 -}
-mkFileSystem : List AudienceFolder -> List Audience -> FileSystem Audience
-mkFileSystem folders files =
+makeFileSystem : List AudienceFolder -> List Audience -> FileSystem Audience
+makeFileSystem folders files =
     sortAudienceFilesAndFoldersAlphabetically <|
-        mkFileSystemHelper
+        makeFileSystemHelper
             folders
             (\af -> af.parent == Nothing)
             files
@@ -130,14 +130,14 @@ mkFileSystem folders files =
             (Folder "ROOT" [])
 
 
-mkFileSystemHelper :
+makeFileSystemHelper :
     List AudienceFolder
     -> (AudienceFolder -> Bool)
     -> List Audience
     -> (Audience -> Bool)
     -> FileSystem Audience
     -> FileSystem Audience
-mkFileSystemHelper folders folderFilter files fileFilter tree =
+makeFileSystemHelper folders folderFilter files fileFilter tree =
     case tree of
         File x ->
             File x
@@ -155,7 +155,7 @@ mkFileSystemHelper folders folderFilter files fileFilter tree =
                 (content
                     ++ List.map
                         (\subFolder ->
-                            mkFileSystemHelper
+                            makeFileSystemHelper
                                 restFolders
                                 (\af -> af.parent == Just subFolder.id)
                                 restFiles
