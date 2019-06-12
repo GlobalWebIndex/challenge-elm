@@ -7,7 +7,6 @@ module Data.FileSystem exposing
     , mapFiles
     , reverse
     , sortAudienceFilesAndFoldersAlphabetically
-    , sortFoldersAlphabetically
     , sortWith
     , toList
     )
@@ -92,25 +91,6 @@ reverse =
 sortWith : (FileSystem a -> FileSystem a -> Order) -> FileSystem a -> FileSystem a
 sortWith sorter =
     updateFolders (List.sortWith sorter)
-
-
-sortFoldersAlphabetically : FileSystem a -> FileSystem a
-sortFoldersAlphabetically =
-    sortWith <|
-        \fs1 ->
-            \fs2 ->
-                case ( fs1, fs2 ) of
-                    ( Folder _ _, File _ ) ->
-                        GT
-
-                    ( File _, Folder _ _ ) ->
-                        LT
-
-                    ( Folder name1 _, Folder name2 _ ) ->
-                        compare name1 name2
-
-                    ( File _, File _ ) ->
-                        EQ
 
 
 {-| Interface with BE Audience & AudienceFolder
