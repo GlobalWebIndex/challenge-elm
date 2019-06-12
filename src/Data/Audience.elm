@@ -15,7 +15,7 @@ This module implements everything related to audience resource.
 -}
 
 import Json.Decode as D exposing (Decoder, field, maybe, nullable, succeed)
-import Json.Decode.Applicative exposing (with)
+import Json.Decode.Applicative exposing (apply)
 
 
 
@@ -71,10 +71,10 @@ audienceTypeDecoder =
 audienceDecoder : Decoder Audience
 audienceDecoder =
     succeed Audience
-        |> with (field "id" D.int)
-        |> with (field "name" D.string)
-        |> with (field "type" audienceTypeDecoder)
-        |> with (field "folder" (nullable D.int))
+        |> apply (field "id" D.int)
+        |> apply (field "name" D.string)
+        |> apply (field "type" audienceTypeDecoder)
+        |> apply (field "folder" (nullable D.int))
 
 
 audiencesDecoder : Decoder (List Audience)

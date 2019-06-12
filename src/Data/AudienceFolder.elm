@@ -15,7 +15,7 @@ This module implements everything related to audience folder resource.
 -}
 
 import Json.Decode as D exposing (Decoder, field, maybe, nullable, succeed)
-import Json.Decode.Applicative exposing (with)
+import Json.Decode.Applicative exposing (apply)
 
 
 
@@ -34,9 +34,9 @@ type alias AudienceFolder =
 audienceFolderDecoder : Decoder AudienceFolder
 audienceFolderDecoder =
     succeed AudienceFolder
-        |> with (field "id" D.int)
-        |> with (field "name" D.string)
-        |> with (field "parent" (nullable D.int))
+        |> apply (field "id" D.int)
+        |> apply (field "name" D.string)
+        |> apply (field "parent" (nullable D.int))
 
 
 audienceFoldersDecoder : Decoder (List AudienceFolder)
