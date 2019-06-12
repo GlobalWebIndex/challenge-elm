@@ -53,7 +53,7 @@ flatten tree =
 
 filterFiles : (a -> Bool) -> FileSystem a -> FileSystem a
 filterFiles check =
-    mapFolders <|
+    updateFolders <|
         List.filter
             (\ft ->
                 case ft of
@@ -75,24 +75,24 @@ mapFiles f tree =
             Folder name (List.map (mapFiles f) content)
 
 
-mapFolders : (List (FileSystem a) -> List (FileSystem a)) -> FileSystem a -> FileSystem a
-mapFolders f tree =
+updateFolders : (List (FileSystem a) -> List (FileSystem a)) -> FileSystem a -> FileSystem a
+updateFolders f tree =
     case tree of
         File file ->
             File file
 
         Folder name content ->
-            Folder name <| f <| List.map (mapFolders f) content
+            Folder name <| f <| List.map (updateFolders f) content
 
 
 reverse : FileSystem a -> FileSystem a
 reverse =
-    mapFolders List.reverse
+    updateFolders List.reverse
 
 
 sortWith : (FileSystem a -> FileSystem a -> Order) -> FileSystem a -> FileSystem a
 sortWith sorter =
-    mapFolders (List.sortWith sorter)
+    updateFolders (List.sortWith sorter)
 
 
 sortFoldersAlphabetically : FileSystem a -> FileSystem a
