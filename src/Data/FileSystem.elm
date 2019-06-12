@@ -14,7 +14,6 @@ module Data.FileSystem exposing
 
 import Data.Audience exposing (Audience)
 import Data.AudienceFolder exposing (AudienceFolder)
-import Data.List.Utility exposing (splitFilter)
 
 
 type alias FolderName =
@@ -145,10 +144,10 @@ makeFileSystemHelper folders folderFilter files fileFilter tree =
         Folder name content ->
             let
                 ( subFolders, restFolders ) =
-                    splitFilter folderFilter folders
+                    List.partition folderFilter folders
 
                 ( subFiles, restFiles ) =
-                    splitFilter fileFilter files
+                    List.partition fileFilter files
             in
             Folder
                 name
