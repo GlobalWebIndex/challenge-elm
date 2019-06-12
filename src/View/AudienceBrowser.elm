@@ -348,12 +348,7 @@ showFilesAndFolders isRoot folderContent =
                                     filesCount =
                                         List.length <| toList fileOrFolder
                                 in
-                                -- i dont show folders that contain no files at all
-                                if filesCount > 0 then
-                                    showFolder position name filesCount
-
-                                else
-                                    text ""
+                                showFolder position name filesCount
                 )
                 folderContent
 
