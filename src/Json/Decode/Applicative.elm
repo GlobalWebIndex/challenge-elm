@@ -2,7 +2,7 @@ module Json.Decode.Applicative exposing (apply, unlift)
 
 {-| Json.Decode.Applicative module
 
-This module implements typeclass applicative (apply : m (a -> b) -> a -> b)
+This module implements typeclass applicative (apply : m (a -> b) -> m a -> m b)
 for Decoder functor
 
 In terms of Monadic return (succeed) and bind (andThen) it's:
