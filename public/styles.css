@@ -1,0 +1,218 @@
+html {
+  font-family: "Lato", sans-serif;
+  font-size: 14px;
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+p {
+  margin-bottom: 0;
+}
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Section */
+
+section {
+  display: flex;
+  height: 100%;
+}
+
+section > div {
+  padding: 10px 30px 0 30px;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 275px;
+}
+
+.sidebar > div {
+  width: 260px;
+}
+
+.sidebar .browser {
+  width: 275px;
+}
+
+.search {
+  flex-shrink: 0;
+  margin-bottom: 5px;
+  height: 50px;
+}
+
+.drop {
+  flex: 1;
+  margin-top: 5px;
+  min-height: 50px;
+}
+
+.main {
+  width: 100%;
+}
+
+/* Browser */
+
+.browser {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.breadcrumbs ul,
+.forest ul {
+  width: 260px;
+}
+
+.forest {
+  overflow-y: auto;
+}
+
+.folder,
+.item {
+  border-radius: 4px;
+}
+
+.folder a,
+.item a {
+  display: block;
+  padding: 14px 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder a {
+  cursor: pointer;
+}
+
+.item a {
+  cursor: default;
+}
+
+/* breadcrumbs */
+
+.breadcrumbs .folder,
+.breadcrumbs .item {
+  margin-bottom: 8px;
+}
+
+.breadcrumbs .parent.folder {
+  margin-bottom: 14px;
+}
+
+/* forest */
+
+.forest .folder,
+.forest .item {
+  margin-bottom: 5px;
+}
+
+.forest .folder:last-child,
+.forest .item:last-child {
+  margin-bottom: 0;
+}
+
+/* Filters */
+
+.filter {
+  margin-bottom: 10px;
+}
+
+.filter ul {
+  display: flex;
+}
+
+.filter li {
+  border-right: 1px solid white;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  padding: 8px;
+  font-size: 10px;
+}
+
+.filter li:last-child {
+  border-right: none;
+}
+
+/* Arrows for breadcrumbs with colors - start */
+.breadcrumbs .folder {
+  position: relative;
+}
+
+.breadcrumbs .folder:before {
+  border: 1px solid white;
+  border-color: white transparent transparent transparent;
+  border-width: 6px 130px 0 130px;
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.breadcrumbs .folder:after {
+  border: 1px solid #11709b;
+  border-color: #11709b transparent transparent transparent;
+  border-width: 6px 130px 0 130px;
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+}
+
+.breadcrumbs .parent.folder:after {
+  border: 1px solid #9b1170;
+  border-color: #9b1170 transparent transparent transparent;
+  border-width: 6px 130px 0 130px;
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+}
+
+.breadcrumbs .folder:first-child:before {
+  border: none;
+} /* Arrows for breadcrumbs - end */
+
+/* Colors */
+
+.folder {
+  background-color: #11709b;
+  color: white;
+}
+
+.parent.folder {
+  background-color: #9b1170;
+}
+
+.item {
+  background-color: #0196cf;
+  color: white;
+}
+
+.filter li {
+  color: #19749e;
+}
+
+.filter li.selected {
+  background-color: #9b1170;
+  color: white;
+}
+
+.search,
+.drop {
+  background-color: #e3e6e8;
+}
