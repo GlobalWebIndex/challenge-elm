@@ -1,6 +1,6 @@
 module Data.Audience exposing
-    ( AudienceType(..), Audience
-    , audiencesJSON
+    ( Audience, audiences
+    , AudienceType, AudienceTypeInfo, initialAudienceType, fromAudienceType
     )
 
 {-| Data.Audiences module
@@ -10,9 +10,16 @@ This module implements everything related to audience resource.
 
 # Interface
 
-@docs AudienceType, Audience, audienceJSON
+@docs Audience, audiences
+@docs AudienceType, AudienceTypeInfo, initialAudienceType, fromAudienceType
 
 -}
+
+import Html
+import Icons
+import Json.Decode
+
+
 
 -- Type definition
 
@@ -33,6 +40,129 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+{-| Information of an `AudienceType` variant
+-}
+type alias AudienceTypeInfo msg =
+    { index : Int
+    , text : String
+    , icon : Html.Html msg
+    }
+
+
+
+-- Decoders
+
+
+{-| `Result` of the JSON parsing.
+It returns `Ok ( List Audience )` if the decoding was successful.
+It returns `Err ( ErrorCode, ErrorDesc )` if the decoding failed.
+-}
+audiences : Result ( String, String ) (List Audience)
+audiences =
+    Result.mapError
+        (\decoderError -> ( "JSON-A", "Parse audiencesJSON says: " ++ Json.Decode.errorToString decoderError ))
+        (Json.Decode.decodeString audiencesDecoder audiencesJSON)
+
+
+audiencesDecoder : Json.Decode.Decoder (List Audience)
+audiencesDecoder =
+    Json.Decode.field "data" (Json.Decode.list audienceDecoder)
+
+
+audienceDecoder : Json.Decode.Decoder Audience
+audienceDecoder =
+    Json.Decode.map4 Audience
+        (Json.Decode.field "id" Json.Decode.int)
+        (Json.Decode.field "name" Json.Decode.string)
+        (Json.Decode.field "type" audienceTypeDecoder)
+        (Json.Decode.field "folder" (Json.Decode.nullable Json.Decode.int))
+
+
+audienceTypeParser : String -> Result String AudienceType
+audienceTypeParser string =
+    case String.toLower string of
+        "user" ->
+            Ok Authored
+
+        "shared" ->
+            Ok Shared
+
+        "curated" ->
+            Ok Curated
+
+        unknown ->
+            Err ("The Audience Type is '" ++ unknown ++ "', but it should be one of these: 'user', 'shared', or 'curated'.")
+
+
+audienceTypeDecoder : Json.Decode.Decoder AudienceType
+audienceTypeDecoder =
+    Json.Decode.andThen (audienceTypeParser >> fromResult) Json.Decode.string
+
+
+fromResult : Result String a -> Json.Decode.Decoder a
+fromResult result =
+    case result of
+        Ok a ->
+            Json.Decode.succeed a
+
+        Err errorMessage ->
+            Json.Decode.fail errorMessage
+
+
+
+-- Helpers
+
+
+comparableAudienceType : List AudienceType
+comparableAudienceType =
+    [ Authored, Shared, Curated ]
+
+
+{-| Initial settings of the Audience type filter.
+
+This is the information which will be stored in the `Model`.
+
+-}
+initialAudienceType : List ( AudienceType, Bool )
+initialAudienceType =
+    List.map2 Tuple.pair comparableAudienceType [ True, False, False ]
+
+
+{-| Retrieves the index and the displayable information of an Audience type variant.
+-}
+fromAudienceType : AudienceType -> AudienceTypeInfo msg
+fromAudienceType audienceType =
+    let
+        index : Int
+        index =
+            getIndexByVariant audienceType comparableAudienceType
+    in
+    case audienceType of
+        Authored ->
+            AudienceTypeInfo index "My audiences" Icons.user
+
+        Shared ->
+            AudienceTypeInfo index "Shared" Icons.share2
+
+        Curated ->
+            AudienceTypeInfo index "Default" Icons.list
+
+
+getIndexByVariant : v -> List v -> Int
+getIndexByVariant variant list =
+    list
+        |> List.indexedMap Tuple.pair
+        |> List.foldl
+            (\( index, actualVariant ) acc ->
+                if actualVariant == variant then
+                    index
+
+                else
+                    acc
+            )
+            -1
 
 
 
