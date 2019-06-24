@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "watch": "elm-live src/Main.elm --port=8081 --dir=public --open -- --output=public/main.js"
+  },
+  "devDependencies": {
+    "elm": "^0.19.0-bugfix6",
+    "elm-live": "^3.4.0"
+  }
+}
