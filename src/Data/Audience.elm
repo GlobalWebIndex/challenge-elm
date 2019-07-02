@@ -1,5 +1,6 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
+    , decoder
     , audiencesJSON
     )
 
@@ -12,9 +13,15 @@ This module implements everything related to audience resource.
 
 @docs AudienceType, Audience
 
+@docs decoder
+
 @docs audiencesJSON
 
 -}
+
+import Json.Decode as Decode exposing (Decoder)
+
+
 
 -- Type definition
 
@@ -35,6 +42,17 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+{-| Decoder of Audience record
+-}
+decoder : Decoder Audience
+decoder =
+    Decode.map4 Audience
+        Decode.int
+        Decode.string
+        (Decode.succeed Authored)
+        (Decode.nullable Decode.int)
 
 
 

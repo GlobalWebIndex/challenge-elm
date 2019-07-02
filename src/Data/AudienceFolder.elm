@@ -1,5 +1,6 @@
 module Data.AudienceFolder exposing
     ( AudienceFolder
+    , decoder
     , audienceFoldersJSON
     )
 
@@ -12,9 +13,15 @@ This module implements everything related to audience folder resource.
 
 @docs AudienceFolder
 
+@docs decoder
+
 @docs audienceFoldersJSON
 
 -}
+
+import Json.Decode as Decode exposing (Decoder)
+
+
 
 -- Type definition
 
@@ -26,6 +33,16 @@ type alias AudienceFolder =
     , name : String
     , parent : Maybe Int
     }
+
+
+{-| Decoder of AudienceFolder record
+-}
+decoder : Decoder AudienceFolder
+decoder =
+    Decode.map3 AudienceFolder
+        Decode.int
+        Decode.string
+        (Decode.nullable Decode.int)
 
 
 
