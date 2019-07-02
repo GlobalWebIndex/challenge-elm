@@ -1,10 +1,18 @@
 module Main exposing (main)
 
-import Data.Audience
-import Data.AudienceFolder
+import Browser
 import Html exposing (Html)
 
 
-main : Html msg
+main : Program () () ()
 main =
-    Html.text "There will be app soon!"
+    Browser.document
+        { init = \_ -> ( (), Cmd.none )
+        , update = \_ _ -> ( (), Cmd.none )
+        , subscriptions = \_ -> Sub.none
+        , view =
+            \_ ->
+                Browser.Document "Hi"
+                    [ Html.text "Hola"
+                    ]
+        }
