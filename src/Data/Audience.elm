@@ -10,7 +10,9 @@ This module implements everything related to audience resource.
 
 # Interface
 
-@docs AudienceType, Audience, audienceJSON
+@docs AudienceType, Audience
+
+@docs audiencesJSON
 
 -}
 

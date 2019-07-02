@@ -1,4 +1,7 @@
-module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
+module Data.AudienceFolder exposing
+    ( AudienceFolder
+    , audienceFoldersJSON
+    )
 
 {-| Data.AudienceFolder module
 
@@ -7,7 +10,9 @@ This module implements everything related to audience folder resource.
 
 # Interface
 
-@docs AudienceFolder, audienceFoldersJSON
+@docs AudienceFolder
+
+@docs audienceFoldersJSON
 
 -}
 
