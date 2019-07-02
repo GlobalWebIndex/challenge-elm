@@ -20,19 +20,38 @@ type alias AudienceLevel =
     }
 
 
+emptyLevel : AudienceLevel
+emptyLevel =
+    AudienceLevel Set.empty Set.empty
+
+
+insertFolderToLevel : AudienceFolderID -> AudienceLevel -> AudienceLevel
+insertFolderToLevel folderID level =
+    { level | folders = Set.insert folderID level.folders }
+
+
+insertAudienceToLevel : AudienceID -> AudienceLevel -> AudienceLevel
+insertAudienceToLevel audienceID level =
+    { level | audiences = Set.insert audienceID level.audiences }
+
+
+type alias Levels =
+    Dict AudienceFolderID AudienceLevel
+
+
+updateOnLevels : AudienceFolderID -> (AudienceLevel -> AudienceLevel) -> Levels -> Levels
+updateOnLevels folderID tagger levels =
+    Dict.update folderID (Just << tagger << Maybe.withDefault emptyLevel) levels
+
+
 type Store
     = Store
         { folders : Dict AudienceFolderID AudienceFolder
         , audiences : Dict AudienceID Audience
         }
         { root : AudienceLevel
-        , levels : Dict AudienceFolderID AudienceLevel
+        , levels : Levels
         }
-
-
-listToDict : List { entity | id : comparable } -> Dict comparable { entity | id : comparable }
-listToDict =
-    List.foldr (\entity -> Dict.insert entity.id entity) Dict.empty
 
 
 init : List AudienceFolder -> List Audience -> Store
@@ -44,34 +63,20 @@ init listOfFolders listOfAudiences =
             }
 
         relations0 =
-            { root = AudienceLevel Set.empty Set.empty
+            { root = emptyLevel
             , levels = Dict.empty
             }
 
         ( data1, relations1 ) =
             List.foldr
-                (\folder ( data, { root, levels } ) ->
+                (\folder ( data, relations ) ->
                     ( { data | folders = Dict.insert folder.id folder data.folders }
                     , case folder.parent of
                         Nothing ->
-                            { root = AudienceLevel (Set.insert folder.id root.folders) root.audiences
-                            , levels = levels
-                            }
+                            { relations | root = insertFolderToLevel folder.id relations.root }
 
                         Just parentID ->
-                            { root = root
-                            , levels =
-                                Dict.update parentID
-                                    (\mLevel ->
-                                        case mLevel of
-                                            Nothing ->
-                                                Just (AudienceLevel (Set.singleton folder.id) Set.empty)
-
-                                            Just level ->
-                                                Just { level | folders = Set.insert folder.id level.folders }
-                                    )
-                                    levels
-                            }
+                            { relations | levels = updateOnLevels parentID (insertFolderToLevel folder.id) relations.levels }
                     )
                 )
                 ( data0, relations0 )
@@ -79,28 +84,14 @@ init listOfFolders listOfAudiences =
 
         ( data2, relations2 ) =
             List.foldr
-                (\audience ( data, { root, levels } ) ->
+                (\audience ( data, relations ) ->
                     ( { data | audiences = Dict.insert audience.id audience data.audiences }
                     , case audience.folder of
                         Nothing ->
-                            { root = AudienceLevel root.folders (Set.insert audience.id root.audiences)
-                            , levels = levels
-                            }
+                            { relations | root = insertAudienceToLevel audience.id relations.root }
 
                         Just folderID ->
-                            { root = root
-                            , levels =
-                                Dict.update folderID
-                                    (\mLevel ->
-                                        case mLevel of
-                                            Nothing ->
-                                                Just (AudienceLevel Set.empty (Set.singleton audience.id))
-
-                                            Just level ->
-                                                Just { level | audiences = Set.insert audience.id level.audiences }
-                                    )
-                                    levels
-                            }
+                            { relations | levels = updateOnLevels folderID (insertAudienceToLevel audience.id) relations.levels }
                     )
                 )
                 ( data1, relations1 )
