@@ -40,9 +40,9 @@ type alias AudienceFolder =
 decoder : Decoder AudienceFolder
 decoder =
     Decode.map3 AudienceFolder
-        Decode.int
-        Decode.string
-        (Decode.nullable Decode.int)
+        (Decode.field "id" Decode.int)
+        (Decode.field "name" Decode.string)
+        (Decode.field "parent" (Decode.nullable Decode.int))
 
 
 

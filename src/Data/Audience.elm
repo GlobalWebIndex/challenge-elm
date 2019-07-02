@@ -34,6 +34,26 @@ type AudienceType
     | Curated
 
 
+audienceTypeDecoder : Decoder AudienceType
+audienceTypeDecoder =
+    Decode.andThen
+        (\str ->
+            case str of
+                "user" ->
+                    Decode.succeed Authored
+
+                "shared" ->
+                    Decode.succeed Shared
+
+                "curated" ->
+                    Decode.succeed Curated
+
+                unknown ->
+                    Decode.fail ("Unknown AudienceType `" ++ unknown ++ "`")
+        )
+        Decode.string
+
+
 {-| Basic type of Audience record
 -}
 type alias Audience =
@@ -49,10 +69,10 @@ type alias Audience =
 decoder : Decoder Audience
 decoder =
     Decode.map4 Audience
-        Decode.int
-        Decode.string
-        (Decode.succeed Authored)
-        (Decode.nullable Decode.int)
+        (Decode.field "id" Decode.int)
+        (Decode.field "name" Decode.string)
+        (Decode.field "type" audienceTypeDecoder)
+        (Decode.field "folder" (Decode.nullable Decode.int))
 
 
 
