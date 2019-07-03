@@ -182,6 +182,14 @@ viewLevel toUp level =
         (toUp :: List.map viewFolder level.folders ++ List.map viewAudience level.audiences)
 
 
+view404 : AudienceFolderID -> Element msg
+view404 folderID =
+    paragraph
+        []
+        [ text ("The folder `" ++ String.fromInt folderID ++ "` doesn't exist")
+        ]
+
+
 viewSucceed : Store -> SucceedState -> Element Msg
 viewSucceed store { current } =
     case current of
@@ -191,7 +199,7 @@ viewSucceed store { current } =
         Just folderID ->
             case Store.getFolderLevel folderID store of
                 Nothing ->
-                    Debug.todo "handle missed level"
+                    view404 folderID
 
                 Just ( parentFolder, level ) ->
                     viewLevel (viewGoUp parentFolder) level
