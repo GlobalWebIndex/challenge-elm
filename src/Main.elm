@@ -145,7 +145,7 @@ viewFolder folder =
             :: stylesButton
         )
         { onPress = Just (GoDown folder.id)
-        , label = paragraph [] [ text folder.name ]
+        , label = paragraph [] [ text ("→ " ++ folder.name) ]
         }
 
 
@@ -169,7 +169,7 @@ viewGoUp parentFolder =
             :: stylesButton
         )
         { onPress = Just (GoUp parentFolder.parent)
-        , label = text parentFolder.name
+        , label = paragraph [] [ text ("↑ " ++ parentFolder.name) ]
         }
 
 
