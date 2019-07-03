@@ -5,9 +5,13 @@ import Data.Api as Api
 import Data.Audience exposing (Audience)
 import Data.AudienceFolder exposing (AudienceFolder)
 import Data.Store as Store exposing (AudienceFolderID, AudienceLevel, Store)
-import Element exposing (Element, column, el, text)
+import Element exposing (Element, column, el, none, paragraph, text)
+import Element.Background
+import Element.Border
+import Element.Events
 import Element.Font
 import Element.Input exposing (button)
+import Html
 import Http
 import Task
 
@@ -130,43 +134,59 @@ viewFailed err =
             text message
 
 
+stylesButton : List (Element.Attribute msg)
+stylesButton =
+    [ Element.width Element.fill
+    , Element.padding 20
+    , Element.Font.color (Element.rgb255 255 255 255)
+    ]
+
+
 viewFolder : AudienceFolder -> Element Msg
 viewFolder folder =
-    column
-        []
-        [ el
-            [ Element.Font.bold
-            ]
-            (text "Folder")
-        , text folder.name
-        , button []
-            { onPress = Just (GoDown folder.id)
-            , label =
-                el
-                    [ Element.Font.underline
-                    ]
-                    (text "Go Down")
-            }
-        ]
+    button
+        (Element.Background.color (Element.rgb255 26 113 153)
+            :: stylesButton
+        )
+        { onPress = Just (GoDown folder.id)
+        , label = paragraph [] [ text folder.name ]
+        }
 
 
 viewAudience : Audience -> Element msg
 viewAudience audience =
-    text audience.name
+    paragraph
+        (Element.Background.color (Element.rgb255 24 151 205)
+            :: stylesButton
+        )
+        [ text audience.name ]
 
 
-viewLevel : AudienceLevel -> Element Msg
-viewLevel level =
+viewGoUp : Element Msg
+viewGoUp =
+    button
+        (Element.Background.color (Element.rgb255 26 80 130)
+            :: stylesButton
+        )
+        { onPress = Just GoUp
+        , label = text "Go Up"
+        }
+
+
+viewLevel : Element Msg -> AudienceLevel -> Element Msg
+viewLevel toUp level =
     column
-        []
-        (List.map viewFolder level.folders ++ List.map viewAudience level.audiences)
+        [ Element.spacing 8
+        , Element.width Element.fill
+        ]
+        (toUp :: List.map viewFolder level.folders ++ List.map viewAudience level.audiences)
 
 
 viewSucceed : Store -> SucceedState -> Element Msg
 viewSucceed store { current } =
     case current of
         Nothing ->
-            viewLevel (Store.getRootLevel store)
+            viewLevel none (Store.getRootLevel store)
 
         Just folderID ->
             case Store.getLevelByFolderID folderID store of
@@ -174,32 +194,32 @@ viewSucceed store { current } =
                     text "oops"
 
                 Just level ->
-                    column
-                        []
-                        [ button []
-                            { onPress = Just GoUp
-                            , label =
-                                el
-                                    [ Element.Font.underline
-                                    ]
-                                    (text "Go Up")
-                            }
-                        , viewLevel level
-                        ]
+                    viewLevel viewGoUp level
+
+
+viewLayout : Model -> Element Msg
+viewLayout model =
+    el
+        [ Element.width (Element.maximum 300 Element.fill)
+        , Element.padding 8
+        , Element.Font.size 14
+        ]
+        (case model of
+            Initialising _ ->
+                viewInitialising
+
+            Failed err ->
+                viewFailed err
+
+            Succeed store state ->
+                viewSucceed store state
+        )
 
 
 view : Model -> Browser.Document Msg
 view model =
     Browser.Document "Challenge"
-        [ case model of
-            Initialising _ ->
-                Element.layout [] viewInitialising
-
-            Failed err ->
-                Element.layout [] (viewFailed err)
-
-            Succeed store state ->
-                Element.layout [] (viewSucceed store state)
+        [ Element.layout [] (viewLayout model)
         ]
 
 
