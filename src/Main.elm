@@ -12,6 +12,7 @@ import Element.Events
 import Element.Font
 import Element.Input exposing (button)
 import Html
+import Html.Attributes
 import Http
 import Task
 
@@ -60,7 +61,7 @@ type Msg
     = LoadAudienceFoldersDone (Result Http.Error (List AudienceFolder))
     | LoadAudiencesDone (Result Http.Error (List Audience))
     | GoDown AudienceFolderID
-    | GoUp
+    | GoUp (Maybe AudienceFolderID)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -96,17 +97,12 @@ update msg model =
         ( GoDown _, _ ) ->
             ( model, Cmd.none )
 
-        ( GoUp, Succeed store state ) ->
-            case state.current of
-                Nothing ->
-                    ( model, Cmd.none )
+        ( GoUp parentFolderID, Succeed store state ) ->
+            ( Succeed store { state | current = parentFolderID }
+            , Cmd.none
+            )
 
-                Just currentFolderID ->
-                    ( Succeed store { state | current = Store.getParentFolderID currentFolderID store }
-                    , Cmd.none
-                    )
-
-        ( GoUp, _ ) ->
+        ( GoUp _, _ ) ->
             ( model, Cmd.none )
 
 
@@ -138,7 +134,6 @@ stylesButton : List (Element.Attribute msg)
 stylesButton =
     [ Element.width Element.fill
     , Element.padding 20
-    , Element.Font.color (Element.rgb255 255 255 255)
     ]
 
 
@@ -146,6 +141,7 @@ viewFolder : AudienceFolder -> Element Msg
 viewFolder folder =
     button
         (Element.Background.color (Element.rgb255 26 113 153)
+            :: Element.Font.color (Element.rgb255 255 255 255)
             :: stylesButton
         )
         { onPress = Just (GoDown folder.id)
@@ -157,19 +153,23 @@ viewAudience : Audience -> Element msg
 viewAudience audience =
     paragraph
         (Element.Background.color (Element.rgb255 24 151 205)
+            :: Element.Font.color (Element.rgb255 255 255 255)
             :: stylesButton
         )
         [ text audience.name ]
 
 
-viewGoUp : Element Msg
-viewGoUp =
+viewGoUp : AudienceFolder -> Element Msg
+viewGoUp parentFolder =
     button
-        (Element.Background.color (Element.rgb255 26 80 130)
+        (Element.Border.solid
+            :: Element.Border.width 2
+            :: Element.Border.color (Element.rgb255 26 113 153)
+            :: Element.Font.color (Element.rgb255 26 113 153)
             :: stylesButton
         )
-        { onPress = Just GoUp
-        , label = text "Go Up"
+        { onPress = Just (GoUp parentFolder.parent)
+        , label = text parentFolder.name
         }
 
 
@@ -189,12 +189,12 @@ viewSucceed store { current } =
             viewLevel none (Store.getRootLevel store)
 
         Just folderID ->
-            case Store.getLevelByFolderID folderID store of
+            case Store.getFolderLevel folderID store of
                 Nothing ->
-                    text "oops"
+                    Debug.todo "handle missed level"
 
-                Just level ->
-                    viewLevel viewGoUp level
+                Just ( parentFolder, level ) ->
+                    viewLevel (viewGoUp parentFolder) level
 
 
 viewLayout : Model -> Element Msg

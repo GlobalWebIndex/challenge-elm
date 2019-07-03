@@ -3,8 +3,7 @@ module Data.Store exposing
     , AudienceID
     , AudienceLevel
     , Store
-    , getLevelByFolderID
-    , getParentFolderID
+    , getFolderLevel
     , getRootLevel
     , init
     )
@@ -152,17 +151,15 @@ getRootLevel (Store data { root }) =
     }
 
 
-getLevelByFolderID : AudienceFolderID -> Store -> Maybe AudienceLevel
-getLevelByFolderID folderID (Store data { levels }) =
-    Maybe.map
-        (\{ folders, audiences } ->
-            { folders = extractListFromData folders data.folders
-            , audiences = extractListFromData audiences data.audiences
-            }
+getFolderLevel : AudienceFolderID -> Store -> Maybe ( AudienceFolder, AudienceLevel )
+getFolderLevel folderID (Store data { levels }) =
+    Maybe.map2 Tuple.pair
+        (Dict.get folderID data.folders)
+        (Maybe.map
+            (\{ folders, audiences } ->
+                { folders = extractListFromData folders data.folders
+                , audiences = extractListFromData audiences data.audiences
+                }
+            )
+            (Dict.get folderID levels)
         )
-        (Dict.get folderID levels)
-
-
-getParentFolderID : AudienceFolderID -> Store -> Maybe AudienceFolderID
-getParentFolderID folderID (Store data _) =
-    Maybe.andThen .parent (Dict.get folderID data.folders)
