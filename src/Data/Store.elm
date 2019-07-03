@@ -11,7 +11,6 @@ module Data.Store exposing
 import Data.Audience exposing (Audience)
 import Data.AudienceFolder exposing (AudienceFolder)
 import Dict exposing (Dict)
-import Set exposing (Set)
 
 
 type alias AudienceFolderID =
@@ -29,24 +28,24 @@ type alias AudienceLevel =
 
 
 type alias Level =
-    { folders : Set AudienceFolderID
-    , audiences : Set AudienceID
+    { folders : List AudienceFolderID
+    , audiences : List AudienceID
     }
 
 
 emptyLevel : Level
 emptyLevel =
-    Level Set.empty Set.empty
+    Level [] []
 
 
 insertFolderToLevel : AudienceFolderID -> Level -> Level
 insertFolderToLevel folderID level =
-    { level | folders = Set.insert folderID level.folders }
+    { level | folders = folderID :: level.folders }
 
 
 insertAudienceToLevel : AudienceID -> Level -> Level
 insertAudienceToLevel audienceID level =
-    { level | audiences = Set.insert audienceID level.audiences }
+    { level | audiences = audienceID :: level.audiences }
 
 
 type alias Levels =
@@ -129,9 +128,9 @@ init listOfFolders listOfAudiences =
     Store data2 relations2
 
 
-extractListFromData : Set comparable -> Dict comparable { a | id : comparable } -> List { a | id : comparable }
+extractListFromData : List comparable -> Dict comparable { a | id : comparable } -> List { a | id : comparable }
 extractListFromData ids entities =
-    Set.foldr
+    List.foldr
         (\id acc ->
             case Dict.get id entities of
                 Nothing ->
