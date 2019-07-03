@@ -4,6 +4,7 @@ module Data.Store exposing
     , AudienceLevel
     , Store
     , getLevelByFolderID
+    , getParentFolderID
     , getRootLevel
     , init
     )
@@ -84,13 +85,28 @@ init listOfFolders listOfAudiences =
         ( data1, relations1 ) =
             List.foldr
                 (\folder ( data, relations ) ->
+                    let
+                        nextLevels =
+                            Dict.update folder.id
+                                (\level ->
+                                    case level of
+                                        Nothing ->
+                                            Just emptyLevel
+
+                                        _ ->
+                                            level
+                                )
+                                relations.levels
+                    in
                     ( { data | folders = Dict.insert folder.id folder data.folders }
                     , case folder.parent of
                         Nothing ->
-                            { relations | root = insertFolderToLevel folder.id relations.root }
+                            { root = insertFolderToLevel folder.id relations.root
+                            , levels = nextLevels
+                            }
 
                         Just parentID ->
-                            { relations | levels = updateOnLevels parentID (insertFolderToLevel folder.id) relations.levels }
+                            { relations | levels = updateOnLevels parentID (insertFolderToLevel folder.id) nextLevels }
                     )
                 )
                 ( data0, relations0 )
@@ -129,28 +145,24 @@ extractListFromData ids entities =
         ids
 
 
-extractLevelByParentID : Maybe AudienceFolderID -> Store -> Maybe AudienceLevel
-extractLevelByParentID mFolderID (Store data { root, levels }) =
+getRootLevel : Store -> AudienceLevel
+getRootLevel (Store data { root }) =
+    { folders = extractListFromData root.folders data.folders
+    , audiences = extractListFromData root.audiences data.audiences
+    }
+
+
+getLevelByFolderID : AudienceFolderID -> Store -> Maybe AudienceLevel
+getLevelByFolderID folderID (Store data { levels }) =
     Maybe.map
         (\{ folders, audiences } ->
             { folders = extractListFromData folders data.folders
             , audiences = extractListFromData audiences data.audiences
             }
         )
-        (case mFolderID of
-            Nothing ->
-                Just root
-
-            Just folderID ->
-                Dict.get folderID levels
-        )
+        (Dict.get folderID levels)
 
 
-getRootLevel : Store -> Maybe AudienceLevel
-getRootLevel =
-    extractLevelByParentID Nothing
-
-
-getLevelByFolderID : AudienceFolderID -> Store -> Maybe AudienceLevel
-getLevelByFolderID =
-    extractLevelByParentID << Just
+getParentFolderID : AudienceFolderID -> Store -> Maybe AudienceFolderID
+getParentFolderID folderID (Store data _) =
+    Maybe.andThen .parent (Dict.get folderID data.folders)
