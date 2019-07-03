@@ -15,7 +15,11 @@ getListOfAudiences : Task Http.Error (List Audience)
 getListOfAudiences =
     Task.andThen
         (\_ ->
-            case decodeString (Decode.list Audience.decoder) Audience.audiencesJSON of
+            case
+                decodeString
+                    (Decode.field "data" (Decode.list Audience.decoder))
+                    Audience.audiencesJSON
+            of
                 Err error ->
                     Task.fail (Http.BadBody (Decode.errorToString error))
 
@@ -29,7 +33,11 @@ getListOfAudienceFolders : Task Http.Error (List AudienceFolder)
 getListOfAudienceFolders =
     Task.andThen
         (\_ ->
-            case decodeString (Decode.list AudienceFolder.decoder) AudienceFolder.audienceFoldersJSON of
+            case
+                decodeString
+                    (Decode.field "data" (Decode.list AudienceFolder.decoder))
+                    AudienceFolder.audienceFoldersJSON
+            of
                 Err error ->
                     Task.fail (Http.BadBody (Decode.errorToString error))
 
