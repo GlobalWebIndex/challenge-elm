@@ -224,8 +224,10 @@ viewGoUp parentFolder =
 viewLevelColumn : List (Element msg) -> Element msg
 viewLevelColumn =
     column
-        [ Element.spacing 8
-        , Element.width Element.fill
+        [ Element.width Element.fill
+        , Element.height Element.fill
+        , Element.scrollbarY
+        , Element.spacing 8
         ]
 
 
@@ -298,6 +300,7 @@ viewSucceed : Store -> SucceedState -> Element Msg
 viewSucceed store state =
     column
         [ Element.width Element.fill
+        , Element.height Element.fill
         , Element.spacing 16
         ]
         [ case Store.select (makeSelector state) store of
@@ -345,12 +348,13 @@ viewFailed err =
 
 viewLayout : Model -> Element Msg
 viewLayout model =
-    el
+    row
         [ Element.width (Element.maximum 300 Element.fill)
+        , Element.height Element.fill
         , Element.padding 8
         , Element.Font.size 14
         ]
-        (case model of
+        [ case model of
             Initialising _ ->
                 viewInitialising
 
@@ -359,13 +363,16 @@ viewLayout model =
 
             Succeed store state ->
                 viewSucceed store state
-        )
+        ]
 
 
 view : Model -> Browser.Document Msg
 view model =
     Browser.Document "Challenge"
-        [ Element.layout [] (viewLayout model)
+        [ Element.layout
+            [ Element.height Element.fill
+            ]
+            (viewLayout model)
         ]
 
 
