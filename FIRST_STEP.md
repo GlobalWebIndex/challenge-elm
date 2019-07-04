@@ -7,20 +7,20 @@ Your job is to implement parsing of data from `JSON` format and fully usable int
 
 This is required for successful implementation:
 
-- [ ] You must use data and type (aliases) provided.
-- [ ] You must use provided `JSON` fixtures in your app (*these are returned by API in production app*)
-- [ ] You must not change any of pre-defined types and fixtures.
+- [x] You must use data and type (aliases) provided.
+- [x] You must use provided `JSON` fixtures in your app (*these are returned by API in production app*)
+- [x] You must not change any of pre-defined types and fixtures.
     - However you can use existing files for your implementation.
-- [ ] You must successfully resolve all relations in data set.
-- [ ] By default component should display root level (items without any parent folder)
-- [ ] Only items from current level are shown (in UI) at any given time.
-- [ ] Folders are displayed before audiences in any level.
-- [ ] Click on any folder opens its content.
-- [ ] `Go up` button is not visible in root level.
-- [ ] `Go up` button is visible in any sub-level.
+- [x] You must successfully resolve all relations in data set.
+- [x] By default component should display root level (items without any parent folder)
+- [x] Only items from current level are shown (in UI) at any given time.
+- [x] Folders are displayed before audiences in any level.
+- [x] Click on any folder opens its content.
+- [x] `Go up` button is not visible in root level.
+- [x] `Go up` button is visible in any sub-level.
     - You can use name of parent folder if you want.
-- [ ] `Go up` button opens parent level on click.
-- [ ] Final solution should be compilable to html app or should contain HTML and source compilable to JavaScript included in HTML.
+- [x] `Go up` button opens parent level on click.
+- [x] Final solution should be compilable to html app or should contain HTML and source compilable to JavaScript included in HTML.
 
 ## Hints
 
