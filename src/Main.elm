@@ -5,7 +5,7 @@ import Data.Api as Api
 import Data.Audience as Audience exposing (Audience, AudienceType)
 import Data.AudienceFolder exposing (AudienceFolder)
 import Data.Store as Store exposing (AudienceFolderID, AudienceLevel, Store)
-import Element exposing (Element, column, el, none, paragraph, text)
+import Element exposing (Element, column, el, none, paragraph, row, text)
 import Element.Background
 import Element.Border
 import Element.Events
@@ -103,6 +103,7 @@ type Msg
     | LoadAudiencesDone (Result Http.Error (List Audience))
     | GoDown AudienceFolderID
     | GoUp
+    | SetFilterBy AudienceType
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -156,6 +157,18 @@ update msg model =
             )
 
         ( GoUp, _ ) ->
+            ( model, Cmd.none )
+
+        ( SetFilterBy nextFilter, Succeed store state ) ->
+            ( Succeed store
+                { state
+                    | location = Root
+                    , filterBy = nextFilter
+                }
+            , Cmd.none
+            )
+
+        ( SetFilterBy _, _ ) ->
             ( model, Cmd.none )
 
 
@@ -230,17 +243,74 @@ view404 folderID =
         ]
 
 
+viewFilter : AudienceType -> AudienceType -> Element Msg
+viewFilter filterBy filter =
+    let
+        label =
+            case filter of
+                Audience.Authored ->
+                    "Authored"
+
+                Audience.Shared ->
+                    "Shared"
+
+                Audience.Curated ->
+                    "Curated"
+
+        config =
+            if filterBy == filter then
+                { background = Element.rgb255 100 100 100
+                , color = Element.rgb255 255 255 255
+                , onPress = Nothing
+                }
+
+            else
+                { background = Element.rgb255 240 240 240
+                , color = Element.rgb255 100 100 100
+                , onPress = Just (SetFilterBy filter)
+                }
+    in
+    button
+        [ Element.width Element.fill
+        , Element.paddingXY 6 18
+        , Element.Background.color config.background
+        , Element.Font.color config.color
+        , Element.Font.center
+        ]
+        { onPress = config.onPress
+        , label = text label
+        }
+
+
+viewFilters : AudienceType -> Element Msg
+viewFilters filterBy =
+    row
+        [ Element.width Element.fill
+        , Element.spacing 8
+        ]
+        (List.map
+            (viewFilter filterBy)
+            [ Audience.Authored, Audience.Shared, Audience.Curated ]
+        )
+
+
 viewSucceed : Store -> SucceedState -> Element Msg
 viewSucceed store state =
-    case Store.select (makeSelector state) store of
-        Store.NotFound folderID ->
-            view404 folderID
+    column
+        [ Element.width Element.fill
+        , Element.spacing 16
+        ]
+        [ case Store.select (makeSelector state) store of
+            Store.NotFound folderID ->
+                view404 folderID
 
-        Store.Root level ->
-            viewLevel none level
+            Store.Root level ->
+                viewLevel none level
 
-        Store.Folder parentFolder level ->
-            viewLevel (viewGoUp parentFolder) level
+            Store.Folder parentFolder level ->
+                viewLevel (viewGoUp parentFolder) level
+        , viewFilters state.filterBy
+        ]
 
 
 viewInitialising : Element msg
