@@ -63,84 +63,106 @@ type alias Levels =
     Dict AudienceFolderID Level
 
 
+type alias Data =
+    { folders : Dict AudienceFolderID AudienceFolder
+    , audiences : Dict AudienceID Audience
+    }
+
+
+type alias Relations =
+    { root : Level
+    , levels : Levels
+    , shared : List AudienceID
+    }
+
+
 type Store
-    = Store
-        { folders : Dict AudienceFolderID AudienceFolder
-        , audiences : Dict AudienceID Audience
-        }
-        { root : Level
-        , levels : Levels
-        , shared : List AudienceID
-        }
+    = Store Data Relations
+
+
+initialData : Data
+initialData =
+    Data Dict.empty Dict.empty
+
+
+initialRelations : Relations
+initialRelations =
+    Relations emptyLevel Dict.empty []
+
+
+initEmptyLevels : List AudienceFolder -> ( Data, Relations ) -> ( Data, Relations )
+initEmptyLevels listOfFolders ( data, relations ) =
+    ( data
+    , { relations | levels = Dict.fromList (List.map (\folder -> ( folder.id, emptyLevel )) listOfFolders) }
+    )
+
+
+buildFoldersDataAndRelations : List AudienceFolder -> ( Data, Relations ) -> ( Data, Relations )
+buildFoldersDataAndRelations listOfFolders acc =
+    List.foldr
+        (\folder ( data, relations ) ->
+            ( { data | folders = Dict.insert folder.id folder data.folders }
+            , case folder.parent of
+                Nothing ->
+                    { relations | root = insertFolderToLevel folder.id relations.root }
+
+                Just parentID ->
+                    let
+                        nextLevel =
+                            Dict.get parentID relations.levels
+                                |> Maybe.withDefault emptyLevel
+                                |> insertFolderToLevel folder.id
+                    in
+                    { relations | levels = Dict.insert parentID nextLevel relations.levels }
+            )
+        )
+        acc
+        listOfFolders
+
+
+buildAudiencesDataAndRelations : List Audience -> ( Data, Relations ) -> ( Data, Relations )
+buildAudiencesDataAndRelations listOfAudiences acc =
+    List.foldr
+        (\audience ( data, relations ) ->
+            ( { data | audiences = Dict.insert audience.id audience data.audiences }
+            , case audience.folder of
+                Nothing ->
+                    let
+                        ( nextShared, nextRoot ) =
+                            insertAudienceToLevel audience relations.shared relations.root
+                    in
+                    { relations
+                        | root = nextRoot
+                        , shared = nextShared
+                    }
+
+                Just folderID ->
+                    let
+                        ( nextShared, nextLevel ) =
+                            Dict.get folderID relations.levels
+                                |> Maybe.withDefault emptyLevel
+                                |> insertAudienceToLevel audience relations.shared
+                    in
+                    { relations
+                        | levels = Dict.insert folderID nextLevel relations.levels
+                        , shared = nextShared
+                    }
+            )
+        )
+        acc
+        listOfAudiences
 
 
 init : List AudienceFolder -> List Audience -> Store
 init listOfFolders listOfAudiences =
     let
-        data0 =
-            { folders = Dict.empty
-            , audiences = Dict.empty
-            }
-
-        relations0 =
-            { root = emptyLevel
-            , levels = Dict.fromList (List.map (\folder -> ( folder.id, emptyLevel )) listOfFolders)
-            , shared = []
-            }
-
-        ( data1, relations1 ) =
-            List.foldr
-                (\folder ( data, relations ) ->
-                    ( { data | folders = Dict.insert folder.id folder data.folders }
-                    , case folder.parent of
-                        Nothing ->
-                            { relations | root = insertFolderToLevel folder.id relations.root }
-
-                        Just parentID ->
-                            let
-                                nextLevel =
-                                    Dict.get parentID relations.levels
-                                        |> Maybe.withDefault emptyLevel
-                                        |> insertFolderToLevel folder.id
-                            in
-                            { relations | levels = Dict.insert parentID nextLevel relations.levels }
-                    )
-                )
-                ( data0, relations0 )
-                listOfFolders
-
-        ( data2, relations2 ) =
-            List.foldr
-                (\audience ( data, relations ) ->
-                    ( { data | audiences = Dict.insert audience.id audience data.audiences }
-                    , case audience.folder of
-                        Nothing ->
-                            let
-                                ( nextShared, nextRoot ) =
-                                    insertAudienceToLevel audience relations.shared relations.root
-                            in
-                            { relations
-                                | root = nextRoot
-                                , shared = nextShared
-                            }
-
-                        Just folderID ->
-                            let
-                                ( nextShared, nextLevel ) =
-                                    Dict.get folderID relations.levels
-                                        |> Maybe.withDefault emptyLevel
-                                        |> insertAudienceToLevel audience relations.shared
-                            in
-                            { relations
-                                | levels = Dict.insert folderID nextLevel relations.levels
-                                , shared = nextShared
-                            }
-                    )
-                )
-                ( data1, relations1 )
-                listOfAudiences
+        ( data, relations ) =
+            ( initialData, initialRelations )
+                |> initEmptyLevels listOfFolders
+                |> buildFoldersDataAndRelations listOfFolders
+                |> buildAudiencesDataAndRelations listOfAudiences
     in
-    Store data2 relations2
+    Store data relations
 
 
 extractListFromData : List comparable -> Dict comparable { a | id : comparable } -> List { a | id : comparable }
