@@ -2,7 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Data.Api as Api
-import Data.Audience exposing (Audience)
+import Data.Audience as Audience exposing (Audience, AudienceType)
 import Data.AudienceFolder exposing (AudienceFolder)
 import Data.Store as Store exposing (AudienceFolderID, AudienceLevel, Store)
 import Element exposing (Element, column, el, none, paragraph, text)
@@ -24,7 +24,8 @@ type alias InitialisingState =
 
 
 type alias SucceedState =
-    { current : Maybe AudienceFolderID
+    { currentFolderID : Maybe AudienceFolderID
+    , filterBy : AudienceType
     }
 
 
@@ -34,6 +35,19 @@ type Model
     | Succeed Store SucceedState
 
 
+makeSelector : SucceedState -> Store.Selector
+makeSelector state =
+    case state.filterBy of
+        Audience.Authored ->
+            Store.OnlyAuthoredIn state.currentFolderID
+
+        Audience.Shared ->
+            Store.OnlyShared
+
+        Audience.Curated ->
+            Store.OnlyCuratedIn state.currentFolderID
+
+
 turnInitialising : InitialisingState -> Model
 turnInitialising state =
     case Maybe.map2 Store.init state.folders state.audiences of
@@ -41,7 +55,7 @@ turnInitialising state =
             Initialising state
 
         Just store ->
-            Succeed store (SucceedState Nothing)
+            Succeed store (SucceedState Nothing Audience.Authored)
 
 
 init : flags -> ( Model, Cmd Msg )
@@ -90,7 +104,7 @@ update msg model =
             ( model, Cmd.none )
 
         ( GoDown childFolderID, Succeed store state ) ->
-            ( Succeed store { state | current = Just childFolderID }
+            ( Succeed store { state | currentFolderID = Just childFolderID }
             , Cmd.none
             )
 
@@ -98,7 +112,7 @@ update msg model =
             ( model, Cmd.none )
 
         ( GoUp parentFolderID, Succeed store state ) ->
-            ( Succeed store { state | current = parentFolderID }
+            ( Succeed store { state | currentFolderID = parentFolderID }
             , Cmd.none
             )
 
@@ -172,18 +186,16 @@ view404 folderID =
 
 
 viewSucceed : Store -> SucceedState -> Element Msg
-viewSucceed store { current } =
-    case current of
-        Nothing ->
-            viewLevel none (Store.getRootLevel store)
+viewSucceed store state =
+    case Store.select (makeSelector state) store of
+        Store.NotFound folderID ->
+            view404 folderID
 
-        Just folderID ->
-            case Store.getFolderLevel folderID store of
-                Nothing ->
-                    view404 folderID
+        Store.Root level ->
+            viewLevel none level
 
-                Just ( parentFolder, level ) ->
-                    viewLevel (viewGoUp parentFolder) level
+        Store.Folder parentFolder level ->
+            viewLevel (viewGoUp parentFolder) level
 
 
 viewInitialising : Element msg
