@@ -17,6 +17,12 @@ import Http
 import Task
 
 
+
+---------------
+-- M O D E L --
+---------------
+
+
 type alias InitialisingState =
     { folders : Maybe (List AudienceFolder)
     , audiences : Maybe (List Audience)
@@ -86,6 +92,12 @@ init _ =
     )
 
 
+
+-----------------
+-- U P D A T E --
+-----------------
+
+
 type Msg
     = LoadAudienceFoldersDone (Result Http.Error (List AudienceFolder))
     | LoadAudiencesDone (Result Http.Error (List Audience))
@@ -145,6 +157,12 @@ update msg model =
 
         ( GoUp, _ ) ->
             ( model, Cmd.none )
+
+
+
+-------------
+-- V I E W --
+-------------
 
 
 stylesButton : List (Element.Attribute msg)
@@ -279,6 +297,12 @@ view model =
     Browser.Document "Challenge"
         [ Element.layout [] (viewLayout model)
         ]
+
+
+
+-------------
+-- M A I N --
+-------------
 
 
 main : Program () Model Msg
