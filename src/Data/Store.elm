@@ -2,13 +2,15 @@ module Data.Store exposing
     ( AudienceFolderID
     , AudienceID
     , AudienceLevel
+    , Selection(..)
+    , Selector(..)
     , Store
-    , getFolderLevel
-    , getRootLevel
+    , getFolderByID
     , init
+    , select
     )
 
-import Data.Audience exposing (Audience)
+import Data.Audience as Audience exposing (Audience, AudienceType)
 import Data.AudienceFolder exposing (AudienceFolder)
 import Dict exposing (Dict)
 
@@ -29,13 +31,14 @@ type alias AudienceLevel =
 
 type alias Level =
     { folders : List AudienceFolderID
-    , audiences : List AudienceID
+    , curated : List AudienceID
+    , authored : List AudienceID
     }
 
 
 emptyLevel : Level
 emptyLevel =
-    Level [] []
+    Level [] [] []
 
 
 insertFolderToLevel : AudienceFolderID -> Level -> Level
@@ -43,18 +46,21 @@ insertFolderToLevel folderID level =
     { level | folders = folderID :: level.folders }
 
 
-insertAudienceToLevel : AudienceID -> Level -> Level
-insertAudienceToLevel audienceID level =
-    { level | audiences = audienceID :: level.audiences }
+insertAudienceToLevel : Audience -> List AudienceID -> Level -> ( List AudienceID, Level )
+insertAudienceToLevel audience shared level =
+    case audience.type_ of
+        Audience.Authored ->
+            ( shared, { level | authored = audience.id :: level.authored } )
+
+        Audience.Shared ->
+            ( audience.id :: shared, level )
+
+        Audience.Curated ->
+            ( shared, { level | curated = audience.id :: level.curated } )
 
 
 type alias Levels =
     Dict AudienceFolderID Level
-
-
-updateOnLevels : AudienceFolderID -> (Level -> Level) -> Levels -> Levels
-updateOnLevels folderID tagger levels =
-    Dict.update folderID (Just << tagger << Maybe.withDefault emptyLevel) levels
 
 
 type Store
@@ -64,6 +70,7 @@ type Store
         }
         { root : Level
         , levels : Levels
+        , shared : List AudienceID
         }
 
 
@@ -77,34 +84,26 @@ init listOfFolders listOfAudiences =
 
         relations0 =
             { root = emptyLevel
-            , levels = Dict.empty
+            , levels = Dict.fromList (List.map (\folder -> ( folder.id, emptyLevel )) listOfFolders)
+            , shared = []
             }
 
         ( data1, relations1 ) =
             List.foldr
                 (\folder ( data, relations ) ->
-                    let
-                        nextLevels =
-                            Dict.update folder.id
-                                (\level ->
-                                    case level of
-                                        Nothing ->
-                                            Just emptyLevel
-
-                                        _ ->
-                                            level
-                                )
-                                relations.levels
-                    in
                     ( { data | folders = Dict.insert folder.id folder data.folders }
                     , case folder.parent of
                         Nothing ->
-                            { root = insertFolderToLevel folder.id relations.root
-                            , levels = nextLevels
-                            }
+                            { relations | root = insertFolderToLevel folder.id relations.root }
 
                         Just parentID ->
-                            { relations | levels = updateOnLevels parentID (insertFolderToLevel folder.id) nextLevels }
+                            let
+                                nextLevel =
+                                    Dict.get parentID relations.levels
+                                        |> Maybe.withDefault emptyLevel
+                                        |> insertFolderToLevel folder.id
+                            in
+                            { relations | levels = Dict.insert parentID nextLevel relations.levels }
                     )
                 )
                 ( data0, relations0 )
@@ -116,10 +115,26 @@ init listOfFolders listOfAudiences =
                     ( { data | audiences = Dict.insert audience.id audience data.audiences }
                     , case audience.folder of
                         Nothing ->
-                            { relations | root = insertAudienceToLevel audience.id relations.root }
+                            let
+                                ( nextShared, nextRoot ) =
+                                    insertAudienceToLevel audience relations.shared relations.root
+                            in
+                            { relations
+                                | root = nextRoot
+                                , shared = nextShared
+                            }
 
                         Just folderID ->
-                            { relations | levels = updateOnLevels folderID (insertAudienceToLevel audience.id) relations.levels }
+                            let
+                                ( nextShared, nextLevel ) =
+                                    Dict.get folderID relations.levels
+                                        |> Maybe.withDefault emptyLevel
+                                        |> insertAudienceToLevel audience relations.shared
+                            in
+                            { relations
+                                | levels = Dict.insert folderID nextLevel relations.levels
+                                , shared = nextShared
+                            }
                     )
                 )
                 ( data1, relations1 )
@@ -130,35 +145,67 @@ init listOfFolders listOfAudiences =
 
 extractListFromData : List comparable -> Dict comparable { a | id : comparable } -> List { a | id : comparable }
 extractListFromData ids entities =
-    List.foldr
-        (\id acc ->
-            case Dict.get id entities of
-                Nothing ->
-                    acc
-
-                Just entity ->
-                    entity :: acc
-        )
-        []
-        ids
+    List.filterMap (\id -> Dict.get id entities) ids
 
 
-getRootLevel : Store -> AudienceLevel
-getRootLevel (Store data { root }) =
-    { folders = extractListFromData root.folders data.folders
-    , audiences = extractListFromData root.audiences data.audiences
-    }
+type Selector
+    = OnlyShared
+    | OnlyCurated
+    | OnlyCuratedIn AudienceFolderID
+    | OnlyAuthored
+    | OnlyAuthoredIn AudienceFolderID
 
 
-getFolderLevel : AudienceFolderID -> Store -> Maybe ( AudienceFolder, AudienceLevel )
-getFolderLevel folderID (Store data { levels }) =
-    Maybe.map2 Tuple.pair
-        (Dict.get folderID data.folders)
-        (Maybe.map
-            (\{ folders, audiences } ->
-                { folders = extractListFromData folders data.folders
-                , audiences = extractListFromData audiences data.audiences
-                }
-            )
-            (Dict.get folderID levels)
-        )
+type Selection
+    = NotFound AudienceFolderID
+    | Root AudienceLevel
+    | Folder AudienceFolder AudienceLevel
+
+
+select : Selector -> Store -> Selection
+select selector (Store data { root, levels, shared }) =
+    case selector of
+        OnlyShared ->
+            AudienceLevel
+                []
+                (extractListFromData shared data.audiences)
+                |> Root
+
+        OnlyCurated ->
+            AudienceLevel
+                (extractListFromData root.folders data.folders)
+                (extractListFromData root.curated data.audiences)
+                |> Root
+
+        OnlyCuratedIn folderID ->
+            case ( Dict.get folderID data.folders, Dict.get folderID levels ) of
+                ( Just folder, Just level ) ->
+                    AudienceLevel
+                        (extractListFromData level.folders data.folders)
+                        (extractListFromData level.curated data.audiences)
+                        |> Folder folder
+
+                _ ->
+                    NotFound folderID
+
+        OnlyAuthored ->
+            AudienceLevel
+                (extractListFromData root.folders data.folders)
+                (extractListFromData root.authored data.audiences)
+                |> Root
+
+        OnlyAuthoredIn folderID ->
+            case ( Dict.get folderID data.folders, Dict.get folderID levels ) of
+                ( Just folder, Just level ) ->
+                    AudienceLevel
+                        (extractListFromData level.folders data.folders)
+                        (extractListFromData level.authored data.audiences)
+                        |> Folder folder
+
+                _ ->
+                    NotFound folderID
+
+
+getFolderByID : AudienceFolderID -> Store -> Maybe AudienceFolder
+getFolderByID folderID (Store data _) =
+    Dict.get folderID data.folders
