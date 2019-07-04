@@ -245,6 +245,19 @@ view404 folderID =
         ]
 
 
+viewFilterButton : List (Element.Attribute msg) -> Element msg -> Element msg
+viewFilterButton attributes label =
+    button
+        (Element.width Element.fill
+            :: Element.paddingXY 6 18
+            :: Element.Font.center
+            :: attributes
+        )
+        { onPress = Nothing
+        , label = label
+        }
+
+
 viewFilter : AudienceType -> AudienceType -> Element Msg
 viewFilter filterBy filter =
     let
@@ -258,51 +271,52 @@ viewFilter filterBy filter =
 
                 Audience.Curated ->
                     "Curated"
-
-        config =
-            if filterBy == filter then
-                { background = Element.rgb255 100 100 100
-                , color = Element.rgb255 255 255 255
-                , onPress = Nothing
-                }
-
-            else
-                { background = Element.rgb255 240 240 240
-                , color = Element.rgb255 100 100 100
-                , onPress = Just (SetFilterBy filter)
-                }
     in
-    button
-        [ Element.width Element.fill
-        , Element.paddingXY 6 18
-        , Element.Background.color config.background
-        , Element.Font.color config.color
-        , Element.Font.center
-        ]
-        { onPress = config.onPress
-        , label = text label
-        }
+    if filterBy == filter then
+        viewFilterButton
+            [ Element.Background.color (Element.rgb255 100 100 100)
+            , Element.Font.color (Element.rgb255 255 255 255)
+            ]
+            (text label)
+
+    else
+        viewFilterButton
+            [ Element.Background.color (Element.rgb255 240 240 240)
+            , Element.Font.color (Element.rgb255 100 100 100)
+            , Element.Events.onClick (SetFilterBy filter)
+            ]
+            (text label)
 
 
-viewFilters : AudienceType -> Element Msg
-viewFilters filterBy =
+viewFiltersRow : List (Element msg) -> Element msg
+viewFiltersRow =
     row
         [ Element.width Element.fill
         , Element.spacing 8
         ]
+
+
+viewFilters : AudienceType -> Element Msg
+viewFilters filterBy =
+    viewFiltersRow
         (List.map
             (viewFilter filterBy)
             [ Audience.Authored, Audience.Shared, Audience.Curated ]
         )
 
 
-viewSucceed : Store -> SucceedState -> Element Msg
-viewSucceed store state =
+viewLayoutColumn : List (Element msg) -> Element msg
+viewLayoutColumn =
     column
         [ Element.width Element.fill
         , Element.height Element.fill
         , Element.spacing 16
         ]
+
+
+viewSucceed : Store -> SucceedState -> Element Msg
+viewSucceed store state =
+    viewLayoutColumn
         [ case Store.select (makeSelector state) store of
             Store.NotFound folderID ->
                 view404 folderID
@@ -318,13 +332,25 @@ viewSucceed store state =
 
 viewInitialising : Element msg
 viewInitialising =
-    el
-        (Element.Background.color (Element.rgb255 220 220 220)
-            :: stylesButton
-        )
-        (text " ")
-        |> List.repeat 10
-        |> viewLevelColumn
+    viewLayoutColumn
+        [ el
+            (Element.Background.color (Element.rgb255 220 220 220)
+                :: stylesButton
+            )
+            (text " ")
+            |> List.repeat 10
+            |> viewLevelColumn
+        , viewFiltersRow
+            (List.map
+                (\_ ->
+                    viewFilterButton
+                        [ Element.Background.color (Element.rgb255 220 220 220)
+                        ]
+                        (text " ")
+                )
+                (List.range 0 2)
+            )
+        ]
 
 
 viewFailed : Http.Error -> Element msg
@@ -349,7 +375,7 @@ viewFailed err =
 viewLayout : Model -> Element Msg
 viewLayout model =
     row
-        [ Element.width (Element.maximum 300 Element.fill)
+        [ Element.width (Element.maximum 400 Element.fill)
         , Element.height Element.fill
         , Element.padding 8
         , Element.Font.size 14
