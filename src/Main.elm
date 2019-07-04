@@ -106,30 +106,6 @@ update msg model =
             ( model, Cmd.none )
 
 
-viewInitialising : Element msg
-viewInitialising =
-    text "Initialising..."
-
-
-viewFailed : Http.Error -> Element msg
-viewFailed err =
-    case err of
-        Http.BadUrl url ->
-            text ("Wrong request url is provided: `" ++ url ++ "`")
-
-        Http.Timeout ->
-            text "Request is canceled by timeout"
-
-        Http.NetworkError ->
-            text "Poor internet connection"
-
-        Http.BadStatus status ->
-            text ("Request went back with bad status: `" ++ String.fromInt status ++ "`")
-
-        Http.BadBody message ->
-            text message
-
-
 stylesButton : List (Element.Attribute msg)
 stylesButton =
     [ Element.width Element.fill
@@ -173,12 +149,17 @@ viewGoUp parentFolder =
         }
 
 
-viewLevel : Element Msg -> AudienceLevel -> Element Msg
-viewLevel toUp level =
+viewLevelColumn : List (Element msg) -> Element msg
+viewLevelColumn =
     column
         [ Element.spacing 8
         , Element.width Element.fill
         ]
+
+
+viewLevel : Element Msg -> AudienceLevel -> Element Msg
+viewLevel toUp level =
+    viewLevelColumn
         (toUp :: List.map viewFolder level.folders ++ List.map viewAudience level.audiences)
 
 
@@ -203,6 +184,36 @@ viewSucceed store { current } =
 
                 Just ( parentFolder, level ) ->
                     viewLevel (viewGoUp parentFolder) level
+
+
+viewInitialising : Element msg
+viewInitialising =
+    el
+        (Element.Background.color (Element.rgb255 220 220 220)
+            :: stylesButton
+        )
+        (text " ")
+        |> List.repeat 10
+        |> viewLevelColumn
+
+
+viewFailed : Http.Error -> Element msg
+viewFailed err =
+    case err of
+        Http.BadUrl url ->
+            text ("Wrong request url is provided: `" ++ url ++ "`")
+
+        Http.Timeout ->
+            text "Request is canceled by timeout"
+
+        Http.NetworkError ->
+            text "Poor internet connection"
+
+        Http.BadStatus status ->
+            text ("Request went back with bad status: `" ++ String.fromInt status ++ "`")
+
+        Http.BadBody message ->
+            text message
 
 
 viewLayout : Model -> Element Msg
