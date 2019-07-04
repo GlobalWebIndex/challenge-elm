@@ -23,8 +23,13 @@ type alias InitialisingState =
     }
 
 
+type Location
+    = Root
+    | Folder AudienceFolderID
+
+
 type alias SucceedState =
-    { currentFolderID : Maybe AudienceFolderID
+    { location : Location
     , filterBy : AudienceType
     }
 
@@ -39,13 +44,23 @@ makeSelector : SucceedState -> Store.Selector
 makeSelector state =
     case state.filterBy of
         Audience.Authored ->
-            Store.OnlyAuthoredIn state.currentFolderID
+            case state.location of
+                Root ->
+                    Store.OnlyAuthored
+
+                Folder folderID ->
+                    Store.OnlyAuthoredIn folderID
 
         Audience.Shared ->
             Store.OnlyShared
 
         Audience.Curated ->
-            Store.OnlyCuratedIn state.currentFolderID
+            case state.location of
+                Root ->
+                    Store.OnlyCurated
+
+                Folder folderID ->
+                    Store.OnlyCuratedIn folderID
 
 
 turnInitialising : InitialisingState -> Model
@@ -55,7 +70,7 @@ turnInitialising state =
             Initialising state
 
         Just store ->
-            Succeed store (SucceedState Nothing Audience.Authored)
+            Succeed store (SucceedState Root Audience.Authored)
 
 
 init : flags -> ( Model, Cmd Msg )
@@ -75,7 +90,7 @@ type Msg
     = LoadAudienceFoldersDone (Result Http.Error (List AudienceFolder))
     | LoadAudiencesDone (Result Http.Error (List Audience))
     | GoDown AudienceFolderID
-    | GoUp (Maybe AudienceFolderID)
+    | GoUp
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -104,19 +119,31 @@ update msg model =
             ( model, Cmd.none )
 
         ( GoDown childFolderID, Succeed store state ) ->
-            ( Succeed store { state | currentFolderID = Just childFolderID }
+            ( Succeed store { state | location = Folder childFolderID }
             , Cmd.none
             )
 
         ( GoDown _, _ ) ->
             ( model, Cmd.none )
 
-        ( GoUp parentFolderID, Succeed store state ) ->
-            ( Succeed store { state | currentFolderID = parentFolderID }
+        ( GoUp, Succeed store state ) ->
+            ( case state.location of
+                Root ->
+                    model
+
+                Folder folderID ->
+                    let
+                        nextLocation =
+                            Store.getFolderByID folderID store
+                                |> Maybe.andThen .parent
+                                |> Maybe.map Folder
+                                |> Maybe.withDefault Root
+                    in
+                    Succeed store { state | location = nextLocation }
             , Cmd.none
             )
 
-        ( GoUp _, _ ) ->
+        ( GoUp, _ ) ->
             ( model, Cmd.none )
 
 
@@ -158,7 +185,7 @@ viewGoUp parentFolder =
             :: Element.Font.color (Element.rgb255 26 113 153)
             :: stylesButton
         )
-        { onPress = Just (GoUp parentFolder.parent)
+        { onPress = Just GoUp
         , label = paragraph [] [ text ("↑ " ++ parentFolder.name) ]
         }
 

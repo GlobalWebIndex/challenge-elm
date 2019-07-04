@@ -5,6 +5,7 @@ module Data.Store exposing
     , Selection(..)
     , Selector(..)
     , Store
+    , getFolderByID
     , init
     , select
     )
@@ -149,8 +150,10 @@ extractListFromData ids entities =
 
 type Selector
     = OnlyShared
-    | OnlyCuratedIn (Maybe AudienceFolderID)
-    | OnlyAuthoredIn (Maybe AudienceFolderID)
+    | OnlyCurated
+    | OnlyCuratedIn AudienceFolderID
+    | OnlyAuthored
+    | OnlyAuthoredIn AudienceFolderID
 
 
 type Selection
@@ -168,13 +171,13 @@ select selector (Store data { root, levels, shared }) =
                 (extractListFromData shared data.audiences)
                 |> Root
 
-        OnlyCuratedIn Nothing ->
+        OnlyCurated ->
             AudienceLevel
                 (extractListFromData root.folders data.folders)
                 (extractListFromData root.curated data.audiences)
                 |> Root
 
-        OnlyCuratedIn (Just folderID) ->
+        OnlyCuratedIn folderID ->
             case ( Dict.get folderID data.folders, Dict.get folderID levels ) of
                 ( Just folder, Just level ) ->
                     AudienceLevel
@@ -185,13 +188,13 @@ select selector (Store data { root, levels, shared }) =
                 _ ->
                     NotFound folderID
 
-        OnlyAuthoredIn Nothing ->
+        OnlyAuthored ->
             AudienceLevel
                 (extractListFromData root.folders data.folders)
                 (extractListFromData root.authored data.audiences)
                 |> Root
 
-        OnlyAuthoredIn (Just folderID) ->
+        OnlyAuthoredIn folderID ->
             case ( Dict.get folderID data.folders, Dict.get folderID levels ) of
                 ( Just folder, Just level ) ->
                     AudienceLevel
@@ -201,3 +204,8 @@ select selector (Store data { root, levels, shared }) =
 
                 _ ->
                     NotFound folderID
+
+
+getFolderByID : AudienceFolderID -> Store -> Maybe AudienceFolder
+getFolderByID folderID (Store data _) =
+    Dict.get folderID data.folders
