@@ -99,11 +99,11 @@ init listOfFolders listOfAudiences =
                         Just parentID ->
                             let
                                 nextLevel =
-                                    Dict.get folder.id relations.levels
+                                    Dict.get parentID relations.levels
                                         |> Maybe.withDefault emptyLevel
                                         |> insertFolderToLevel folder.id
                             in
-                            { relations | levels = Dict.insert folder.id nextLevel relations.levels }
+                            { relations | levels = Dict.insert parentID nextLevel relations.levels }
                     )
                 )
                 ( data0, relations0 )
