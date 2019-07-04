@@ -21,15 +21,15 @@ Categories are:
 
 ### These are the requirements for this step:
 
-- [ ] You must not change any of pre-defined types and fixtures.
+- [x] You must not change any of pre-defined types and fixtures.
     - However you can use existing files for your implementation.
-- [ ] Add 3 buttons - one for every category of audiences.
-- [ ] Clicking on each button activates particular category of audience.
-- [ ] By default `Authored` audiences are filtered.
-- [ ] There must by at least one category selected at the time.
-- [ ] Every-time user changes category she sees its root level.
-- [ ] In case of shared audiences ignore tree structure and display audiences in single level without any folder.
-- [ ] Final solution should be compilable to html app or should contain HTML and source compilable to JavaScript included in HTML.
+- [x] Add 3 buttons - one for every category of audiences.
+- [x] Clicking on each button activates particular category of audience.
+- [x] By default `Authored` audiences are filtered.
+- [x] There must by at least one category selected at the time.
+- [x] Every-time user changes category she sees its root level.
+- [x] In case of shared audiences ignore tree structure and display audiences in single level without any folder.
+- [x] Final solution should be compilable to html app or should contain HTML and source compilable to JavaScript included in HTML.
 
 ## Hints
 
