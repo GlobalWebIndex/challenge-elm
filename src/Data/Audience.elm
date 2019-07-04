@@ -1,5 +1,6 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
+    , decoder
     , audiencesJSON
     )
 
@@ -10,9 +11,17 @@ This module implements everything related to audience resource.
 
 # Interface
 
-@docs AudienceType, Audience, audienceJSON
+@docs AudienceType, Audience
+
+@docs decoder
+
+@docs audiencesJSON
 
 -}
+
+import Json.Decode as Decode exposing (Decoder)
+
+
 
 -- Type definition
 
@@ -25,6 +34,26 @@ type AudienceType
     | Curated
 
 
+audienceTypeDecoder : Decoder AudienceType
+audienceTypeDecoder =
+    Decode.andThen
+        (\str ->
+            case str of
+                "user" ->
+                    Decode.succeed Authored
+
+                "shared" ->
+                    Decode.succeed Shared
+
+                "curated" ->
+                    Decode.succeed Curated
+
+                unknown ->
+                    Decode.fail ("Unknown AudienceType `" ++ unknown ++ "`")
+        )
+        Decode.string
+
+
 {-| Basic type of Audience record
 -}
 type alias Audience =
@@ -33,6 +62,17 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+{-| Decoder of Audience record
+-}
+decoder : Decoder Audience
+decoder =
+    Decode.map4 Audience
+        (Decode.field "id" Decode.int)
+        (Decode.field "name" Decode.string)
+        (Decode.field "type" audienceTypeDecoder)
+        (Decode.field "folder" (Decode.nullable Decode.int))
 
 
 
