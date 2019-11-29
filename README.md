@@ -83,8 +83,8 @@ Also we want to see your ability to come up with a robust solution and will look
 
 ## Contacts
 
-In case you want to apply for a position in our team, please contact `petr@globalwebindex.net`.
-If you have any questions about implementation itself, you can send me mail to `marek@globalwebindex.net`
+In case you want to apply for a position in our team, please contact `thunt@globalwebindex.net`.
+If you have any questions about implementation itself, you can send me mail to `mjaniczek@globalwebindex.net`
 or open issue/PR in this repository so we can discuss any part together.
 
 ## License
