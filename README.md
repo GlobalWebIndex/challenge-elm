@@ -3,24 +3,24 @@
 Hello! Welcome to the Elm Challenge.
 
 This repository contains requirements definition of a project used for job applications
-on a **position of [Elm](https://elm-lang.org/)/[JavaScript](https://www.javascript.com/) developer**.
+on a **position of an [Elm](https://elm-lang.org/) developer**.
 The challenge consists of two parts, where **only the first part is required**.
-Whole assignment is based on a real part of our production app.
+The whole assignment is based on a real part of our production app.
 However, since there is a lot of domain specific knowledge required for most parts of our system
 and we are aware of the fact that most of this logic might be confusing to newcomers, we've tried to
 pick a task which doesn't require any specific insight and removed all parts which might be possibly confusing to pick up.
-Thanks to this, this project can be used as a general challenge to build an HTML app in Elm.
+Thanks to this, this project can be used as a general challenge to build an Elm app.
 
 ## Position Description
 
-In its essence, GlobalWebIndex is a data company and our primary way how we deliver all our datasets to clients is PRO Platform – our proprietary web interface for our analytical engine.
+In its essence, GlobalWebIndex is a data company and our primary way how we deliver all our datasets to clients is the PRO Platform – our web application interface to our backend analytical engine.
 
-Praised and used by the world's largest organizations, PRO Platform enables our clients to cut through our data using custom audiences, segmentations and modular charting library.
+Praised and used by the world's largest organizations, the PRO Platform enables our clients to cut through our data using custom audiences, segmentations and modular charting library.
 
 You will be part of our PRO Platform team and will be jointly responsible for pushing the development of the platform forward.
 Day-to-day this involves new feature engineering, reviewing and discussing code of your colleagues and discussing the design decisions with the wider technical leadership team.
 
-- Ideate, brainstorm and implement new components and features using JavaScript, Elm or Ruby, if you fancy getting your hands on backend code.
+- Ideate, brainstorm and implement new components and features using Elm.
 - Develop the project codebase, with the focus on long-term maintenance – we look for people who really care about the quality as a day-to-day routine.
 - Think forward and propose innovative approaches, which can push the project to the next level.
 We like to discuss things so you’ll be expected to demonstrate conclusive arguments and get a buy in from the whole team.
@@ -48,14 +48,14 @@ You will also find particular type definitions of each model. Your job is to des
 
 - The implementation must be done in the `Elm` language.
 - You can use any 3rd-party library you want.
-- `elm-lang/html` must be used for rendering UI.
+- `elm/html` must be used for rendering UI.
 - You are free to use `ports` and `subscriptions` in case you want to.
 - You can use [screenshot](/media/screenshot.png) as an inspiration for the UI or come up with your own layout if it satisfies the requirements.
 - All naming including comments and additional documentation must be in English.
 - The final result must be in the form of a full git repository with your own implementation.
 - There are **no time restrictions** for completing this challenge.
-- **(Only) The first part is required.**
-- **In case you want to apply for the job, but have no time to finish the first step soon, let us know you're interested anyway.** (We are people too)
+- **Only the first part is required.**
+- **In case you want to apply for the job, but have no time to finish the first step soon, let us know you're interested anyway.** (We are people too!)
 
 ## Where to Start
 
@@ -66,9 +66,9 @@ please continue following the steps:
 - Complete an implementation inside your fork.
 - Open pull request to [original](https://github.com/GlobalWebIndex/challenge-elm/) repository with your own implementation.
 - Comment your pull request with message containing `READY` or `RDY` to let us know that we can review your code.
-- Comment your PR with any question in case you need any help (or send us email - see bellow).
+- Comment your PR with any question in case you need any help (or send us email - see below).
 
-**You can also open pull request before you finish the implementation in case you are willing to discuss anything!**
+**You can also open a pull request before you finish the implementation in case you are willing to discuss anything!**
 
 ## Parts
 
@@ -79,12 +79,12 @@ please continue following the steps:
 
 The goal is to test your ability to come up with a solution for a real world problem which will be part of your day to day responsibility.
 Obviously the first thing what we will look at is a degree to what your implementation satisfies original requirements.
-Also we want to see your ability to come up with a robust solution and will look on over all code quality.
+Also we want to see your ability to come up with a robust solution and will look at the overall code quality.
 
 ## Contacts
 
 In case you want to apply for a position in our team, please contact `thunt@globalwebindex.com`.
-If you have any questions about implementation itself, you can send me mail to `mjaniczek@globalwebindex.com`
+If you have any questions about the implementation itself, you can send an e-mail to `mjaniczek@globalwebindex.com`
 or open issue/PR in this repository so we can discuss any part together.
 
 ## License
