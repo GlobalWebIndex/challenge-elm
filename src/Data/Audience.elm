@@ -1,6 +1,6 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
-    , audiencesJSON
+    , decoder, fixtures
     )
 
 {-| Data.Audiences module
@@ -13,6 +13,10 @@ This module implements everything related to audience resource.
 @docs AudienceType, Audience, audienceJSON
 
 -}
+
+import Json.Decode exposing (Decoder)
+
+
 
 -- Type definition
 
@@ -36,6 +40,45 @@ type alias Audience =
 
 
 
+-- Decoders
+
+
+decoder : Decoder Audience
+decoder =
+    -- I know about Json.Decode.Pipeline but for small projects, I prefer to
+    -- limit the number of dependencies. Plus, using `mapX` leads to easier
+    -- to understand error messages than the applicative version.
+    Json.Decode.map4 Audience
+        (Json.Decode.field "id" Json.Decode.int)
+        (Json.Decode.field "name" Json.Decode.string)
+        -- I choosed to rely on the `type` since it seems way easier
+        -- (and more reliable) than checking `curated` and `shared`
+        -- booleans
+        (Json.Decode.field "type" audienceTypeDecoder)
+        (Json.Decode.field "folder" (Json.Decode.nullable Json.Decode.int))
+
+
+audienceTypeDecoder : Decoder AudienceType
+audienceTypeDecoder =
+    Json.Decode.string
+        |> Json.Decode.andThen
+            (\typeStr ->
+                case typeStr of
+                    "user" ->
+                        Json.Decode.succeed Authored
+
+                    "shared" ->
+                        Json.Decode.succeed Shared
+
+                    "curated" ->
+                        Json.Decode.succeed Curated
+
+                    _ ->
+                        Json.Decode.fail ("invalid audience type: " ++ typeStr)
+            )
+
+
+
 -- Fixtures
 
 
@@ -51,8 +94,8 @@ from old version of API to new one.
 You're free to use any strategy to decode JSON.
 
 -}
-audiencesJSON : String
-audiencesJSON =
+fixtures : String
+fixtures =
     """
     {
         "data": [
@@ -5920,6 +5963,17 @@ audiencesJSON =
                 "shared": true,
                 "category": null,
                 "folder": null
+            },
+            {
+                "id": 91958,
+                "name": "My Folder doesn't exist",
+                "expression": {
+                },
+                "curated": null,
+                "type": "shared",
+                "shared": true,
+                "category": null,
+                "folder": 9999999
             }
         ]
     }
