@@ -75,8 +75,8 @@ fromAudiencesAndFolders audiences_ folders =
 --
 -- It would be problematic if multiple folders share the same id `I`. If an audience
 -- belongs to `I`, to what folder should we put it? If we encounter
--- such a case, only the first folder is kept and we keep track of those problematic ids
--- in the `duplicatedFolderIds` set.
+-- such a case, only the first folder is kept and we keep track of those problematic folders
+-- in the `duplicatedFolderIds` list.
 
 
 type alias Step1Result =
@@ -153,8 +153,8 @@ step1 folders =
 --
 -- In this step, we add all the audiences to their corresponding PendingFolder.
 -- If the folder indicated in the audience record doesn't exist, the audience
--- is assigned to root and we keep track of the missing folder id in the
--- `missingFolderId` set.
+-- is assigned to root and we keep track of this audience in the
+-- `missingFolderId` list.
 --
 -- This step has to be performed AFTER the previous one (we have to know all the
 -- folders ids). This is "softly constrained" by the fact that the `step2`
@@ -241,7 +241,7 @@ addAudienceToFolder audience pendingFolder =
 -- This has to be done AFTER the step 2. Again, this is "softly constrained" because
 -- `rearrangePendingFolder` takes `Step2Result` as argument.
 --
--- We also track the missing folder id when a parent doesn't exist. In this
+-- We also track the missing folder id when a parent doesn't exist. In this case
 -- the folder is added to the root.
 --
 -- This step is a bit tricky if we don't want to pay a quadratic complexity.
