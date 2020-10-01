@@ -1,6 +1,6 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
-    , audiencesJSON
+    , audiencesDecoder, audiencesJSON
     )
 
 {-| Data.Audiences module
@@ -13,6 +13,11 @@ This module implements everything related to audience resource.
 @docs AudienceType, Audience, audienceJSON
 
 -}
+
+import Json.Decode as D exposing (Decoder, field, maybe, nullable, succeed)
+import Json.Decode.Applicative exposing (apply)
+
+
 
 -- Type definition
 
@@ -33,6 +38,48 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+
+-- Decoder
+
+
+decodeAudienceType : String -> Decoder AudienceType
+decodeAudienceType s =
+    case s of
+        "curated" ->
+            D.succeed Curated
+
+        "shared" ->
+            D.succeed Shared
+
+        "user" ->
+            D.succeed Authored
+
+        type_ ->
+            D.fail <|
+                "Invalid audience type: "
+                    ++ type_
+                    ++ "! Only \"curated\", \"shared\" and \"user\" are valid."
+
+
+audienceTypeDecoder : Decoder AudienceType
+audienceTypeDecoder =
+    D.andThen decodeAudienceType D.string
+
+
+audienceDecoder : Decoder Audience
+audienceDecoder =
+    succeed Audience
+        |> apply (field "id" D.int)
+        |> apply (field "name" D.string)
+        |> apply (field "type" audienceTypeDecoder)
+        |> apply (field "folder" (nullable D.int))
+
+
+audiencesDecoder : Decoder (List Audience)
+audiencesDecoder =
+    field "data" <| D.list audienceDecoder
 
 
 
