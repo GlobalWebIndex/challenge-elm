@@ -1,7 +1,15 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
+    , audienceTypeToString, audienceTypeToIcon
+    , audienceDecoder, audienceTypeDecoder
     , audiencesJSON
     )
+
+import Json.Decode as JD
+import Json.Decode.Pipeline as JDP
+import Html
+import Icons
+
 
 {-| Data.Audiences module
 
@@ -17,8 +25,9 @@ This module implements everything related to audience resource.
 -- Type definition
 
 
-{-| Audience type
+{- AudienceType 
 -}
+
 type AudienceType
     = Authored
     | Shared
@@ -34,6 +43,63 @@ type alias Audience =
     , folder : Maybe Int
     }
 
+audienceTypeToString : AudienceType -> String
+audienceTypeToString t =
+    case t of
+        Shared ->
+            "Shared"
+        Curated ->
+            "Curated"
+        Authored ->
+            "Authored"
+
+audienceTypeToIcon : AudienceType -> Html.Html msg
+audienceTypeToIcon audienceType =
+    case audienceType of
+        Authored ->
+            Icons.person
+        Curated ->
+            Icons.curated
+        Shared ->
+            Icons.people
+
+
+audienceTypeDecoder : JD.Decoder AudienceType
+audienceTypeDecoder =
+    let
+        typeToAudienceType t =
+            if t == "curated" then
+                JD.succeed Curated
+            else if t == "shared" then
+                JD.succeed Shared
+            else if t == "user" then
+                JD.succeed Authored
+            else
+                JD.fail <| """valid `type` strings are either "curated", "shared", or "user". Instead, we got: """ ++ t
+    in
+        (JD.field "type" JD.string)
+            |> JD.andThen typeToAudienceType
+
+
+audienceDecoder : JD.Decoder Audience
+audienceDecoder =
+
+    -- we could use the default `elm/json` package and use something like
+    -- `Json.Decode.map4` here, but if we want to decode more than 8 fields, we can't
+    -- because the Json.Decode.map functions stop at Json.Decode.map8. 
+
+    -- Instead, since Json.Decode.Decoder is an applicative functor, we can use 
+    -- `pure` and `apply` to combine our decoders into a pipeline as shown below.
+    -- in this case `pure` is Json.Decode.succeed, and `apply` is elm's pipe operator (|>),
+    -- as defined in the NoRedInk/elm-json-decode-pipeline package (which we're using here)
+
+    -- this way we can decode an arbitrary number of additional fields, if we need to
+    (JD.succeed Audience)
+        |> JDP.required "id" JD.int
+        |> JDP.required "name" JD.string
+            -- the "type" field seems most reliable, so I used that one
+        |> JDP.custom audienceTypeDecoder
+        |> JDP.required "folder" (JD.nullable JD.int)
 
 
 -- Fixtures
