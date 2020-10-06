@@ -1,4 +1,7 @@
-module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
+module Data.AudienceFolder exposing
+    ( AudienceFolder, audienceFoldersJSON
+    , decoder, fetch
+    )
 
 {-| Data.AudienceFolder module
 
@@ -11,6 +14,11 @@ This module implements everything related to audience folder resource.
 
 -}
 
+import Json.Decode as D exposing (Decoder)
+import MockFetch exposing (mockFetch)
+
+
+
 -- Type definition
 
 
@@ -21,6 +29,19 @@ type alias AudienceFolder =
     , name : String
     , parent : Maybe Int
     }
+
+
+fetch : (Result D.Error a -> msg) -> Decoder a -> Cmd msg
+fetch =
+    mockFetch audienceFoldersJSON
+
+
+decoder : Decoder AudienceFolder
+decoder =
+    D.map3 AudienceFolder
+        (D.field "id" D.int)
+        (D.field "name" D.string)
+        (D.field "parent" <| D.nullable D.int)
 
 
 

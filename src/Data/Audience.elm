@@ -1,6 +1,6 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
-    , audiencesJSON
+    , decoder, fetch
     )
 
 {-| Data.Audiences module
@@ -10,9 +10,14 @@ This module implements everything related to audience resource.
 
 # Interface
 
-@docs AudienceType, Audience, audienceJSON
+@docs AudienceType, Audience
 
 -}
+
+import Json.Decode as D exposing (Decoder)
+import MockFetch exposing (mockFetch)
+
+
 
 -- Type definition
 
@@ -33,6 +38,40 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+fetch : (Result D.Error a -> msg) -> Decoder a -> Cmd msg
+fetch =
+    mockFetch audiencesJSON
+
+
+decoder : Decoder Audience
+decoder =
+    D.map4 Audience
+        (D.field "id" D.int)
+        (D.field "name" D.string)
+        (D.field "type" typeDecoder)
+        (D.field "folder" <| D.nullable D.int)
+
+
+typeDecoder : Decoder AudienceType
+typeDecoder =
+    D.andThen
+        (\type_ ->
+            case type_ of
+                "user" ->
+                    D.succeed Authored
+
+                "shared" ->
+                    D.succeed Shared
+
+                "curated" ->
+                    D.succeed Curated
+
+                _ ->
+                    D.fail <| "\"" ++ type_ ++ "\" is not a valid type."
+        )
+        D.string
 
 
 
