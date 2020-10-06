@@ -1,3 +1,7 @@
+# Preview
+**desktop**
+![Desktop Preview](media/preview.png?raw=true "Desktop Preview")
+
 # Challenge: Elm
 
 Hello! Welcome to the Elm Challenge.

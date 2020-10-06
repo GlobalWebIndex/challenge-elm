@@ -13,7 +13,6 @@ import Element.Font as EFont
 import Element.Input as EInput
 import Html
 import Html.Attributes
-import Html.Events
 import Icons
 import Json.Decode
 import Palette
@@ -112,6 +111,7 @@ init flags =
     ( model_, cmd_ )
 
 
+initLoadedModel : Dict.Dict Int FormattedAudience -> Dict.Dict Int FormattedAudienceFolder -> LoadedModel
 initLoadedModel loadedAudiences loadedAudienceFolders =
     { audiences = loadedAudiences
     , audienceFolders = loadedAudienceFolders
@@ -120,6 +120,7 @@ initLoadedModel loadedAudiences loadedAudienceFolders =
     }
 
 
+tryLoadingModelToLoaded : LoadingModel -> Model
 tryLoadingModelToLoaded loadingM =
     case ( loadingM.audiences, loadingM.audienceFolders ) of
         ( Just loadedAudiences, Just loadedAudienceFolders ) ->
@@ -287,6 +288,7 @@ update msg model =
 -}
 
 
+view : Model -> Html.Html Msg
 view model =
     let
         content =
@@ -365,6 +367,7 @@ sortButton audienceType audienceTypeToSortBy =
 -- the panel on the right hand side of the dashboard
 
 
+viewSortingPanel : Data.Audience.AudienceType -> E.Element Msg
 viewSortingPanel currentlySortBy =
     let
         buttons =
@@ -400,12 +403,14 @@ viewSortingPanel currentlySortBy =
 viewDashboard : LoadedModel -> E.Element Msg
 viewDashboard model =
     let
+        currentFolder : Maybe Int
         currentFolder =
             List.head model.currentFolderPath
 
         -- as per the requirements of the "SECOND_STEP.md", in the case that the
         -- audience to sort by is "Data.Audience.Shared", we just return a flattened
         -- list of "Shared" Audiences
+        filteredAudienceFolders : List (E.Element Msg)
         filteredAudienceFolders =
             case model.sortBy of
                 Data.Audience.Shared ->
@@ -416,6 +421,7 @@ viewDashboard model =
                         |> Dict.filter (\key value -> value.parent == currentFolder)
                         |> Dict.foldl viewFolder []
 
+        filteredAudiences : List (E.Element Msg)
         filteredAudiences =
             case model.sortBy of
                 Data.Audience.Shared ->
@@ -431,6 +437,7 @@ viewDashboard model =
 
         -- we would normally use an icon here that would represent "i" for
         -- "info", but a regular text element did the job well enough
+        coolI : E.Element Msg
         coolI =
             E.el
                 [ E.width <| E.px 15
@@ -441,6 +448,7 @@ viewDashboard model =
 
         -- according to "FIRST_STEP.md", we should only display the "back" button
         -- if we're not at the root of the tree
+        upperLeftBackButtonOrText : E.Element Msg
         upperLeftBackButtonOrText =
             case currentFolder of
                 Just _ ->
@@ -460,6 +468,7 @@ viewDashboard model =
                         ]
                         <| E.text upperLeftText
 
+        upperLeftText : String
         upperLeftText =
             case model.sortBy of
                 Data.Audience.Shared ->
@@ -468,6 +477,7 @@ viewDashboard model =
                 _ ->
                     "Click a folder to start browsing!"
 
+        upperRightInfoElement : E.Element Msg
         upperRightInfoElement =
             E.row
                 [ EBackground.color Palette.color4
@@ -488,6 +498,7 @@ viewDashboard model =
                 ]
 
         -- the little panel above the file browser
+        upperPanel : E.Element Msg
         upperPanel =
             E.row
                 [ E.height <| E.px 50
@@ -499,6 +510,7 @@ viewDashboard model =
                 , E.el [ E.alignRight ] upperRightInfoElement
                 ]
 
+        browser : E.Element Msg
         browser =
             E.column
                 [ E.width E.fill
@@ -581,6 +593,7 @@ viewAudience _ audience acc =
     item :: acc
 
 
+viewColor : E.Color -> E.Element Msg
 viewColor c =
     E.el
         [ E.width E.fill
@@ -593,6 +606,7 @@ viewColor c =
 
 
 -- this just wraps some element in a colored circle
+wrapColorCircle : E.Color -> E.Element Msg -> E.Element Msg
 wrapColorCircle color_ content_ =
     E.el
         [ E.padding 5
@@ -602,6 +616,7 @@ wrapColorCircle color_ content_ =
         content_
 
 
+colors : List E.Color
 colors =
     [ Palette.color0
     , Palette.color1
@@ -741,6 +756,7 @@ viewCircle color_ width startingPoint currentPosition =
 
 -- I haven't spent much time styling this because this is something the user shouldn't
 -- even see. No point in styling it just for it to look cute for the developers
+viewJsonError : Json.Decode.Error -> E.Element Msg
 viewJsonError err =
     let
         formattedErrText =
@@ -793,6 +809,7 @@ audienceFoldersToDict folders =
         |> Dict.fromList
 
 
+subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
         Loading _ ->
