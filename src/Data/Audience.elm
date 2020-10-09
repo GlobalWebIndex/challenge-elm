@@ -1,6 +1,6 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
-    , audiencesJSON
+    , Audiences(..), audiencesJSON, isFolderId, roots
     )
 
 {-| Data.Audiences module
@@ -33,6 +33,39 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+type Audiences
+    = Audiences (List Audience)
+
+
+roots : List Audience -> List Audience
+roots audiences =
+    List.filter isRoot audiences
+
+
+isRoot : Audience -> Bool
+isRoot audience =
+    case audience.folder of
+        Just _ ->
+            False
+
+        Nothing ->
+            True
+
+
+isFolderId : Int -> Audience -> Bool
+isFolderId id audience =
+    case audience.folder of
+        Just fId ->
+            if fId == id then
+                True
+
+            else
+                False
+
+        Nothing ->
+            False
 
 
 

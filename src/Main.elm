@@ -1,9 +1,9 @@
-module Main exposing (main, rootAudiences)
+module Main exposing (main)
 
 import Browser
 import Css as Css
-import Data.Audience exposing (..)
-import Data.AudienceFolder exposing (..)
+import Data.Audience as Audience exposing (Audience, AudienceType(..), Audiences(..), audiencesJSON, isFolderId)
+import Data.AudienceFolder as AudienceFolder exposing (AudienceFolder, Folders(..), audienceFoldersJSON, isParentId)
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (css)
 import Html.Styled.Events exposing (onClick)
@@ -33,70 +33,12 @@ type Model
     = DecodeFailed String
     | DecodeOk Folders Audiences CurrentLevel
 
-type Audiences = Audiences (List Audience)
-type Folders = Folders (List AudienceFolder)
+
 type alias CurrentLevel =
     { currentFolder : Maybe AudienceFolder
     , subFolders : List AudienceFolder
     , subAudiences : List Audience
     }
-
-rootAudienceFolders : List AudienceFolder -> List AudienceFolder
-rootAudienceFolders allAudienceFolders =
-    List.filter isRootAudienceFolder allAudienceFolders
-
-
-isRootAudienceFolder : AudienceFolder -> Bool
-isRootAudienceFolder folder =
-    case folder.parent of
-        Just _ ->
-            False
-
-        Nothing ->
-            True
-
-
-rootAudiences : List Audience -> List Audience
-rootAudiences allAudiences =
-    List.filter isRootAudience allAudiences
-
-
-isRootAudience : Audience -> Bool
-isRootAudience audience =
-    case audience.folder of
-        Just _ ->
-            False
-
-        Nothing ->
-            True
-
-
-folderIdIs : Int -> Audience -> Bool
-folderIdIs id audience =
-    case audience.folder of
-        Just fId ->
-            if fId == id then
-                True
-
-            else
-                False
-
-        Nothing ->
-            False
-
-
-parentIdIs : Int -> AudienceFolder -> Bool
-parentIdIs id folder =
-    case folder.parent of
-        Just fId ->
-            if fId == id then
-                True
-
-            else
-                False
-
-        Nothing ->
-            False
 
 
 init : () -> ( Model, Cmd Msg )
@@ -117,8 +59,8 @@ init _ =
                         (Audiences audiences)
                         (CurrentLevel
                             Nothing
-                            (rootAudienceFolders folders)
-                            (rootAudiences audiences)
+                            (AudienceFolder.roots folders)
+                            (Audience.roots audiences)
                         )
                     , Cmd.none
                     )
@@ -152,34 +94,37 @@ update msg model =
                                     List.head <| List.filter (\folder -> folder.id == parentId) folders
 
                                 newSubFolders =
-                                    List.filter (parentIdIs parentId) folders
+                                    List.filter (isParentId parentId) folders
 
                                 newSubAudiences =
-                                    List.filter (folderIdIs parentId) audiences
+                                    List.filter (isFolderId parentId) audiences
                             in
-                            ( DecodeOk  (Folders folders) 
-                                        (Audiences audiences) 
-                                        (CurrentLevel currentFolder newSubFolders newSubAudiences)
-                            , Cmd.none )
+                            ( DecodeOk (Folders folders)
+                                (Audiences audiences)
+                                (CurrentLevel currentFolder newSubFolders newSubAudiences)
+                            , Cmd.none
+                            )
 
                         Nothing ->
-                            ( DecodeOk  (Folders folders) 
-                                        (Audiences audiences)
-                                        (CurrentLevel Nothing (rootAudienceFolders folders) (rootAudiences audiences))
-                            , Cmd.none )
+                            ( DecodeOk (Folders folders)
+                                (Audiences audiences)
+                                (CurrentLevel Nothing (AudienceFolder.roots folders) (Audience.roots audiences))
+                            , Cmd.none
+                            )
 
                 OpenFolder folder ->
                     let
                         newSubFolders =
-                            List.filter (parentIdIs folder.id) folders
+                            List.filter (isParentId folder.id) folders
 
                         newSubAudiences =
-                            List.filter (folderIdIs folder.id) audiences
+                            List.filter (isFolderId folder.id) audiences
                     in
                     ( DecodeOk (Folders folders)
-                                (Audiences audiences)
-                                (CurrentLevel (Just folder) newSubFolders newSubAudiences)
-                    , Cmd.none )
+                        (Audiences audiences)
+                        (CurrentLevel (Just folder) newSubFolders newSubAudiences)
+                    , Cmd.none
+                    )
 
         DecodeFailed _ ->
             ( model, Cmd.none )
@@ -204,7 +149,7 @@ view model =
         DecodeFailed errorStr ->
             text errorStr
 
-        DecodeOk _ _ ({ currentFolder, subFolders, subAudiences }) ->
+        DecodeOk _ _ { currentFolder, subFolders, subAudiences } ->
             div []
                 [ viewCurrentFolder currentFolder (List.length subFolders + List.length subAudiences)
                 , div []
@@ -220,7 +165,7 @@ viewCurrentFolder maybeFolder filesLength =
         Just folder ->
             div [ onClick (GoUp folder), css [ folderCss True ] ]
                 [ text folder.name
-                , span [css [folderSize]] [text <| String.fromInt filesLength]
+                , span [ css [ folderSize ] ] [ text <| String.fromInt filesLength ]
                 ]
 
         Nothing ->
@@ -314,6 +259,7 @@ folderCss isOpen =
             , Css.marginRight (Css.px 8)
             ]
         ]
+
 
 folderSize : Css.Style
 folderSize =

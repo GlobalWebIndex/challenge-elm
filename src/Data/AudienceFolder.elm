@@ -1,4 +1,7 @@
-module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
+module Data.AudienceFolder exposing
+    ( AudienceFolder, audienceFoldersJSON
+    , Folders(..), isParentId, roots
+    )
 
 {-| Data.AudienceFolder module
 
@@ -21,6 +24,39 @@ type alias AudienceFolder =
     , name : String
     , parent : Maybe Int
     }
+
+
+type Folders
+    = Folders (List AudienceFolder)
+
+
+roots : List AudienceFolder -> List AudienceFolder
+roots allAudienceFolders =
+    List.filter isRoot allAudienceFolders
+
+
+isRoot : AudienceFolder -> Bool
+isRoot folder =
+    case folder.parent of
+        Just _ ->
+            False
+
+        Nothing ->
+            True
+
+
+isParentId : Int -> AudienceFolder -> Bool
+isParentId id folder =
+    case folder.parent of
+        Just fId ->
+            if fId == id then
+                True
+
+            else
+                False
+
+        Nothing ->
+            False
 
 
 
