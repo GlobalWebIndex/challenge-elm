@@ -41,9 +41,6 @@ type alias CurrentLevel =
     , subAudiences : List Audience
     }
 
--- type CurrentLevel = CurrentLevel (Maybe AudienceFolder) (List AudienceFolder) (List Audience)
-
-
 rootAudienceFolders : List AudienceFolder -> List AudienceFolder
 rootAudienceFolders allAudienceFolders =
     List.filter isRootAudienceFolder allAudienceFolders
