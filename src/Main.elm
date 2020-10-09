@@ -31,16 +31,17 @@ main =
 
 type Model
     = DecodeFailed String
-    | DecodeOk AudiencesAndFolder
+    | DecodeOk Folders Audiences CurrentLevel
 
-
-type alias AudiencesAndFolder =
-    { audienceFolders : List AudienceFolder
-    , audiences : List Audience
-    , currentAudienceFolders : List AudienceFolder
-    , currentAudiences : List Audience
-    , currentFolder : Maybe AudienceFolder
+type Audiences = Audiences (List Audience)
+type Folders = Folders (List AudienceFolder)
+type alias CurrentLevel =
+    { currentFolder : Maybe AudienceFolder
+    , subFolders : List AudienceFolder
+    , subAudiences : List Audience
     }
+
+-- type CurrentLevel = CurrentLevel (Maybe AudienceFolder) (List AudienceFolder) (List Audience)
 
 
 rootAudienceFolders : List AudienceFolder -> List AudienceFolder
@@ -111,16 +112,17 @@ init _ =
             D.decodeString (D.field "data" <| D.list audienceDecoder) audiencesJSON
     in
     case decodedAudienceFolders of
-        Ok audienceFolders ->
+        Ok folders ->
             case decodedAudiences of
                 Ok audiences ->
-                    ( DecodeOk <|
-                        AudiencesAndFolder
-                            audienceFolders
-                            audiences
-                            (rootAudienceFolders audienceFolders)
-                            (rootAudiences audiences)
+                    ( DecodeOk
+                        (Folders folders)
+                        (Audiences audiences)
+                        (CurrentLevel
                             Nothing
+                            (rootAudienceFolders folders)
+                            (rootAudiences audiences)
+                        )
                     , Cmd.none
                     )
 
@@ -143,35 +145,44 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model of
-        DecodeOk { audienceFolders, audiences, currentAudienceFolders, currentAudiences } ->
+        DecodeOk (Folders folders) (Audiences audiences) { subFolders, subAudiences } ->
             case msg of
                 GoUp parentFolder ->
                     case parentFolder.parent of
                         Just parentId ->
                             let
                                 currentFolder =
-                                    List.head <| List.filter (\folder -> folder.id == parentId) audienceFolders
+                                    List.head <| List.filter (\folder -> folder.id == parentId) folders
 
-                                nextFolders =
-                                    List.filter (parentIdIs parentId) audienceFolders
+                                newSubFolders =
+                                    List.filter (parentIdIs parentId) folders
 
-                                nextAudiences =
+                                newSubAudiences =
                                     List.filter (folderIdIs parentId) audiences
                             in
-                            ( DecodeOk <| AudiencesAndFolder audienceFolders audiences nextFolders nextAudiences currentFolder, Cmd.none )
+                            ( DecodeOk  (Folders folders) 
+                                        (Audiences audiences) 
+                                        (CurrentLevel currentFolder newSubFolders newSubAudiences)
+                            , Cmd.none )
 
                         Nothing ->
-                            ( DecodeOk <| AudiencesAndFolder audienceFolders audiences (rootAudienceFolders audienceFolders) (rootAudiences audiences) Nothing, Cmd.none )
+                            ( DecodeOk  (Folders folders) 
+                                        (Audiences audiences)
+                                        (CurrentLevel Nothing (rootAudienceFolders folders) (rootAudiences audiences))
+                            , Cmd.none )
 
                 OpenFolder folder ->
                     let
-                        nextFolders =
-                            List.filter (parentIdIs folder.id) audienceFolders
+                        newSubFolders =
+                            List.filter (parentIdIs folder.id) folders
 
-                        nextAudiences =
+                        newSubAudiences =
                             List.filter (folderIdIs folder.id) audiences
                     in
-                    ( DecodeOk <| AudiencesAndFolder audienceFolders audiences nextFolders nextAudiences (Just folder), Cmd.none )
+                    ( DecodeOk (Folders folders)
+                                (Audiences audiences)
+                                (CurrentLevel (Just folder) newSubFolders newSubAudiences)
+                    , Cmd.none )
 
         DecodeFailed _ ->
             ( model, Cmd.none )
@@ -196,22 +207,24 @@ view model =
         DecodeFailed errorStr ->
             text errorStr
 
-        DecodeOk { currentAudienceFolders, currentAudiences, currentFolder } ->
+        DecodeOk _ _ ({ currentFolder, subFolders, subAudiences }) ->
             div []
-                [ viewCurrentFolder currentFolder
+                [ viewCurrentFolder currentFolder (List.length subFolders + List.length subAudiences)
                 , div []
-                    (List.map (\folder -> viewAudienceFolder folder) currentAudienceFolders)
+                    (List.map (\folder -> viewAudienceFolder folder) subFolders)
                 , div []
-                    (List.map (\file -> viewAudience file) currentAudiences)
+                    (List.map (\file -> viewAudience file) subAudiences)
                 ]
 
 
-viewCurrentFolder : Maybe AudienceFolder -> Html Msg
-viewCurrentFolder maybeFolder =
+viewCurrentFolder : Maybe AudienceFolder -> Int -> Html Msg
+viewCurrentFolder maybeFolder filesLength =
     case maybeFolder of
         Just folder ->
             div [ onClick (GoUp folder), css [ folderCss True ] ]
-                [ text folder.name ]
+                [ text folder.name
+                , span [css [folderSize]] [text <| String.fromInt filesLength]
+                ]
 
         Nothing ->
             div [] []
@@ -274,8 +287,8 @@ fileCss : Css.Style
 fileCss =
     Css.batch
         [ Css.backgroundColor (Css.hex "#5f9ea0")
-        , Css.width (Css.px 200)
-        , Css.color (Css.hex "white")
+        , Css.width (Css.px 240)
+        , Css.color (Css.hex "#ffffff")
         , Css.fontSize (Css.px 19)
         , Css.padding (Css.px 20)
         , Css.borderRadius (Css.px 5)
@@ -299,6 +312,19 @@ folderCss isOpen =
         , Css.hover [ Css.backgroundColor (Css.hex "#4c7e80") ]
         , Css.after
             [ Css.property "content" content
-            , Css.float Css.right
+            , Css.float Css.left
+            , Css.marginTop (Css.px -4)
+            , Css.marginRight (Css.px 8)
             ]
+        ]
+
+folderSize : Css.Style
+folderSize =
+    Css.batch
+        [ Css.float Css.right
+        , Css.backgroundColor (Css.hex "#3d6566")
+        , Css.color (Css.hex "#ffffff")
+        , Css.borderRadius (Css.px 4)
+        , Css.paddingRight (Css.px 6)
+        , Css.paddingLeft (Css.px 6)
         ]
