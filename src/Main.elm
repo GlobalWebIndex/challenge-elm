@@ -31,7 +31,7 @@ main =
 
 type Model
     = DecodeFailed String
-    | DecodeOk Folders Audiences (E.Zipper AudienceFolder Audience)
+    | DecodeOk Folders Audiences (List Int) (E.Zipper AudienceFolder Audience)
 
 
 type alias CurrentLevel =
@@ -57,6 +57,7 @@ init _ =
                     ( DecodeOk
                         (Folders folders)
                         (Audiences audiences)
+                        []
                         (E.createRoot
                             |> E.addFolders (AudienceFolder.roots folders)
                             |> E.addFiles (Audience.roots audiences)
@@ -83,12 +84,13 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model of
-        DecodeOk (Folders folders) (Audiences audiences) explorer ->
+        DecodeOk (Folders folders) (Audiences audiences) expandedFolderIds explorer ->
             case msg of
                 GoUp parentFolder ->
                     ( DecodeOk 
                             (Folders folders)
                             (Audiences audiences)
+                            expandedFolderIds
                             (explorer |> E.goUp)
                     , Cmd.none)
 
@@ -100,11 +102,21 @@ update msg model =
                         newSubAudiences =
                             List.filter (isFolderId folder.id) audiences
                     in
-                    ( DecodeOk (Folders folders)
-                        (Audiences audiences)
-                        (explorer |> E.goTo folder.id |> E.addFolders newSubFolders |> E.addFiles newSubAudiences)
-                    , Cmd.none
-                    )
+                    case List.filter ((==) folder.id) expandedFolderIds of
+                       [] ->
+                        ( DecodeOk (Folders folders)
+                            (Audiences audiences)
+                            (folder.id::expandedFolderIds)
+                            (explorer |> E.goTo folder.id |> E.addFolders newSubFolders |> E.addFiles newSubAudiences)
+                        , Cmd.none
+                        )
+                       _ ->
+                        ( DecodeOk (Folders folders)
+                            (Audiences audiences)
+                            (expandedFolderIds)
+                            (explorer |> E.goTo folder.id)
+                        , Cmd.none
+                        )
 
         DecodeFailed _ ->
             ( model, Cmd.none )
@@ -129,7 +141,7 @@ view model =
         DecodeFailed errorStr ->
             text errorStr
 
-        DecodeOk _ _ explorer ->
+        DecodeOk _ _ _ explorer ->
             let
                 subFolders = explorer |> E.subFolders
                 subAudiences = explorer |> E.subFiles
