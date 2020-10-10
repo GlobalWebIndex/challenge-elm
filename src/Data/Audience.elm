@@ -1,8 +1,10 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
-    , Audiences(..), audiencesJSON, isFolderId, roots
+    , audiencesJSON, isFolderId, roots
+    , decoder
     )
-
+import Json.Decode as D
+import Json.Decode.Extra as DX
 {-| Data.Audiences module
 
 This module implements everything related to audience resource.
@@ -17,8 +19,8 @@ This module implements everything related to audience resource.
 -- Type definition
 
 
-{-| Audience type
--}
+--{-| Audience type
+---}
 type AudienceType
     = Authored
     | Shared
@@ -33,10 +35,6 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
-
-
-type Audiences
-    = Audiences (List Audience)
 
 
 roots : List Audience -> List Audience
@@ -67,6 +65,34 @@ isFolderId id audience =
         Nothing ->
             False
 
+-- Decoders
+decoder : D.Decoder (List Audience)
+decoder =
+    D.field "data" <| D.list audienceDecoder
+
+audienceDecoder : D.Decoder Audience
+audienceDecoder =
+    D.succeed Audience
+        |> DX.andMap (D.field "id" D.int)
+        |> DX.andMap (D.field "name" D.string)
+        |> DX.andMap (D.field "type" (D.andThen audienceTypeDecoder D.string))
+        |> DX.andMap (D.field "folder" (D.nullable D.int))
+
+
+audienceTypeDecoder : String -> D.Decoder AudienceType
+audienceTypeDecoder typeString =
+    case typeString of
+        "user" ->
+            D.succeed Authored
+
+        "shared" ->
+            D.succeed Shared
+
+        "curated" ->
+            D.succeed Curated
+
+        _ ->
+            D.fail ("this is not an audience type: " ++ typeString)
 
 
 -- Fixtures

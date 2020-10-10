@@ -1,7 +1,6 @@
-module Data.AudienceFolder exposing
-    ( AudienceFolder, audienceFoldersJSON
-    , Folders(..), isParentId, roots
-    )
+module Data.AudienceFolder exposing (AudienceFolder, roots, isParentId, audienceFoldersJSON, decoder)
+import Json.Decode as D
+import Json.Decode.Extra as DX
 
 {-| Data.AudienceFolder module
 
@@ -17,18 +16,15 @@ This module implements everything related to audience folder resource.
 -- Type definition
 
 
-{-| Basic type of AudienceFolder record
--}
+--{-| Basic type of AudienceFolder record
+---}
 type alias AudienceFolder =
     { id : Int
     , name : String
     , parent : Maybe Int
     }
 
-
-type Folders
-    = Folders (List AudienceFolder)
-
+type Folders = Folders (List AudienceFolder)
 
 roots : List AudienceFolder -> List AudienceFolder
 roots allAudienceFolders =
@@ -58,6 +54,21 @@ isParentId id folder =
         Nothing ->
             False
 
+
+-- Decoders
+
+decoder : D.Decoder (List AudienceFolder)
+decoder =
+    D.field "data" <| D.list audienceFolderDecoder
+
+
+
+audienceFolderDecoder : D.Decoder AudienceFolder
+audienceFolderDecoder =
+    D.succeed AudienceFolder
+        |> DX.andMap (D.field "id" D.int)
+        |> DX.andMap (D.field "name" D.string)
+        |> DX.andMap (D.field "parent" (D.nullable D.int))
 
 
 -- Fixtures

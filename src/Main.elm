@@ -2,8 +2,8 @@ module Main exposing (main)
 
 import Browser
 import Css as Css
-import Data.Audience as Audience exposing (Audience, AudienceType(..), Audiences(..), audiencesJSON, isFolderId)
-import Data.AudienceFolder as AudienceFolder exposing (AudienceFolder, Folders(..), audienceFoldersJSON, isParentId)
+import Data.Audience as Audience exposing (Audience, AudienceType(..), audiencesJSON, isFolderId)
+import Data.AudienceFolder as AudienceFolder exposing (AudienceFolder, audienceFoldersJSON, isParentId)
 import Explorer as E
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (css)
@@ -13,7 +13,7 @@ import Json.Decode.Extra as DX
 
 
 
--- MAIN
+-- Main
 
 
 main : Program () Model Msg
@@ -27,35 +27,31 @@ main =
 
 
 
--- MODEL
+-- Model
 
 
 type Model
     = DecodeFailed String
-    | DecodeOk Folders Audiences (List Int) (E.Zipper AudienceFolder Audience)
+    | DecodeOk (List AudienceFolder) (List Audience) (E.Zipper AudienceFolder Audience)
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
         decodedAudienceFolders =
-            D.decodeString (D.field "data" <| D.list audienceFolderDecoder) audienceFoldersJSON
+            D.decodeString AudienceFolder.decoder audienceFoldersJSON
 
         decodedAudiences =
-            D.decodeString (D.field "data" <| D.list audienceDecoder) audiencesJSON
+            D.decodeString Audience.decoder audiencesJSON
     in
     case decodedAudienceFolders of
         Ok folders ->
             case decodedAudiences of
                 Ok audiences ->
                     ( DecodeOk
-                        (Folders folders)
-                        (Audiences audiences)
-                        []
-                        (E.createRoot
-                            |> E.addFolders (AudienceFolder.roots folders)
-                            |> E.addFiles (Audience.roots audiences)
-                        )
+                        folders
+                        audiences
+                        (E.createRoot (AudienceFolder.roots folders) (Audience.roots audiences))
                     , Cmd.none
                     )
 
@@ -67,59 +63,51 @@ init _ =
 
 
 
--- UPDATE
+-- Update
 
 
 type Msg
-    = GoUp AudienceFolder
-    | OpenFolder AudienceFolder
+    = GoUp
+    | OpenFolder (E.Zipper AudienceFolder Audience)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model of
-        DecodeOk (Folders folders) (Audiences audiences) expandedFolderIds explorer ->
+        DecodeOk folders audiences explorer ->
             case msg of
-                GoUp parentFolder ->
+                GoUp ->
                     ( DecodeOk
-                        (Folders folders)
-                        (Audiences audiences)
-                        expandedFolderIds
+                        folders
+                        audiences
                         (explorer |> E.goUp)
                     , Cmd.none
                     )
 
-                OpenFolder folder ->
+                OpenFolder zipper ->
                     let
+                        folder =
+                            E.current zipper |> Maybe.withDefault (AudienceFolder -1 "dummy" Nothing)
+
                         newSubFolders =
-                            List.filter (isParentId folder.id) folders
+                            \_ -> List.filter (isParentId folder.id) folders
 
                         newSubAudiences =
-                            List.filter (isFolderId folder.id) audiences
+                            \_ -> List.filter (isFolderId folder.id) audiences
                     in
-                    case List.filter ((==) folder.id) expandedFolderIds of
-                        [] ->
-                            ( DecodeOk (Folders folders)
-                                (Audiences audiences)
-                                (folder.id :: expandedFolderIds)
-                                (explorer |> E.goTo folder.id |> E.addFolders newSubFolders |> E.addFiles newSubAudiences)
-                            , Cmd.none
-                            )
-
-                        _ ->
-                            ( DecodeOk (Folders folders)
-                                (Audiences audiences)
-                                expandedFolderIds
-                                (explorer |> E.goTo folder.id)
-                            , Cmd.none
-                            )
+                    ( DecodeOk
+                        folders
+                        audiences
+                        (zipper |> E.expand newSubFolders newSubAudiences)
+                    , Cmd.none
+                    )
 
         DecodeFailed _ ->
             ( model, Cmd.none )
 
 
 
--- SUBSCRIPTIONS
+-- Subscriptions
 
 
 subscriptions : Model -> Sub Msg
@@ -128,7 +116,7 @@ subscriptions model =
 
 
 
--- VIEW
+-- View
 
 
 view : Model -> Html Msg
@@ -137,7 +125,7 @@ view model =
         DecodeFailed errorStr ->
             text errorStr
 
-        DecodeOk _ _ _ explorer ->
+        DecodeOk _ _ explorer ->
             let
                 subFolders =
                     explorer |> E.subFolders
@@ -148,7 +136,7 @@ view model =
             div []
                 [ viewCurrentFolder (explorer |> E.current) (List.length subFolders + List.length subAudiences)
                 , div []
-                    (List.map (\folder -> viewAudienceFolder folder) subFolders)
+                    (List.map (\zipper -> viewAudienceFolder zipper) subFolders)
                 , div []
                     (List.map (\file -> viewAudience file) subAudiences)
                 ]
@@ -158,7 +146,7 @@ viewCurrentFolder : Maybe AudienceFolder -> Int -> Html Msg
 viewCurrentFolder maybeFolder filesLength =
     case maybeFolder of
         Just folder ->
-            div [ onClick (GoUp folder), css [ folderCss True ] ]
+            div [ onClick GoUp, css [ folderCss True ] ]
                 [ text folder.name
                 , span [ css [ folderSize ] ] [ text <| String.fromInt filesLength ]
                 ]
@@ -173,51 +161,24 @@ viewAudience audience =
         [ text audience.name ]
 
 
-viewAudienceFolder : AudienceFolder -> Html Msg
-viewAudienceFolder audienceFolder =
-    div [ onClick (OpenFolder audienceFolder), css [ folderCss False ] ]
-        [ text audienceFolder.name ]
+viewAudienceFolder : E.Zipper AudienceFolder Audience -> Html Msg
+viewAudienceFolder zipper =
+    let
+        maybeFolder =
+            zipper |> E.current
+    in
+    case maybeFolder of
+        Just folder ->
+            div [ onClick (OpenFolder zipper), css [ folderCss False ] ]
+                [ text folder.name ]
+
+        -- impossible state
+        Nothing ->
+            div [] []
 
 
 
--- DECODERS
-
-
-audienceFolderDecoder : D.Decoder AudienceFolder
-audienceFolderDecoder =
-    D.succeed AudienceFolder
-        |> DX.andMap (D.field "id" D.int)
-        |> DX.andMap (D.field "name" D.string)
-        |> DX.andMap (D.field "parent" (D.nullable D.int))
-
-
-audienceDecoder : D.Decoder Audience
-audienceDecoder =
-    D.succeed Audience
-        |> DX.andMap (D.field "id" D.int)
-        |> DX.andMap (D.field "name" D.string)
-        |> DX.andMap (D.field "type" (D.andThen audienceTypeDecoder D.string))
-        |> DX.andMap (D.field "folder" (D.nullable D.int))
-
-
-audienceTypeDecoder : String -> D.Decoder AudienceType
-audienceTypeDecoder typeString =
-    case typeString of
-        "user" ->
-            D.succeed Authored
-
-        "shared" ->
-            D.succeed Shared
-
-        "curated" ->
-            D.succeed Curated
-
-        _ ->
-            D.fail ("this is not an audience type: " ++ typeString)
-
-
-
--- CSS
+-- Css
 
 
 fileCss : Css.Style
