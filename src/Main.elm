@@ -10,7 +10,7 @@ import Html.Styled.Events exposing (onClick)
 import Json.Decode as D
 import Json.Decode.Extra as DX
 
-
+import Explorer as E
 
 -- MAIN
 
@@ -31,11 +31,11 @@ main =
 
 type Model
     = DecodeFailed String
-    | DecodeOk Folders Audiences CurrentLevel
+    | DecodeOk Folders Audiences (E.Zipper AudienceFolder Audience)
 
 
 type alias CurrentLevel =
-    { currentFolder : Maybe AudienceFolder
+    { currentFolder : E.Zipper AudienceFolder Audience
     , subFolders : List AudienceFolder
     , subAudiences : List Audience
     }
@@ -57,10 +57,9 @@ init _ =
                     ( DecodeOk
                         (Folders folders)
                         (Audiences audiences)
-                        (CurrentLevel
-                            Nothing
-                            (AudienceFolder.roots folders)
-                            (Audience.roots audiences)
+                        (E.createRoot
+                            |> E.addFolders (AudienceFolder.roots folders)
+                            |> E.addFiles (Audience.roots audiences)
                         )
                     , Cmd.none
                     )
@@ -84,33 +83,14 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model of
-        DecodeOk (Folders folders) (Audiences audiences) { subFolders, subAudiences } ->
+        DecodeOk (Folders folders) (Audiences audiences) explorer ->
             case msg of
                 GoUp parentFolder ->
-                    case parentFolder.parent of
-                        Just parentId ->
-                            let
-                                currentFolder =
-                                    List.head <| List.filter (\folder -> folder.id == parentId) folders
-
-                                newSubFolders =
-                                    List.filter (isParentId parentId) folders
-
-                                newSubAudiences =
-                                    List.filter (isFolderId parentId) audiences
-                            in
-                            ( DecodeOk (Folders folders)
-                                (Audiences audiences)
-                                (CurrentLevel currentFolder newSubFolders newSubAudiences)
-                            , Cmd.none
-                            )
-
-                        Nothing ->
-                            ( DecodeOk (Folders folders)
-                                (Audiences audiences)
-                                (CurrentLevel Nothing (AudienceFolder.roots folders) (Audience.roots audiences))
-                            , Cmd.none
-                            )
+                    ( DecodeOk 
+                            (Folders folders)
+                            (Audiences audiences)
+                            (explorer |> E.goUp)
+                    , Cmd.none)
 
                 OpenFolder folder ->
                     let
@@ -122,7 +102,7 @@ update msg model =
                     in
                     ( DecodeOk (Folders folders)
                         (Audiences audiences)
-                        (CurrentLevel (Just folder) newSubFolders newSubAudiences)
+                        (explorer |> E.goTo folder.id |> E.addFolders newSubFolders |> E.addFiles newSubAudiences)
                     , Cmd.none
                     )
 
@@ -149,9 +129,13 @@ view model =
         DecodeFailed errorStr ->
             text errorStr
 
-        DecodeOk _ _ { currentFolder, subFolders, subAudiences } ->
+        DecodeOk _ _ explorer ->
+            let
+                subFolders = explorer |> E.subFolders
+                subAudiences = explorer |> E.subFiles
+            in
             div []
-                [ viewCurrentFolder currentFolder (List.length subFolders + List.length subAudiences)
+                [ viewCurrentFolder (explorer |> E.current) (List.length subFolders + List.length subAudiences)
                 , div []
                     (List.map (\folder -> viewAudienceFolder folder) subFolders)
                 , div []
@@ -201,14 +185,14 @@ audienceDecoder =
     D.succeed Audience
         |> DX.andMap (D.field "id" D.int)
         |> DX.andMap (D.field "name" D.string)
-        |> DX.andMap (D.field "type" (D.andThen audienceTypeDecoder D.string) |> DX.withDefault Shared)
+        |> DX.andMap (D.field "type" (D.andThen audienceTypeDecoder D.string))
         |> DX.andMap (D.field "folder" (D.nullable D.int))
 
 
 audienceTypeDecoder : String -> D.Decoder AudienceType
 audienceTypeDecoder typeString =
     case typeString of
-        "authored" ->
+        "user" ->
             D.succeed Authored
 
         "shared" ->
