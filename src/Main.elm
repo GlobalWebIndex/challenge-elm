@@ -4,6 +4,7 @@ import Browser
 import Browser.Events
 import Data.Audience
 import Data.AudienceFolder
+import Data.AudienceTree
 import Dict
 import Element as E -- elm-ui
 import Element.Background as EBackground
@@ -21,6 +22,31 @@ import Task
 import Time
 
 
+type alias History =
+    { root : Data.AudienceTree.AudienceTree
+    -- this list tracks the depth that we went to into an AudienceTree
+    -- it takes the form of [ currentLevel, parent, grandparent, etc ]
+    , points : List Data.AudienceTree.AudienceTree
+    }
+
+getCurrentPoint : History -> Data.AudienceTree.AudienceTree
+getCurrentPoint history =
+    case history.points of
+        [] ->
+            history.root
+        x :: xs ->
+            x
+
+tail history =
+    case history.points of
+        [] ->
+            { root = history.root
+            , points = []
+            }
+        x :: xs ->
+            { root = history.root
+            , points = xs
+            }
 
 -- we could perhaps model this so that you can only make a "FolderClicked" Msg
 -- or "SortBy" Msg only after the model has loaded up, but I don't think this is
@@ -28,9 +54,9 @@ import Time
 
 
 type Msg
-    = FolderClicked Int
+    = FolderClicked Data.AudienceTree.AudienceTree
     | GoBack
-    | SortBy Data.Audience.AudienceType
+    | FilterBy Data.Audience.AudienceType
     | GotAudiencesJSON String
     | GotAudienceFoldersJSON String
     | GotTime Time.Posix
@@ -60,23 +86,19 @@ type Model
 
 
 type alias LoadingModel =
-    { audiences : Maybe (Dict.Dict Int FormattedAudience)
-    , audienceFolders : Maybe (Dict.Dict Int FormattedAudienceFolder)
+    { audiences : Maybe (Dict.Dict Int Data.Audience.Audience)
+    , audienceFolders : Maybe (Dict.Dict Int Data.AudienceFolder.AudienceFolder)
     , time : Maybe Time.Posix
     }
 
 
 type alias LoadedModel =
-    { audiences : Dict.Dict Int FormattedAudience
-    , audienceFolders : Dict.Dict Int FormattedAudienceFolder
-
-    -- we store the full path, because we want to record the full history
-    -- to go back in the tree of folders
-    , currentFolderPath : List Int
+    { categorizedAudiences : Data.AudienceTree.CategorizedAudiences
+    , history : Maybe History -- if there's no history, we "filter" by shared
 
     -- according to "SECOND_STEP.md" there must be at least one category selected
     -- at any time
-    , sortBy : Data.Audience.AudienceType
+    , filterBy : Data.Audience.AudienceType
     }
 
 
@@ -90,7 +112,7 @@ fakeHttpGet msg time =
 
 
 init : () -> ( Model, Cmd Msg )
-init flags =
+init _ =
     let
         model_ =
             Loading
@@ -105,19 +127,21 @@ init flags =
         cmd_ =
             Cmd.batch
                 [ fakeHttpGet (GotAudiencesJSON Data.Audience.audiencesJSON) 300
-                , fakeHttpGet (GotAudienceFoldersJSON Data.AudienceFolder.audienceFoldersJSON) 2000
+                , fakeHttpGet (GotAudienceFoldersJSON Data.AudienceFolder.audienceFoldersJSON) 200
                 ]
     in
     ( model_, cmd_ )
 
 
-initLoadedModel : Dict.Dict Int FormattedAudience -> Dict.Dict Int FormattedAudienceFolder -> LoadedModel
+initLoadedModel : Dict.Dict Int Data.Audience.Audience -> Dict.Dict Int Data.AudienceFolder.AudienceFolder -> LoadedModel
 initLoadedModel loadedAudiences loadedAudienceFolders =
-    { audiences = loadedAudiences
-    , audienceFolders = loadedAudienceFolders
-    , currentFolderPath = []
-    , sortBy = Data.Audience.Authored
-    }
+    let
+        categorizedAudiences = Data.AudienceTree.constructCategorizedAudiences loadedAudiences loadedAudienceFolders
+    in
+        { categorizedAudiences = categorizedAudiences
+        , history = Just { root = categorizedAudiences.authoredAudienceTree , points = [] }
+        , filterBy = Data.Audience.Authored
+        }
 
 
 tryLoadingModelToLoaded : LoadingModel -> Model
@@ -126,7 +150,7 @@ tryLoadingModelToLoaded loadingM =
         ( Just loadedAudiences, Just loadedAudienceFolders ) ->
             Loaded (initLoadedModel loadedAudiences loadedAudienceFolders)
 
-        ( _, _ ) ->
+        _ ->
             Loading loadingM
 
 
@@ -175,21 +199,36 @@ update msg model =
 
         ( FolderClicked sel, Loaded loadedModel ) ->
             Loaded
-                { loadedModel
-                    | currentFolderPath = sel :: loadedModel.currentFolderPath
-                }
+                <| case loadedModel.history of
+                    Nothing ->
+                        loadedModel
+                    Just hs ->
+                        { loadedModel
+                            | history = Just { hs | points = sel :: hs.points }
+                        }
 
         ( GoBack, Loaded loadedModel ) ->
             Loaded
-                { loadedModel
-                    | currentFolderPath = List.drop 1 loadedModel.currentFolderPath
-                }
+                <| case loadedModel.history of
+                    Nothing ->
+                        loadedModel
+                    Just hs ->
+                        { loadedModel
+                            | history = Just (tail hs)
+                        }
 
-        ( SortBy audienceType, Loaded loadedModel ) ->
+        ( FilterBy audienceType, Loaded loadedModel ) ->
             Loaded
                 { loadedModel
-                    | sortBy = audienceType
-                    , currentFolderPath = []
+                    | filterBy = audienceType
+                    , history = 
+                        case audienceType of
+                            Data.Audience.Authored ->
+                                Just { root = loadedModel.categorizedAudiences.authoredAudienceTree, points = [] }
+                            Data.Audience.Curated ->
+                                Just { root = loadedModel.categorizedAudiences.curatedAudienceTree, points = [] }
+                            Data.Audience.Shared ->
+                                Nothing
                 }
 
         ( GotTime time, Loading loadingModel ) ->
@@ -359,7 +398,7 @@ sortButton audienceType audienceTypeToSortBy =
         , EBorder.color <| Palette.color3
         ]
         { label = label
-        , onPress = Just (SortBy audienceType)
+        , onPress = Just (FilterBy audienceType)
         }
 
 
@@ -372,10 +411,10 @@ viewSortingPanel currentlySortBy =
     let
         buttons =
             List.map
-                (\btn -> btn currentlySortBy)
-                [ sortButton Data.Audience.Authored
-                , sortButton Data.Audience.Curated
-                , sortButton Data.Audience.Shared
+                (\btn -> sortButton btn currentlySortBy)
+                [ Data.Audience.Authored
+                , Data.Audience.Curated
+                , Data.Audience.Shared
                 ]
     in
     E.column
@@ -403,37 +442,23 @@ viewSortingPanel currentlySortBy =
 viewDashboard : LoadedModel -> E.Element Msg
 viewDashboard model =
     let
-        currentFolder : Maybe Int
-        currentFolder =
-            List.head model.currentFolderPath
-
-        -- as per the requirements of the "SECOND_STEP.md", in the case that the
-        -- audience to sort by is "Data.Audience.Shared", we just return a flattened
-        -- list of "Shared" Audiences
-        filteredAudienceFolders : List (E.Element Msg)
-        filteredAudienceFolders =
-            case model.sortBy of
-                Data.Audience.Shared ->
+        audienceFolders =
+            case model.history of
+                Just hs ->
+                    getCurrentPoint hs
+                        |> Data.AudienceTree.getSubFolders
+                        |> Dict.values
+                        |> List.foldl viewFolder []
+                Nothing ->
                     []
-
-                _ ->
-                    model.audienceFolders
-                        |> Dict.filter (\key value -> value.parent == currentFolder)
-                        |> Dict.foldl viewFolder []
-
-        filteredAudiences : List (E.Element Msg)
-        filteredAudiences =
-            case model.sortBy of
-                Data.Audience.Shared ->
-                    model.audiences
-                        |> Dict.filter (\key value -> value.type_ == model.sortBy)
-                        |> Dict.foldl viewAudience []
-
-                _ ->
-                    model.audiences
-                        |> Dict.filter (\key value -> value.folder == currentFolder)
-                        |> Dict.filter (\key value -> value.type_ == model.sortBy)
-                        |> Dict.foldl viewAudience []
+        audiences =
+            case model.history of
+                Just hs ->
+                    getCurrentPoint hs
+                        |> Data.AudienceTree.getAudiences
+                        |> List.foldl viewAudience []
+                Nothing ->
+                    Debug.log "" <| List.foldl viewAudience [] model.categorizedAudiences.sharedAudiences
 
         -- we would normally use an icon here that would represent "i" for
         -- "info", but a regular text element did the job well enough
@@ -450,17 +475,24 @@ viewDashboard model =
         -- if we're not at the root of the tree
         upperLeftBackButtonOrText : E.Element Msg
         upperLeftBackButtonOrText =
-            case currentFolder of
-                Just _ ->
-                    EInput.button
-                        [ E.centerY
-                        , EBackground.color Palette.color4
-                        , EBorder.rounded 3
-                        , E.paddingXY 7 7
-                        ]
-                        { onPress = Just GoBack
-                        , label = E.text "Go Back"
-                        }
+            case model.history of
+                Just hs ->
+                    case hs.points of
+                        [] ->
+                            E.el
+                                [ E.centerY
+                                ]
+                                <| E.text upperLeftText
+                        els ->
+                            EInput.button
+                                [ E.centerY
+                                , EBackground.color Palette.color4
+                                , EBorder.rounded 3
+                                , E.paddingXY 7 7
+                                ]
+                                { onPress = Just GoBack
+                                , label = E.text "Go Back"
+                                }
 
                 Nothing ->
                     E.el
@@ -470,7 +502,7 @@ viewDashboard model =
 
         upperLeftText : String
         upperLeftText =
-            case model.sortBy of
+            case model.filterBy of
                 Data.Audience.Shared ->
                     "Displaying Shared audiences from all folders"
 
@@ -492,9 +524,9 @@ viewDashboard model =
                     [ E.text "Currently sorting by "
                     , E.el
                         [ EFont.bold ]
-                        <| E.text (Data.Audience.audienceTypeToString model.sortBy)
+                        <| E.text (Data.Audience.audienceTypeToString model.filterBy)
                     ]
-                , wrapColorCircle Palette.color3 coolI -- we wrap it in a colored circle
+                , wrapColorCircle Palette.color3 coolI
                 ]
 
         -- the little panel above the file browser
@@ -532,26 +564,26 @@ viewDashboard model =
                     , E.spacing 1
                     ]
                     -- folders first, just like "FIRST_STEP.md" says
-                    (filteredAudienceFolders ++ filteredAudiences)
+                    (audienceFolders ++ audiences )
                 ]
     in
     E.row
         [ E.spacing 20
         ]
         [ E.el [ E.alignTop, E.width <| E.px 700 ] browser
-        , viewSortingPanel model.sortBy
+        , viewSortingPanel model.filterBy
         ]
 
 
-viewFolder : Int -> FormattedAudienceFolder -> List (E.Element Msg) -> List (E.Element Msg)
-viewFolder id folder acc =
+viewFolder : Data.AudienceTree.AudienceTree -> List (E.Element Msg) -> List (E.Element Msg)
+viewFolder folder acc =
     let
         -- we view a "folder" as a row: the icon, and the name of the folder
         item =
             E.row
                 [ E.paddingXY 15 10
                 , EBackground.color Palette.gray5
-                , EEvents.onClick (FolderClicked id)
+                , EEvents.onClick (FolderClicked folder)
                 , EFont.color Palette.gray0
                 , E.width E.fill
                 , E.spacing 15
@@ -563,14 +595,14 @@ viewFolder id folder acc =
                     , E.height <| E.px 18
                     ]
                     <| E.html <| Icons.folder "#6ea4fc"
-                , E.text folder.name
+                , E.text (Data.AudienceTree.getName folder)
                 ]
     in
     item :: acc
 
 
-viewAudience : Int -> FormattedAudience -> List (E.Element Msg) -> List (E.Element Msg)
-viewAudience _ audience acc =
+viewAudience : Data.Audience.Audience -> List (E.Element Msg) -> List (E.Element Msg)
+viewAudience audience acc =
     let
         -- we view an "audience" as a row: the icon, and the name of the audience
         item =
@@ -633,9 +665,7 @@ viewLoading loadingModel =
         currentTime =
             case loadingModel.time of
                 Just t ->
-                    toFloat (Time.posixToMillis t) / 70
-
-                -- this controls the speed of the animation
+                    toFloat (Time.posixToMillis t) / 70 -- this controls the speed of the animation
                 Nothing ->
                     0
 
@@ -782,30 +812,17 @@ viewJsonError err =
 -- intermediate representation for "audience"s and "audienceFolder"s , so we
 -- can easily make dicts out of them
 
-type alias FormattedAudience =
-    { name : String
-    , type_ : Data.Audience.AudienceType
-    , folder : Maybe Int
-    }
-
-
-type alias FormattedAudienceFolder =
-    { name : String
-    , parent : Maybe Int
-    }
-
-
-audiencesToDict : List Data.Audience.Audience -> Dict.Dict Int FormattedAudience
+-- audiencesToDict : List Data.Audience.Audience -> Dict.Dict Int FormattedAudience
 audiencesToDict audiences =
     audiences
-        |> List.map (\a -> ( a.id, FormattedAudience a.name a.type_ a.folder ))
+        |> List.map (\a -> ( a.id, a ))
         |> Dict.fromList
 
 
-audienceFoldersToDict : List Data.AudienceFolder.AudienceFolder -> Dict.Dict Int FormattedAudienceFolder
+-- audienceFoldersToDict : List Data.AudienceFolder.AudienceFolder -> Dict.Dict Int FormattedAudienceFolder
 audienceFoldersToDict folders =
     folders
-        |> List.map (\f -> ( f.id, FormattedAudienceFolder f.name f.parent ))
+        |> List.map (\f -> ( f.id, f ))
         |> Dict.fromList
 
 

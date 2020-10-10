@@ -68,14 +68,15 @@ audienceTypeDecoder : JD.Decoder AudienceType
 audienceTypeDecoder =
     let
         typeToAudienceType t =
-            if t == "curated" then
-                JD.succeed Curated
-            else if t == "shared" then
-                JD.succeed Shared
-            else if t == "user" then
-                JD.succeed Authored
-            else
-                JD.fail <| """valid `type` strings are either "curated", "shared", or "user". Instead, we got: """ ++ t
+            case t of
+                "curated" ->
+                    JD.succeed Curated
+                "shared" ->
+                    JD.succeed Shared
+                "user" ->
+                    JD.succeed Authored
+                _ ->
+                    JD.fail <| """valid `type` strings are either "curated", "shared", or "user". Instead, we got: """ ++ t
     in
         (JD.field "type" JD.string)
             |> JD.andThen typeToAudienceType
