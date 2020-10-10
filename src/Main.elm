@@ -35,13 +35,6 @@ type Model
     | DecodeOk Folders Audiences (List Int) (E.Zipper AudienceFolder Audience)
 
 
-type alias CurrentLevel =
-    { currentFolder : E.Zipper AudienceFolder Audience
-    , subFolders : List AudienceFolder
-    , subAudiences : List Audience
-    }
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
