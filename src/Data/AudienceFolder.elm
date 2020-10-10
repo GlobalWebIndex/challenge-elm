@@ -1,4 +1,11 @@
-module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
+module Data.AudienceFolder exposing 
+    ( AudienceFolder
+    , audienceFoldersJSON
+    , audienceFolderDecoder
+    )
+
+import Json.Decode as JD
+import Json.Decode.Pipeline as JDP
 
 {-| Data.AudienceFolder module
 
@@ -14,7 +21,7 @@ This module implements everything related to audience folder resource.
 -- Type definition
 
 
-{-| Basic type of AudienceFolder record
+{- Basic type of AudienceFolder record
 -}
 type alias AudienceFolder =
     { id : Int
@@ -22,6 +29,12 @@ type alias AudienceFolder =
     , parent : Maybe Int
     }
 
+audienceFolderDecoder : JD.Decoder AudienceFolder
+audienceFolderDecoder =
+    (JD.succeed AudienceFolder)
+        |> JDP.required "id" JD.int
+        |> JDP.required "name" JD.string
+        |> JDP.required "parent" (JD.nullable JD.int)
 
 
 -- Fixtures
