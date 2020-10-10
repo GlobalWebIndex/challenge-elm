@@ -4,13 +4,14 @@ import Browser
 import Css as Css
 import Data.Audience as Audience exposing (Audience, AudienceType(..), Audiences(..), audiencesJSON, isFolderId)
 import Data.AudienceFolder as AudienceFolder exposing (AudienceFolder, Folders(..), audienceFoldersJSON, isParentId)
+import Explorer as E
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (css)
 import Html.Styled.Events exposing (onClick)
 import Json.Decode as D
 import Json.Decode.Extra as DX
 
-import Explorer as E
+
 
 -- MAIN
 
@@ -87,12 +88,13 @@ update msg model =
         DecodeOk (Folders folders) (Audiences audiences) expandedFolderIds explorer ->
             case msg of
                 GoUp parentFolder ->
-                    ( DecodeOk 
-                            (Folders folders)
-                            (Audiences audiences)
-                            expandedFolderIds
-                            (explorer |> E.goUp)
-                    , Cmd.none)
+                    ( DecodeOk
+                        (Folders folders)
+                        (Audiences audiences)
+                        expandedFolderIds
+                        (explorer |> E.goUp)
+                    , Cmd.none
+                    )
 
                 OpenFolder folder ->
                     let
@@ -103,20 +105,21 @@ update msg model =
                             List.filter (isFolderId folder.id) audiences
                     in
                     case List.filter ((==) folder.id) expandedFolderIds of
-                       [] ->
-                        ( DecodeOk (Folders folders)
-                            (Audiences audiences)
-                            (folder.id::expandedFolderIds)
-                            (explorer |> E.goTo folder.id |> E.addFolders newSubFolders |> E.addFiles newSubAudiences)
-                        , Cmd.none
-                        )
-                       _ ->
-                        ( DecodeOk (Folders folders)
-                            (Audiences audiences)
-                            (expandedFolderIds)
-                            (explorer |> E.goTo folder.id)
-                        , Cmd.none
-                        )
+                        [] ->
+                            ( DecodeOk (Folders folders)
+                                (Audiences audiences)
+                                (folder.id :: expandedFolderIds)
+                                (explorer |> E.goTo folder.id |> E.addFolders newSubFolders |> E.addFiles newSubAudiences)
+                            , Cmd.none
+                            )
+
+                        _ ->
+                            ( DecodeOk (Folders folders)
+                                (Audiences audiences)
+                                expandedFolderIds
+                                (explorer |> E.goTo folder.id)
+                            , Cmd.none
+                            )
 
         DecodeFailed _ ->
             ( model, Cmd.none )
@@ -143,8 +146,11 @@ view model =
 
         DecodeOk _ _ _ explorer ->
             let
-                subFolders = explorer |> E.subFolders
-                subAudiences = explorer |> E.subFiles
+                subFolders =
+                    explorer |> E.subFolders
+
+                subAudiences =
+                    explorer |> E.subFiles
             in
             div []
                 [ viewCurrentFolder (explorer |> E.current) (List.length subFolders + List.length subAudiences)
