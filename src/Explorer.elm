@@ -1,17 +1,16 @@
-module Explorer exposing (..)
-import Html exposing (b)
+module Explorer exposing (Zipper, createRoot, goUp, goTo, addFiles, addFolders)
 
 type Explorer a b
       = Root (List (Explorer a b)) | Folder a (List (Explorer a b)) | File b
 
 type Crumb a b = Crumb a (List (Explorer a b)) (List (Explorer a b)) | RootCrumb (List (Explorer a b)) (List (Explorer a b))
-type alias Zipper a b = (Explorer a b, List (Crumb a b)) 
+type Zipper a b = Zipper (Explorer a b) (List (Crumb a b)) 
 type alias WithId a = { a | id: Int}
 type alias ListWithRef a = (List a, Maybe a, List a)
 
 createRoot : Zipper a b
 createRoot =
-  (Root [], [])
+  Zipper (Root []) []
 
 createFolder : a -> Explorer a b
 createFolder x =
@@ -22,7 +21,7 @@ createFile x =
   File x
 
 current : Zipper a b -> Maybe a
-current (parent, breadcrumbs) =
+current (Zipper parent breadcrumbs) =
     case parent of
       Root _ ->
         Nothing
@@ -32,7 +31,7 @@ current (parent, breadcrumbs) =
         Nothing
 
 subFolders : Zipper a b -> List a
-subFolders (parent, _) =
+subFolders (Zipper parent _) =
   case parent of
     Root children ->
       List.filterMap toFolder children
@@ -50,7 +49,7 @@ toFolder eplorer =
       Nothing
 
 subFiles : Zipper a b -> List b
-subFiles (parent, _) =
+subFiles (Zipper parent _) =
   case parent of
     Root children ->
       List.filterMap toFile children
@@ -69,17 +68,17 @@ toFile explorer =
 
 
 goUp : Zipper a b -> Zipper a b
-goUp (parent, breadcrumbs) =
+goUp (Zipper parent breadcrumbs) =
   case breadcrumbs of
     [] -> 
-      (parent, breadcrumbs)
+      Zipper parent breadcrumbs
     (RootCrumb rightUncles leftUncles)::rest ->
-      (Root (rightUncles ++ [parent] ++ leftUncles), rest)
+      Zipper (Root (rightUncles ++ [parent] ++ leftUncles)) rest
     (Crumb x rightUncles leftUncles)::rest ->
-      (Folder x (rightUncles ++ [parent] ++ leftUncles), rest)
+      Zipper (Folder x (rightUncles ++ [parent] ++ leftUncles)) rest
 
 goTo : Int -> Zipper (WithId a) (WithId b) -> Zipper (WithId a) (WithId b)
-goTo id (folder, breadcrumbs) =
+goTo id (Zipper folder breadcrumbs) =
   case folder of
     Root children ->
        let
@@ -87,42 +86,42 @@ goTo id (folder, breadcrumbs) =
       in
          case ref of
           Just itemToGo ->
-            (itemToGo, (RootCrumb left rest) :: breadcrumbs)
+            Zipper itemToGo ((RootCrumb left rest) :: breadcrumbs)
           Nothing ->
-            (folder, breadcrumbs) -- shouldn't happen
+            Zipper folder breadcrumbs -- shouldn't happen
     Folder x children ->
       let
         (left, ref, rest) = break (\f -> f == id) children
       in
         case ref of
           Just itemToGo ->
-            (itemToGo, (Crumb x left rest) :: breadcrumbs)
+            Zipper itemToGo ((Crumb x left rest) :: breadcrumbs)
           Nothing ->
-            (folder, breadcrumbs) -- shouldn't happen
+            Zipper folder breadcrumbs -- shouldn't happen
     File _ ->
-      (folder, breadcrumbs)
+      Zipper folder breadcrumbs
 
 addFolders : List a -> Zipper a b -> Zipper a b
-addFolders folders (folder, breadcrumbs) =
+addFolders folders (Zipper folder breadcrumbs) =
   folders
   |> List.map (\x -> Folder x [])
-  |> List.foldl (addEntry) (folder, breadcrumbs)
+  |> List.foldl (addEntry) (Zipper folder breadcrumbs)
 
 addFiles : List b -> Zipper a b -> Zipper a b
-addFiles files (folder, breadcrumbs) =
+addFiles files (Zipper folder breadcrumbs) =
   files
   |> List.map (\x -> File x)
-  |> List.foldl (addEntry) (folder, breadcrumbs)
+  |> List.foldl (addEntry) (Zipper folder breadcrumbs)
 
 addEntry : Explorer a b -> Zipper a b -> Zipper a b
-addEntry x (folder, breadcrumbs) =
+addEntry x (Zipper folder breadcrumbs) =
   case folder of
     Root children ->
-      (Root (x::children), breadcrumbs)
+      Zipper (Root (x::children)) breadcrumbs
     Folder f children ->
-      (Folder f (x::children), breadcrumbs)
+      Zipper (Folder f (x::children)) breadcrumbs
     File y ->
-      (folder, breadcrumbs)
+      Zipper folder breadcrumbs
 
 break : (Int -> Bool) ->  List (Explorer (WithId a) (WithId b)) -> ListWithRef (Explorer (WithId a) (WithId b))
 break fn list =
