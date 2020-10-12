@@ -2,8 +2,8 @@ module Main exposing (main)
 
 import Browser
 import Css as Css
-import Data.Audience as Audience exposing (Audience, AudienceType(..), audiencesJSON, isFolderId)
-import Data.AudienceFolder as AudienceFolder exposing (AudienceFolder, audienceFoldersJSON, isParentId)
+import Data.Audience as Audience exposing (Audience, AudienceType(..), audiencesJSON)
+import Data.AudienceFolder as AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
 import Explorer as E
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (css)
@@ -87,18 +87,18 @@ update msg model =
                 OpenFolder zipper ->
                     let
                         folder =
-                            E.current zipper |> Maybe.withDefault (AudienceFolder -1 "dummy" Nothing)
+                            E.currentFolder zipper |> Maybe.withDefault (AudienceFolder -1 "dummy" Nothing)
 
                         newSubFolders =
-                            \_ -> List.filter (isParentId folder.id) folders
+                            \_ -> List.filter (AudienceFolder.isParent folder) folders
 
                         newSubAudiences =
-                            \_ -> List.filter (isFolderId folder.id) audiences
+                            \_ -> List.filter (Audience.isParent folder) audiences
                     in
                     ( DecodeOk
                         folders
                         audiences
-                        (zipper |> E.expand newSubFolders newSubAudiences)
+                        (zipper |> E.expandFolder newSubFolders newSubAudiences)
                     , Cmd.none
                     )
 
@@ -134,7 +134,7 @@ view model =
                     explorer |> E.subFiles
             in
             div []
-                [ viewCurrentFolder (explorer |> E.current) (List.length subFolders + List.length subAudiences)
+                [ viewCurrentFolder (explorer |> E.currentFolder) (List.length subFolders + List.length subAudiences)
                 , div []
                     (List.map (\zipper -> viewAudienceFolder zipper) subFolders)
                 , div []
@@ -165,7 +165,7 @@ viewAudienceFolder : E.Zipper AudienceFolder Audience -> Html Msg
 viewAudienceFolder zipper =
     let
         maybeFolder =
-            zipper |> E.current
+            zipper |> E.currentFolder
     in
     case maybeFolder of
         Just folder ->

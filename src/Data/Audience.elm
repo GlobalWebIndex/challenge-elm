@@ -1,10 +1,18 @@
 module Data.Audience exposing
-    ( AudienceType(..), Audience
-    , audiencesJSON, isFolderId, roots
+    ( Audience
+    , AudienceType(..)
+    , audiencesJSON
     , decoder
+    , isParent
+    , isRoot
+    , roots
     )
+
+import Data.AudienceFolder exposing (AudienceFolder)
 import Json.Decode as D
 import Json.Decode.Extra as DX
+
+
 {-| Data.Audiences module
 
 This module implements everything related to audience resource.
@@ -16,11 +24,13 @@ This module implements everything related to audience resource.
 
 -}
 
+
+
 -- Type definition
-
-
 --{-| Audience type
 ---}
+
+
 type AudienceType
     = Authored
     | Shared
@@ -37,11 +47,15 @@ type alias Audience =
     }
 
 
+{-| Determines if the given audience does not have parent folder
+-}
 roots : List Audience -> List Audience
 roots audiences =
     List.filter isRoot audiences
 
 
+{-| Determines if the given audience does not have parent folder
+-}
 isRoot : Audience -> Bool
 isRoot audience =
     case audience.folder of
@@ -52,23 +66,26 @@ isRoot audience =
             True
 
 
-isFolderId : Int -> Audience -> Bool
-isFolderId id audience =
-    case audience.folder of
-        Just fId ->
-            if fId == id then
-                True
-
-            else
-                False
+{-| Determines if the folder is the parent of the audience
+-}
+isParent : AudienceFolder -> Audience -> Bool
+isParent parent children =
+    case children.folder of
+        Just parentId ->
+            parentId == parent.id
 
         Nothing ->
             False
 
+
+
 -- Decoders
+
+
 decoder : D.Decoder (List Audience)
 decoder =
     D.field "data" <| D.list audienceDecoder
+
 
 audienceDecoder : D.Decoder Audience
 audienceDecoder =
@@ -93,6 +110,7 @@ audienceTypeDecoder typeString =
 
         _ ->
             D.fail ("this is not an audience type: " ++ typeString)
+
 
 
 -- Fixtures

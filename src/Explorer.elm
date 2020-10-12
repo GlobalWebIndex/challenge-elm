@@ -1,8 +1,8 @@
 module Explorer exposing
     ( Zipper, createRoot
-    , current, subFiles, subFolders
+    , currentFolder, subFiles, subFolders
     , addFiles, addFolders
-    , goUp, expand
+    , goUp, expandFolder
     )
 
 {-| A Multiway tree with a focus, representing the currently opened folder.
@@ -84,7 +84,7 @@ createRoot rootFolders rootfiles =
         |> addFiles rootfiles
 
 
-{-| Get the value of the current folder
+{-| Get the value of the current folder, where the focus is
 
       createRoot [1] [2, 3] |> current == Nothing
 
@@ -93,8 +93,8 @@ createRoot rootFolders rootfiles =
       Zipper (File 2) [RootCrumb [File 3] [Folder 1 [] NotExpanded]] == Nothing
 
 -}
-current : Zipper a b -> Maybe a
-current (Zipper parent breadcrumbs) =
+currentFolder : Zipper a b -> Maybe a
+currentFolder (Zipper parent breadcrumbs) =
     case parent of
         Root _ _ ->
             Nothing
@@ -191,8 +191,8 @@ goUp (Zipper parent breadcrumbs) =
 
 {-| Fetch files and folder if it was not expanded yet, if it was we just return with the zipper
 -}
-expand : (() -> List a) -> (() -> List b) -> Zipper a b -> Zipper a b
-expand folders files (Zipper folder breadcrumbs) =
+expandFolder : (() -> List a) -> (() -> List b) -> Zipper a b -> Zipper a b
+expandFolder folders files (Zipper folder breadcrumbs) =
     case folder of
         Root children expanded ->
             Zipper folder breadcrumbs

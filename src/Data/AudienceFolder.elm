@@ -1,6 +1,8 @@
-module Data.AudienceFolder exposing (AudienceFolder, roots, isParentId, audienceFoldersJSON, decoder)
+module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON, decoder, isParent, roots)
+
 import Json.Decode as D
 import Json.Decode.Extra as DX
+
 
 {-| Data.AudienceFolder module
 
@@ -13,24 +15,29 @@ This module implements everything related to audience folder resource.
 
 -}
 
+
+
 -- Type definition
-
-
 --{-| Basic type of AudienceFolder record
 ---}
+
+
 type alias AudienceFolder =
     { id : Int
     , name : String
     , parent : Maybe Int
     }
 
-type Folders = Folders (List AudienceFolder)
 
+{-| Keep folders which does not have parent folder
+-}
 roots : List AudienceFolder -> List AudienceFolder
-roots allAudienceFolders =
-    List.filter isRoot allAudienceFolders
+roots folders =
+    List.filter isRoot folders
 
 
+{-| Determines if the given folder does not have parent folder
+-}
 isRoot : AudienceFolder -> Bool
 isRoot folder =
     case folder.parent of
@@ -41,26 +48,25 @@ isRoot folder =
             True
 
 
-isParentId : Int -> AudienceFolder -> Bool
-isParentId id folder =
-    case folder.parent of
-        Just fId ->
-            if fId == id then
-                True
-
-            else
-                False
+{-| Determines if the given two folder is in parent - child relationship
+-}
+isParent : AudienceFolder -> AudienceFolder -> Bool
+isParent parent child =
+    case child.parent of
+        Just id ->
+            parent.id == id
 
         Nothing ->
             False
 
 
+
 -- Decoders
+
 
 decoder : D.Decoder (List AudienceFolder)
 decoder =
     D.field "data" <| D.list audienceFolderDecoder
-
 
 
 audienceFolderDecoder : D.Decoder AudienceFolder
@@ -69,6 +75,7 @@ audienceFolderDecoder =
         |> DX.andMap (D.field "id" D.int)
         |> DX.andMap (D.field "name" D.string)
         |> DX.andMap (D.field "parent" (D.nullable D.int))
+
 
 
 -- Fixtures
