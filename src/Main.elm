@@ -44,7 +44,6 @@ audiences : Dict Int (List Audience)
 audiences =
     audiencesJSON
     |> decodeString decodeAudiences
-    --|> log "here"
     |> Result.withDefault []
     |> map (\aud -> (M.withDefault -1 aud.folder, [aud]))
     |> DE.fromListDedupe List.append
@@ -73,8 +72,10 @@ displayContents model =
 
 maybeDisplayBack : Bool -> Html Msg
 maybeDisplayBack display =
-    if display then Html.button [Html.Events.onClick Up] [Html.text "Back"]
-    else Html.text ""
+    if display then
+        Html.button ((Html.Events.onClick Up)::backButtonStyle) [Html.text "Back"]
+    else
+        Html.div [] []
 
 displayFolder : AudienceFolder -> Html Msg
 displayFolder {id, name, parent} =
@@ -105,3 +106,21 @@ commonStyle = [ Html.Attributes.style "color" "#fff"
         , Html.Attributes.style "transition" "color .15s"
         , Html.Attributes.style "width" "100%"
     ]
+
+backButtonStyle = [ Html.Attributes.style "margin-left" "40px"
+    , Html.Attributes.style "background-color" "#7d30a5"
+    , Html.Attributes.style "cursor" "pointer"
+    , Html.Attributes.style "color" "#fff"
+    , Html.Attributes.style "border-color" "#007bff"
+    , Html.Attributes.style "display" "table"
+    , Html.Attributes.style "font-weight" "400"
+    , Html.Attributes.style "text-align" "center"
+    , Html.Attributes.style "white-space" "nowrap"
+    , Html.Attributes.style "vertical-align" "middle"
+    , Html.Attributes.style "user-select" "none"
+    , Html.Attributes.style "border" "1px solid transparent"
+    , Html.Attributes.style "padding" ".375rem .75rem"
+    , Html.Attributes.style "font-size" "1rem"
+    , Html.Attributes.style "line-height" "1.5"
+    , Html.Attributes.style "border-radius" ".25rem"
+    , Html.Attributes.style "transition" "color .15s"]
