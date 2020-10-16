@@ -63,42 +63,33 @@ displayContents model =
     let
         currF = List.head model.currentFolder |> withDefault -1
     in
-    --[Html.text <| toString (size model.audiences), Html.text <| toString (size model.audienceFolders)]
-    Html.ul [ Html.Attributes.style "width" "50%"]
-    <| List.append
-        (map displayFolder (Dict.get currF model.audienceFolders |> withDefault []))
-        (map displayFile (Dict.get currF model.audiences |> withDefault []))
+    Html.div []
+    [maybeDisplayBack (currF /= -1)
+    , Html.ul [ Html.Attributes.style "width" "50%"]
+        <| List.append
+            (map displayFolder (Dict.get currF model.audienceFolders |> withDefault []))
+            (map displayFile (Dict.get currF model.audiences |> withDefault []))
+    ]
 
+maybeDisplayBack : Bool -> Html Msg
+maybeDisplayBack display =
+    if display then Html.button [Html.Events.onClick Up] [Html.text "Back"]
+    else Html.text ""
 
 displayFolder : AudienceFolder -> Html Msg
 displayFolder {id, name, parent} =
-    Html.li
-        [ Html.Attributes.style "color" "#fff"
+    Html.li (commonStyle++
+        [ Html.Events.onClick (Down id)
         , Html.Attributes.style "background-color" "#007bff"
         , Html.Attributes.style "cursor" "pointer"
-        , Html.Attributes.style "border-color" "#007bff"
-        , Html.Attributes.style "display" "table"
-        , Html.Attributes.style "font-weight" "400"
-        , Html.Attributes.style "text-align" "center"
-        , Html.Attributes.style "white-space" "nowrap"
-        , Html.Attributes.style "vertical-align" "middle"
-        , Html.Attributes.style "user-select" "none"
-        , Html.Attributes.style "border" "1px solid transparent"
-        , Html.Attributes.style "padding" ".375rem .75rem"
-        , Html.Attributes.style "font-size" "1rem"
-        , Html.Attributes.style "line-height" "1.5"
-        , Html.Attributes.style "border-radius" ".25rem"
-        , Html.Attributes.style "transition" "color .15s"
-        , Html.Attributes.style "width" "100%"
-        , Html.Events.onClick (Down id)
-        ]
+        ])
         [ Html.text name ]
 
 displayFile : Audience -> Html Msg
 displayFile {id, name, type_, folder} =
-    Html.li [ Html.Attributes.style "color" "#fff"
-        , Html.Attributes.style "background-color" "#91c0f3"
-        , Html.Attributes.style "cursor" "pointer"
+    Html.li ((Html.Attributes.style "background-color" "#91c0f3")::commonStyle) [Html.text name]
+
+commonStyle = [ Html.Attributes.style "color" "#fff"
         , Html.Attributes.style "border-color" "#007bff"
         , Html.Attributes.style "display" "table"
         , Html.Attributes.style "font-weight" "400"
@@ -113,4 +104,4 @@ displayFile {id, name, type_, folder} =
         , Html.Attributes.style "border-radius" ".25rem"
         , Html.Attributes.style "transition" "color .15s"
         , Html.Attributes.style "width" "100%"
-    ] [Html.text name]
+    ]
