@@ -1,17 +1,16 @@
 module Main exposing (main)
 
+import Browser exposing (sandbox)
 import Data.Audience exposing (..)
 import Data.AudienceFolder exposing (..)
+import Dict exposing (Dict)
+import Dict.Extra as DE exposing (fromListDedupe)
 import Html exposing (Html, div, button, text)
 import Html.Events
 import Html.Attributes
-import Browser exposing (sandbox)
-import Json.Decode exposing (decodeString)
-import Dict.Extra as DE exposing (fromListDedupe)
-import Dict exposing (Dict, size)
-import List exposing (map, drop, filter)
-import Maybe as M exposing (withDefault)
-import Debug exposing (toString)
+import Json.Decode as JD exposing (decodeString)
+import List as L exposing (map, drop, filter)
+import Maybe as M
 
 
 type alias Model = {
@@ -41,30 +40,30 @@ view model =
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        Up -> {model | currentFolder = drop 1 model.currentFolder}
+        Up -> {model | currentFolder = L.drop 1 model.currentFolder}
         Down dir -> {model | currentFolder = dir::model.currentFolder}
         Filter at -> {model | audienceFilter = at, currentFolder = []}
 
 audiences : Dict Int (List Audience)
 audiences =
     audiencesJSON
-    |> decodeString decodeAudiences
+    |> JD.decodeString decodeAudiences
     |> Result.withDefault []
-    |> map (\aud -> (M.withDefault -1 aud.folder, [aud]))
+    |> L.map (\aud -> (M.withDefault -1 aud.folder, [aud]))
     |> DE.fromListDedupe List.append
 
 audienceFolders : Dict Int (List AudienceFolder)
 audienceFolders =
     audienceFoldersJSON
-    |> decodeString decodeAudienceFolders
+    |> JD.decodeString decodeAudienceFolders
     |> Result.withDefault []
-    |> map (\audF -> (M.withDefault -1 audF.parent, [audF]))
+    |> L.map (\audF -> (M.withDefault -1 audF.parent, [audF]))
     |> DE.fromListDedupe List.append
 
 viewContents : Model -> Html Msg
 viewContents model =
     let
-        currF = List.head model.currentFolder |> withDefault -1
+        currF = List.head model.currentFolder |> M.withDefault -1
         contents =
             if model.audienceFilter /= Shared then
                 List.append
@@ -92,6 +91,7 @@ viewFilterButtons at =
     Html.div
         [ Html.Attributes.style "width" "50%"
         , Html.Attributes.style "margin-left" "40px"
+        , Html.Attributes.style "margin-top" "20px"
         ]
         [ viewFilterButton at Authored
         , viewFilterButton at Shared
@@ -107,11 +107,15 @@ viewFilterButton selectedAudienceType audienceType =
         (filterButtonStyles++
             (selectedAudienceAction (selectedAudienceType == audienceType) (Filter audienceType))
         )
-        [text <| toString audienceType]
+        [text <| audienceTypeToString audienceType]
 
-viewAllAudiences : List Audience -> List (Html Msg)
-viewAllAudiences ads =
-    map (\file -> viewAudience file) ads
+audienceTypeToString : AudienceType -> String
+audienceTypeToString at =
+    case at of
+        Shared -> "Shared"
+        Authored -> "Authored"
+        Curated -> "Curated"
+
 
 selectedAudienceAction : Bool -> Msg -> List (Html.Attribute Msg)
 selectedAudienceAction isSelected msg =
@@ -119,20 +123,12 @@ selectedAudienceAction isSelected msg =
         action = [Html.Events.onClick msg]
     in
     if isSelected then
-        [Html.Attributes.style "background-color" "#baff13"] ++ action
+        action ++ [Html.Attributes.style "background-color" "#baff13"]
     else action
-
-containerButtonStyle : List (Html.Attribute Msg)
-containerButtonStyle = [Html.Attributes.style "width" "30%"
-    , Html.Attributes.style "display" "inline-block"]
 
 viewAudienceFolders : Dict Int (List AudienceFolder) -> Int -> List (Html Msg)
 viewAudienceFolders aFolders currentFolder =
-    map viewAudienceFolder (Dict.get currentFolder aFolders |> withDefault [])
-
-viewAudiences : AudienceType -> Dict Int (List Audience) -> Int -> List (Html Msg)
-viewAudiences at ads currentFolder =
-    map viewAudience (filter (\a -> a.type_ == at) (Dict.get currentFolder ads |> withDefault []))
+    L.map viewAudienceFolder (Dict.get currentFolder aFolders |> M.withDefault [])
 
 viewAudienceFolder : AudienceFolder -> Html Msg
 viewAudienceFolder {id, name, parent} =
@@ -143,6 +139,14 @@ viewAudienceFolder {id, name, parent} =
         , Html.Attributes.style "border-color" "#007bff"
         ])
         [ Html.text name ]
+
+viewAllAudiences : List Audience -> List (Html Msg)
+viewAllAudiences ads =
+    L.map (\file -> viewAudience file) ads
+
+viewAudiences : AudienceType -> Dict Int (List Audience) -> Int -> List (Html Msg)
+viewAudiences at ads currentFolder =
+    L.map viewAudience (L.filter (\a -> a.type_ == at) (Dict.get currentFolder ads |> M.withDefault []))
 
 viewAudience : Audience -> Html Msg
 viewAudience {id, name, type_, folder} =
@@ -155,11 +159,14 @@ viewAudience {id, name, type_, folder} =
 
 ----- styles only ----
 
+containerButtonStyle : List (Html.Attribute Msg)
+containerButtonStyle = [Html.Attributes.style "width" "30%"
+    , Html.Attributes.style "display" "inline-block"]
 
 contentsStyle : Bool -> List (Html.Attribute Msg)
 contentsStyle backExists =
     if backExists then []
-    else [Html.Attributes.style "margin-top" "54px"]
+    else [Html.Attributes.style "margin-top" "78px"]
 
 listItemStyle : List (Html.Attribute Msg)
 listItemStyle = containerStyle ++
@@ -172,7 +179,8 @@ backButtonStyle = containerStyle ++
     , Html.Attributes.style "background-color" "#7d30a5"
     , Html.Attributes.style "cursor" "pointer"
     , Html.Attributes.style "color" "#fff"
-    , Html.Attributes.style "border-color" "#6b1371"]
+    , Html.Attributes.style "border-color" "#6b1371"
+    , Html.Attributes.style "margin-top" "20px"]
 
 containerStyle : List (Html.Attribute Msg)
 containerStyle =
