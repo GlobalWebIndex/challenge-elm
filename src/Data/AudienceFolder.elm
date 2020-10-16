@@ -1,4 +1,4 @@
-module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
+module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON, decodeAudienceFolders)
 
 {-| Data.AudienceFolder module
 
@@ -11,6 +11,8 @@ This module implements everything related to audience folder resource.
 
 -}
 
+import Json.Decode as JD
+
 -- Type definition
 
 
@@ -22,6 +24,19 @@ type alias AudienceFolder =
     , parent : Maybe Int
     }
 
+{-| Decoder for AudienceFolder
+-}
+decodeAudienceFolder : JD.Decoder AudienceFolder
+decodeAudienceFolder =
+    JD.map3 AudienceFolder
+        (JD.field "id" JD.int)
+        (JD.field "name" JD.string)
+        (JD.field "parent" (JD.maybe JD.int))
+
+{-| Decoder for list of AudienceFolder
+-}
+decodeAudienceFolders : JD.Decoder (List AudienceFolder)
+decodeAudienceFolders = JD.field "data" (JD.list decodeAudienceFolder)
 
 
 -- Fixtures

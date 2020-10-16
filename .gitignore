@@ -1,1 +1,4 @@
 elm-stuff/
+./src/elm-stuff
+src/elm-package.json
+src/index.html
