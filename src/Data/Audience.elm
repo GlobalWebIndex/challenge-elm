@@ -1,6 +1,6 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
-    , audiencesJSON
+    , audiencesJSON, decodeAudiences
     )
 
 {-| Data.Audiences module
@@ -13,6 +13,8 @@ This module implements everything related to audience resource.
 @docs AudienceType, Audience, audienceJSON
 
 -}
+
+import Json.Decode as JD
 
 -- Type definition
 
@@ -34,7 +36,30 @@ type alias Audience =
     , folder : Maybe Int
     }
 
+{-| Decoder for an Audience
+-}
+decodeAudience : JD.Decoder Audience
+decodeAudience = JD.map4
+    Audience
+        (JD.field "id" JD.int)
+        (JD.field "name" JD.string)
+        (JD.field "type" decodeAudienceType)
+        (JD.field "folder" (JD.maybe JD.int))
 
+{-| Decoder for AudienceType
+-}
+decodeAudienceType : JD.Decoder AudienceType
+decodeAudienceType = JD.string |> JD.andThen (\str ->
+    case str of
+        "curated" -> JD.succeed Curated
+        "shared" -> JD.succeed Shared
+        "user" -> JD.succeed Authored
+        sthElse -> JD.fail <| "Unknown AudienceType: " ++ sthElse)
+
+{-| Decoder for List of Audiences
+-}
+decodeAudiences : JD.Decoder (List Audience)
+decodeAudiences = JD.field "data" (JD.list decodeAudience)
 
 -- Fixtures
 
