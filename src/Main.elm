@@ -7,7 +7,7 @@ import Html.Events
 import Html.Attributes
 import Browser exposing (sandbox)
 import Json.Decode exposing (decodeString)
-import Dict.Extra as DE
+import Dict.Extra as DE exposing (fromListDedupe)
 import Dict exposing (Dict, size)
 import List exposing (map, drop, filter)
 import Maybe as M exposing (withDefault)
@@ -65,27 +65,20 @@ viewContents : Model -> Html Msg
 viewContents model =
     let
         currF = List.head model.currentFolder |> withDefault -1
-    in
-    if model.audienceFilter /= Shared then
-        Html.div (contentsStyle (currF /= -1))
-        [maybeViewBackButton (currF /= -1)
-        , viewFilterButtons model.audienceFilter
-        , Html.ul [Html.Attributes.style "width" "50%"]
-            <| List.append
+        contents =
+            if model.audienceFilter /= Shared then
+                List.append
                 (viewAudienceFolders model.audienceFolders currF)
                 (viewAudiences model.audienceFilter model.audiences currF)
+            else
+                viewAllAudiences
+                <| Dict.foldl (\parent children lst -> children++lst) [] model.audiences
+    in
+    Html.div (contentsStyle (currF /= -1))
+        [ maybeViewBackButton (currF /= -1 && model.audienceFilter /= Shared)
+        , viewFilterButtons model.audienceFilter
+        , Html.ul [Html.Attributes.style "width" "50%"] contents
         ]
-    else
-        Html.div (contentsStyle (currF /= -1))
-            [viewFilterButtons model.audienceFilter
-            , Html.ul [Html.Attributes.style "width" "50%"]
-                (viewAllAudiences
-                    <| Dict.foldl (\parent contents lst -> contents++lst) [] model.audiences)
-            ]
-
-viewAllAudiences : List Audience -> List (Html Msg)
-viewAllAudiences ads =
-    map (\file -> viewAudience file) ads
 
 maybeViewBackButton : Bool -> Html Msg
 maybeViewBackButton display =
@@ -96,26 +89,32 @@ maybeViewBackButton display =
 
 viewFilterButtons : AudienceType -> Html Msg
 viewFilterButtons at =
+    Html.div
+        [ Html.Attributes.style "width" "50%"
+        , Html.Attributes.style "margin-left" "40px"
+        ]
+        [ viewFilterButton at Authored
+        , viewFilterButton at Shared
+        , viewFilterButton at Curated
+        ]
+
+viewFilterButton : AudienceType -> AudienceType -> Html Msg
+viewFilterButton selectedAudienceType audienceType =
     let
         filterButtonStyles = containerStyle++containerButtonStyle
     in
-    Html.div
-        [Html.Attributes.style "width" "50%"
-        , Html.Attributes.style "margin-left" "40px"
-        ]
-        [ Html.button
-            (filterButtonStyles++(maybeSelectedAudience (at == Authored) (Filter Authored)))
-            [text "Authored"]
-        , Html.button
-            (filterButtonStyles++(maybeSelectedAudience (at == Shared) (Filter Shared)))
-            [text "Shared"]
-        , Html.button
-            (filterButtonStyles++(maybeSelectedAudience (at == Curated) (Filter Curated)))
-            [text "Curated"]
-        ]
+    Html.button
+        (filterButtonStyles++
+            (selectedAudienceAction (selectedAudienceType == audienceType) (Filter audienceType))
+        )
+        [text <| toString audienceType]
 
-maybeSelectedAudience : Bool -> Msg -> List (Html.Attribute Msg)
-maybeSelectedAudience isSelected msg =
+viewAllAudiences : List Audience -> List (Html Msg)
+viewAllAudiences ads =
+    map (\file -> viewAudience file) ads
+
+selectedAudienceAction : Bool -> Msg -> List (Html.Attribute Msg)
+selectedAudienceAction isSelected msg =
     let
         action = [Html.Events.onClick msg]
     in
@@ -152,6 +151,10 @@ viewAudience {id, name, type_, folder} =
             [ Html.Attributes.style "background-color" "#91c0f3"
             , Html.Attributes.style "border-color" "#8cacce" ])
         [Html.text name]
+
+
+----- styles only ----
+
 
 contentsStyle : Bool -> List (Html.Attribute Msg)
 contentsStyle backExists =
