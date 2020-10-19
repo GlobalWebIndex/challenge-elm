@@ -36,7 +36,7 @@ type Model
 
 
 init : () -> ( Model, Cmd Msg )
-init _ =
+init _ =    
     let
         decodedAudienceFolders =
             D.decodeString AudienceFolder.decoder audienceFoldersJSON
@@ -68,7 +68,7 @@ init _ =
 
 type Msg
     = GoUp
-    | OpenFolder (E.Zipper AudienceFolder Audience)
+    | OpenFolder AudienceFolder
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -84,11 +84,8 @@ update msg model =
                     , Cmd.none
                     )
 
-                OpenFolder zipper ->
+                OpenFolder folder ->
                     let
-                        folder =
-                            E.currentFolder zipper |> Maybe.withDefault (AudienceFolder -1 "dummy" Nothing)
-
                         newSubFolders =
                             \_ -> List.filter (AudienceFolder.isParent folder) folders
 
@@ -98,7 +95,7 @@ update msg model =
                     ( DecodeOk
                         folders
                         audiences
-                        (zipper |> E.expandFolder newSubFolders newSubAudiences)
+                        (explorer |> E.goTo folder |> E.expandFolder newSubFolders newSubAudiences)
                     , Cmd.none
                     )
 
@@ -161,20 +158,10 @@ viewAudience audience =
         [ text audience.name ]
 
 
-viewAudienceFolder : E.Zipper AudienceFolder Audience -> Html Msg
-viewAudienceFolder zipper =
-    let
-        maybeFolder =
-            zipper |> E.currentFolder
-    in
-    case maybeFolder of
-        Just folder ->
-            div [ onClick (OpenFolder zipper), css [ folderCss False ] ]
-                [ text folder.name ]
-
-        -- impossible state
-        Nothing ->
-            div [] []
+viewAudienceFolder : AudienceFolder -> Html Msg
+viewAudienceFolder folder =
+    div [ onClick (OpenFolder folder), css [ folderCss False ] ]
+        [ text folder.name ]
 
 
 

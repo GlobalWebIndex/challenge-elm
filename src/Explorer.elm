@@ -2,17 +2,20 @@ module Explorer exposing
     ( Zipper, createRoot
     , currentFolder, subFiles, subFolders
     , addFiles, addFolders
-    , goUp, expandFolder
+    , goUp, goTo, expandFolder
     )
 
 {-| A Multiway tree with a focus, representing the currently opened folder.
 The tree can be built from a list, with folder references.
-The building of the tree happens as you navigate on the tree
 
 
 # Structure
 
 @docs Zipper, createRoot
+
+# Build
+
+@docs createRoot
 
 
 # Current level
@@ -27,7 +30,7 @@ The building of the tree happens as you navigate on the tree
 
 # Navigation
 
-@docs goUp, expand
+@docs goUp, goTo, expand
 
 -}
 
@@ -66,10 +69,12 @@ type Zipper a b
 type alias ListWithRef a =
     ( List a, a, List a )
 
+type alias ListWithR a =
+    ( List a, Maybe a, List a )
 
 {-| Creates the root of the file explorer from folders and files, focusing on the root
 
-      createRoot [{id = 3}] ["file 2", "file 3"] ==
+      create ["folder 1"] ["file 2", "file 3"] ==
         Zipper (Root [ File ("file 3"),
                      , File ("file 2"),
                      , Folder { id = 3 } [] NotExpanded,
@@ -86,7 +91,7 @@ createRoot rootFolders rootfiles =
 
 {-| Get the value of the current folder, where the focus is
 
-      createRoot [1] [2, 3] |> current == Nothing
+      create [1] [2, 3] |> current == Nothing
 
       Zipper (Folder 1 [] NotExpanded) [RootCrumb [File 3,File 2] []] |> current == 1
 
@@ -115,8 +120,8 @@ currentFolder (Zipper parent breadcrumbs) =
         ]
 
 -}
-subFolders : Zipper a b -> List (Zipper a b)
-subFolders (Zipper parent breadcrumbs) =
+subZippers : Zipper a b -> List (Zipper a b)
+subZippers (Zipper parent breadcrumbs) =
     case parent of
         Root children crumbs ->
             children
@@ -130,7 +135,26 @@ subFolders (Zipper parent breadcrumbs) =
 
         File y ->
             []
+subFolders : Zipper a b -> List a
+subFolders (Zipper parent _) =
+    case parent of
+        Root children _ ->
+            List.filterMap toFolder children
 
+        Folder _ children _ ->
+            List.filterMap toFolder children
+
+        File _ ->
+            []
+
+toFolder : Explorer a b -> Maybe a
+toFolder explorer =
+    case explorer of
+        Folder x _ _ ->
+            Just x
+
+        _ ->
+            Nothing
 
 goToRootChild : List (Crumb a b) -> ListWithRef (Explorer a b) -> Zipper a b
 goToRootChild breadcrumbs ( leftSide, itemToGo, rightSide ) =
@@ -188,8 +212,41 @@ goUp (Zipper parent breadcrumbs) =
         (Crumb x rightUncles leftUncles) :: rest ->
             Zipper (Folder x (rightUncles ++ [ parent ] ++ leftUncles) Expanded) rest
 
+{-|
+-}
+goTo : a -> Zipper a b -> Zipper a b
+goTo child (Zipper folder breadcrumbs) =
+    case folder of
+        Root children _ ->
+            let
+                ( left, ref, rest ) =
+                    findChild ( (==) child) children
+            in
+             case ref of
+                Just itemToGo ->
+                    goToRootChild breadcrumbs (left, itemToGo, rest)
 
-{-| Fetch files and folder if it was not expanded yet, if it was we just return with the zipper
+                -- shouldn't happen
+                Nothing ->
+                    Zipper folder breadcrumbs
+
+        Folder x children _ ->
+            let
+                ( left, ref, rest ) =
+                    findChild ( (==) child) children
+            in
+             case ref of
+                Just itemToGo ->
+                    goToChild x breadcrumbs (left, itemToGo, rest)
+
+                -- shouldn't happen
+                Nothing ->
+                    Zipper folder breadcrumbs
+        
+        File _ ->
+            Zipper folder breadcrumbs
+
+{-| Fetch files and folders if it was not expanded yet, if it was we just return with the zipper
 -}
 expandFolder : (() -> List a) -> (() -> List b) -> Zipper a b -> Zipper a b
 expandFolder folders files (Zipper folder breadcrumbs) =
@@ -228,19 +285,19 @@ setExpanded (Zipper folder breadcrumbs) =
 {-| Append folders to the current folder
 -}
 addFolders : List a -> Zipper a b -> Zipper a b
-addFolders folders (Zipper folder breadcrumbs) =
+addFolders folders zipper =
     folders
         |> List.map (\x -> Folder x [] NotExpanded)
-        |> List.foldl addEntry (Zipper folder breadcrumbs)
+        |> List.foldl addEntry zipper
 
 
 {-| Add files to the current folder
 -}
 addFiles : List b -> Zipper a b -> Zipper a b
-addFiles files (Zipper folder breadcrumbs) =
+addFiles files zipper =
     files
-        |> List.map (\x -> File x)
-        |> List.foldl addEntry (Zipper folder breadcrumbs)
+        |> List.map File
+        |> List.foldl addEntry zipper
 
 
 addEntry : Explorer a b -> Zipper a b -> Zipper a b
@@ -286,3 +343,23 @@ allRefHelp list acc =
 
                 ( leftS, f, [] ) :: accRest ->
                     List.reverse acc
+
+
+findChild : (a -> Bool) ->  List (Explorer a b) -> ListWithR (Explorer a b)
+findChild fn list =
+  findChildHelp fn list ([], Nothing, [])
+
+findChildHelp : (a -> Bool) -> List (Explorer a b) -> ListWithR (Explorer a b) -> ListWithR (Explorer a b)
+findChildHelp fn children (accL, child, accR) =
+  case children of
+    first::rest ->
+      case currentFolder (Zipper first []) of
+        Just x ->
+             if (fn x) then
+                (List.reverse accL, Just first, rest)
+            else
+                findChildHelp fn rest (first::accL, Nothing, accR)
+        Nothing ->
+            findChildHelp fn rest (first::accL, Nothing, accR)
+    [] ->
+      (accL, child, accR)
