@@ -1,8 +1,9 @@
 module Explorer exposing
     ( Zipper, createRoot
-    , currentFolder, subFiles, subFolders
+    , subFiles, subFolders
     , addFiles, addFolders
-    , goUp, goTo, expandFolder
+    , goUp, goTo
+    , currentFolder, expandFolder
     )
 
 {-| A Multiway tree with a focus, representing the currently opened folder.
@@ -12,6 +13,7 @@ The tree can be built from a list, with folder references.
 # Structure
 
 @docs Zipper, createRoot
+
 
 # Build
 
@@ -69,8 +71,10 @@ type Zipper a b
 type alias ListWithRef a =
     ( List a, a, List a )
 
+
 type alias ListWithR a =
     ( List a, Maybe a, List a )
+
 
 {-| Creates the root of the file explorer from folders and files, focusing on the root
 
@@ -135,6 +139,8 @@ subZippers (Zipper parent breadcrumbs) =
 
         File y ->
             []
+
+
 subFolders : Zipper a b -> List a
 subFolders (Zipper parent _) =
     case parent of
@@ -147,6 +153,7 @@ subFolders (Zipper parent _) =
         File _ ->
             []
 
+
 toFolder : Explorer a b -> Maybe a
 toFolder explorer =
     case explorer of
@@ -155,6 +162,7 @@ toFolder explorer =
 
         _ ->
             Nothing
+
 
 goToRootChild : List (Crumb a b) -> ListWithRef (Explorer a b) -> Zipper a b
 goToRootChild breadcrumbs ( leftSide, itemToGo, rightSide ) =
@@ -212,19 +220,19 @@ goUp (Zipper parent breadcrumbs) =
         (Crumb x rightUncles leftUncles) :: rest ->
             Zipper (Folder x (rightUncles ++ [ parent ] ++ leftUncles) Expanded) rest
 
-{-|
--}
+
+{-| -}
 goTo : a -> Zipper a b -> Zipper a b
 goTo child (Zipper folder breadcrumbs) =
     case folder of
         Root children _ ->
             let
                 ( left, ref, rest ) =
-                    findChild ( (==) child) children
+                    findChild ((==) child) children
             in
-             case ref of
+            case ref of
                 Just itemToGo ->
-                    goToRootChild breadcrumbs (left, itemToGo, rest)
+                    goToRootChild breadcrumbs ( left, itemToGo, rest )
 
                 -- shouldn't happen
                 Nothing ->
@@ -233,18 +241,19 @@ goTo child (Zipper folder breadcrumbs) =
         Folder x children _ ->
             let
                 ( left, ref, rest ) =
-                    findChild ( (==) child) children
+                    findChild ((==) child) children
             in
-             case ref of
+            case ref of
                 Just itemToGo ->
-                    goToChild x breadcrumbs (left, itemToGo, rest)
+                    goToChild x breadcrumbs ( left, itemToGo, rest )
 
                 -- shouldn't happen
                 Nothing ->
                     Zipper folder breadcrumbs
-        
+
         File _ ->
             Zipper folder breadcrumbs
+
 
 {-| Fetch files and folders if it was not expanded yet, if it was we just return with the zipper
 -}
@@ -345,21 +354,25 @@ allRefHelp list acc =
                     List.reverse acc
 
 
-findChild : (a -> Bool) ->  List (Explorer a b) -> ListWithR (Explorer a b)
+findChild : (a -> Bool) -> List (Explorer a b) -> ListWithR (Explorer a b)
 findChild fn list =
-  findChildHelp fn list ([], Nothing, [])
+    findChildHelp fn list ( [], Nothing, [] )
+
 
 findChildHelp : (a -> Bool) -> List (Explorer a b) -> ListWithR (Explorer a b) -> ListWithR (Explorer a b)
-findChildHelp fn children (accL, child, accR) =
-  case children of
-    first::rest ->
-      case currentFolder (Zipper first []) of
-        Just x ->
-             if (fn x) then
-                (List.reverse accL, Just first, rest)
-            else
-                findChildHelp fn rest (first::accL, Nothing, accR)
-        Nothing ->
-            findChildHelp fn rest (first::accL, Nothing, accR)
-    [] ->
-      (accL, child, accR)
+findChildHelp fn children ( accL, child, accR ) =
+    case children of
+        first :: rest ->
+            case currentFolder (Zipper first []) of
+                Just x ->
+                    if fn x then
+                        ( List.reverse accL, Just first, rest )
+
+                    else
+                        findChildHelp fn rest ( first :: accL, Nothing, accR )
+
+                Nothing ->
+                    findChildHelp fn rest ( first :: accL, Nothing, accR )
+
+        [] ->
+            ( accL, child, accR )

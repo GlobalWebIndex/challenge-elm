@@ -5,6 +5,7 @@ import Css as Css
 import Data.Audience as Audience exposing (Audience, AudienceType(..), audiencesJSON)
 import Data.AudienceFolder as AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
 import Explorer as E
+import FileSystem as FS exposing (FileSystem)
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (css)
 import Html.Styled.Events exposing (onClick)
@@ -32,11 +33,11 @@ main =
 
 type Model
     = DecodeFailed String
-    | DecodeOk (List AudienceFolder) (List Audience) (E.Zipper AudienceFolder Audience)
+    | DecodeOk (List AudienceFolder) (List Audience) (FileSystem AudienceFolder Audience)
 
 
 init : () -> ( Model, Cmd Msg )
-init _ =    
+init _ =
     let
         decodedAudienceFolders =
             D.decodeString AudienceFolder.decoder audienceFoldersJSON
@@ -51,7 +52,7 @@ init _ =
                     ( DecodeOk
                         folders
                         audiences
-                        (E.createRoot (AudienceFolder.roots folders) (Audience.roots audiences))
+                        (FS.createRoot (AudienceFolder.roots folders) (Audience.roots audiences))
                     , Cmd.none
                     )
 
@@ -68,23 +69,23 @@ init _ =
 
 type Msg
     = GoUp
-    | OpenFolder AudienceFolder
+    | GoTo AudienceFolder
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model of
-        DecodeOk folders audiences explorer ->
+        DecodeOk folders audiences fs ->
             case msg of
                 GoUp ->
                     ( DecodeOk
                         folders
                         audiences
-                        (explorer |> E.goUp)
+                        (fs |> FS.goUp)
                     , Cmd.none
                     )
 
-                OpenFolder folder ->
+                GoTo folder ->
                     let
                         newSubFolders =
                             \_ -> List.filter (AudienceFolder.isParent folder) folders
@@ -95,7 +96,7 @@ update msg model =
                     ( DecodeOk
                         folders
                         audiences
-                        (explorer |> E.goTo folder |> E.expandFolder newSubFolders newSubAudiences)
+                        (fs |> FS.goTo folder |> FS.expandFolder newSubFolders newSubAudiences)
                     , Cmd.none
                     )
 
@@ -125,13 +126,13 @@ view model =
         DecodeOk _ _ explorer ->
             let
                 subFolders =
-                    explorer |> E.subFolders
+                    explorer |> FS.subFolders
 
                 subAudiences =
-                    explorer |> E.subFiles
+                    explorer |> FS.subFiles
             in
             div []
-                [ viewCurrentFolder (explorer |> E.currentFolder) (List.length subFolders + List.length subAudiences)
+                [ viewCurrentFolder (explorer |> FS.currentFolder) (List.length subFolders + List.length subAudiences)
                 , div []
                     (List.map (\zipper -> viewAudienceFolder zipper) subFolders)
                 , div []
@@ -160,7 +161,7 @@ viewAudience audience =
 
 viewAudienceFolder : AudienceFolder -> Html Msg
 viewAudienceFolder folder =
-    div [ onClick (OpenFolder folder), css [ folderCss False ] ]
+    div [ onClick (GoTo folder), css [ folderCss False ] ]
         [ text folder.name ]
 
 
