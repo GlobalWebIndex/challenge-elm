@@ -4,7 +4,6 @@ import Browser
 import Css as Css
 import Data.Audience as Audience exposing (Audience, AudienceType(..), audiencesJSON)
 import Data.AudienceFolder as AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
-import Explorer as E
 import FileSystem as FS exposing (FileSystem)
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (css)
