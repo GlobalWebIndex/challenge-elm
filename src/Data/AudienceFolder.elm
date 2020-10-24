@@ -26,6 +26,7 @@ type alias AudienceFolder =
     { id : Int
     , name : String
     , parent : Maybe Int
+    , curated : Bool
     }
 
 
@@ -75,6 +76,7 @@ audienceFolderDecoder =
         |> DX.andMap (D.field "id" D.int)
         |> DX.andMap (D.field "name" D.string)
         |> DX.andMap (D.field "parent" (D.nullable D.int))
+        |> DX.andMap (D.field "curated" D.bool)
 
 
 

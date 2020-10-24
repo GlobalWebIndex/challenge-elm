@@ -1,7 +1,7 @@
 module Zipper exposing
     ( Zipper
     , create, fromTree
-    , goUp, goTo
+    , goUp, goTo, goRoot
     , current, children
     , addChild, addChildren, mapRoot
     )
@@ -21,7 +21,7 @@ module Zipper exposing
 
 # Navigation
 
-@docs goUp, goTo
+@docs goUp, goTo, goRoot
 
 
 # Current level
@@ -102,6 +102,18 @@ goUp (Zipper parent breadcrumbs) =
 
         (Crumb x leftUncles rightUncles) :: rest ->
             Just <| Zipper (MTree.mtree x (leftUncles ++ [ parent ] ++ rightUncles)) rest
+
+
+{-| Move the pointer to the root of the three
+-}
+goRoot : Zipper a -> Zipper a
+goRoot zipper =
+    case zipper |> goUp of
+        Nothing ->
+            zipper
+
+        Just z ->
+            z |> goRoot
 
 
 {-| Move the pointer to a child that satisfy the test

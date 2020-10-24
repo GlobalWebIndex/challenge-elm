@@ -50,7 +50,7 @@ leaf x =
 
 {- Create a multiway tree from a value and a list of child
 
-   mtree 6 [leaf 1, leaf 2]
+   mtree 6 [leaf 1, leaf 2, mtree 3 []]
 -}
 
 

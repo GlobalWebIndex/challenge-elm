@@ -42,8 +42,7 @@ toFolder entry =
             Nothing
 
 
-
-{-| Mapping from FSEntry to the type of the File 
+{-| Mapping from FSEntry to the type of the File
 -}
 toFile : FSEntry a b -> Maybe b
 toFile entry =
@@ -113,6 +112,11 @@ goUp currentLevel =
         -- should not happen
         Nothing ->
             currentLevel
+
+
+goRoot : FileSystem a b -> FileSystem a b
+goRoot fs =
+    fs |> Zipper.goRoot
 
 
 {-| Go to the given folder
