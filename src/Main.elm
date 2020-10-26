@@ -6,8 +6,8 @@ import Data.Audience as Audience exposing (Audience, AudienceType(..), audiences
 import Data.AudienceFolder as AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
 import FileSystem as FS exposing (FileSystem)
 import Html.Styled exposing (..)
-import Html.Styled.Attributes exposing (css)
-import Html.Styled.Events exposing (onClick)
+import Html.Styled.Attributes exposing (css, value)
+import Html.Styled.Events exposing (onClick, onInput)
 import Json.Decode as D
 import Json.Decode.Extra as DX
 
@@ -36,7 +36,8 @@ type Model
 
 
 type alias Audiences =
-    { selectedType : AudienceType
+    { searchStr : String
+    , selectedType : AudienceType
     , authored : AudienceBrowser
     , curated : AudienceBrowser
     , shared : List Audience
@@ -76,6 +77,7 @@ init _ =
 
                         categorizedAudiences =
                             Audiences
+                                ""
                                 Authored
                                 (AudienceBrowser folders authoredAudiences (FS.createRoot (AudienceFolder.roots authoredFolders) (Audience.roots authoredAudiences)))
                                 (AudienceBrowser folders curatedAudiences (FS.createRoot (AudienceFolder.roots curatedFolders) (Audience.roots curatedAudiences)))
@@ -116,37 +118,44 @@ type Msg
     = GoUp
     | GoTo AudienceFolder
     | SelectAudience AudienceType
+    | ChangeSearch String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model of
-        DecodeOk { selectedType, authored, curated, shared } ->
+        DecodeOk audiences ->
+            --{ searchStr, selectedType, authored, curated, shared }
             case msg of
+                ChangeSearch newStr ->
+                    ( DecodeOk <| { audiences | searchStr = newStr }, Cmd.none )
+
                 SelectAudience newType ->
-                    ( DecodeOk <| Audiences newType (authored |> goRoot) (curated |> goRoot) shared, Cmd.none )
+                    ( DecodeOk <| { audiences | selectedType = newType, authored = audiences.authored |> goRoot, curated = audiences.curated |> goRoot }, Cmd.none )
 
                 GoUp ->
-                    case selectedType of
+                    case audiences.selectedType of
                         Authored ->
-                            ( DecodeOk <| Audiences selectedType (authored |> goUp) curated shared, Cmd.none )
+                            ( DecodeOk <| { audiences | authored = audiences.authored |> goUp }, Cmd.none )
 
                         Curated ->
-                            ( DecodeOk <| Audiences selectedType authored (curated |> goUp) shared, Cmd.none )
+                            ( DecodeOk <| { audiences | curated = audiences.curated |> goUp }, Cmd.none )
 
+                        -- Won't happen
                         Shared ->
-                            ( DecodeOk <| Audiences selectedType authored curated shared, Cmd.none )
+                            ( DecodeOk <| audiences, Cmd.none )
 
                 GoTo folder ->
-                    case selectedType of
+                    case audiences.selectedType of
                         Authored ->
-                            ( DecodeOk <| Audiences selectedType (authored |> goTo folder) curated shared, Cmd.none )
+                            ( DecodeOk <| { audiences | authored = audiences.authored |> goTo folder }, Cmd.none )
 
                         Curated ->
-                            ( DecodeOk <| Audiences selectedType authored (curated |> goTo folder) shared, Cmd.none )
+                            ( DecodeOk <| { audiences | curated = audiences.curated |> goTo folder }, Cmd.none )
 
+                        -- Won't happen
                         Shared ->
-                            ( DecodeOk <| Audiences selectedType authored curated shared, Cmd.none )
+                            ( DecodeOk <| audiences, Cmd.none )
 
         DecodeFailed _ ->
             ( model, Cmd.none )
@@ -196,24 +205,33 @@ view model =
         DecodeFailed errorStr ->
             text errorStr
 
-        DecodeOk { selectedType, authored, curated, shared } ->
+        DecodeOk { searchStr, selectedType, authored, curated, shared } ->
             let
                 audienceBrowser =
                     case selectedType of
                         Authored ->
-                            viewCurrentLevel authored selectedType
+                            viewCurrentLevel searchStr authored selectedType
 
                         Curated ->
-                            viewCurrentLevel curated selectedType
+                            viewCurrentLevel searchStr curated selectedType
 
                         Shared ->
                             div [ css [ browser ] ]
                                 (List.map (viewAudience selectedType) shared)
             in
             div []
-                [ audienceBrowser
+                [ inputWithIcon "🔎" [ value searchStr, onInput ChangeSearch ] []
+                , audienceBrowser
                 , viewAudienceTypeSelector selectedType
                 ]
+
+
+inputWithIcon : String -> List (Attribute msg) -> List (Html msg) -> Html msg
+inputWithIcon icon attributes c =
+    div [ css [ inputWrapper ] ]
+        [ div [ css [ inputIcon ] ] [ text icon ]
+        , input (css [ searchInputCss ] :: attributes) c
+        ]
 
 
 viewAudienceTypeSelector : AudienceType -> Html Msg
@@ -241,14 +259,14 @@ viewAudienceType label audienceType selected =
         [ text label ]
 
 
-viewCurrentLevel : AudienceBrowser -> AudienceType -> Html Msg
-viewCurrentLevel (AudienceBrowser _ _ fs) audienceType =
+viewCurrentLevel : String -> AudienceBrowser -> AudienceType -> Html Msg
+viewCurrentLevel searchStr (AudienceBrowser _ _ fs) audienceType =
     let
         subFolders =
             fs |> FS.subFolders
 
         subAudiences =
-            fs |> FS.subFiles
+            fs |> FS.subFiles |> List.filter (includes (String.toLower searchStr) << String.toLower << .name)
     in
     div [ css [ browser ] ]
         [ viewCurrentFolder audienceType (fs |> FS.currentFolder) (List.length subFolders + List.length subAudiences)
@@ -259,20 +277,30 @@ viewCurrentLevel (AudienceBrowser _ _ fs) audienceType =
         ]
 
 
+includes : String -> String -> Bool
+includes s1 s2 =
+    case s1 of
+        "" ->
+            True
+
+        _ ->
+            String.indexes s1 s2 |> List.length |> (/=) 0
+
+
 viewCurrentFolder : AudienceType -> Maybe AudienceFolder -> Int -> Html Msg
 viewCurrentFolder audienceType maybeFolder filesLength =
     case maybeFolder of
         Just folder ->
             div [ onClick GoUp, css [ folderCss True audienceType ] ]
                 [ text folder.name
-                , span [ css [ folderSize ] ] [ text <| String.fromInt filesLength ]
+                , span [ css [ folderSize audienceType ] ] [ text <| String.fromInt filesLength ]
                 ]
 
         Nothing ->
             div [] []
 
 
-viewAudience : AudienceType -> Audience -> Html msg
+viewAudience : AudienceType -> Audience -> Html Msg
 viewAudience audienceType audience =
     div [ css [ fileCss audienceType ] ]
         [ text audience.name ]
@@ -286,6 +314,34 @@ viewAudienceFolder audienceType folder =
 
 
 -- Css
+
+
+inputIcon : Css.Style
+inputIcon =
+    Css.batch
+        [ Css.position Css.absolute
+        , Css.left (Css.px 10)
+        ]
+
+
+inputWrapper : Css.Style
+inputWrapper =
+    Css.batch
+        [ Css.displayFlex
+        , Css.alignItems Css.center
+        ]
+
+
+searchInputCss : Css.Style
+searchInputCss =
+    Css.batch
+        [ Css.margin (Css.px 5)
+        , Css.width (Css.px 245)
+        , Css.height (Css.px 35)
+        , Css.fontSize (Css.px 19)
+        , Css.borderRadius (Css.px 5)
+        , Css.paddingLeft (Css.px 30)
+        ]
 
 
 audienceTypeCss : Css.Style
@@ -315,7 +371,7 @@ browser : Css.Style
 browser =
     Css.batch
         [ Css.overflowY Css.auto
-        , Css.height (Css.vh 93)
+        , Css.height (Css.vh 86)
         ]
 
 
@@ -355,11 +411,11 @@ folderCss isOpen audienceType =
         ]
 
 
-folderSize : Css.Style
-folderSize =
+folderSize : AudienceType -> Css.Style
+folderSize audienceType =
     Css.batch
         [ Css.float Css.right
-        , Css.backgroundColor (Css.hex "#3d6566")
+        , audienceDarkerColor audienceType
         , Css.color (Css.hex "#ffffff")
         , Css.borderRadius (Css.px 4)
         , Css.paddingRight (Css.px 6)
@@ -378,3 +434,16 @@ audienceColor audienceType =
 
         Curated ->
             Css.backgroundColor (Css.hex "#5f9ea0")
+
+
+audienceDarkerColor : AudienceType -> Css.Style
+audienceDarkerColor audienceType =
+    case audienceType of
+        Authored ->
+            Css.backgroundColor (Css.hex "#904d4d")
+
+        Shared ->
+            Css.backgroundColor (Css.hex "#997300")
+
+        Curated ->
+            Css.backgroundColor (Css.hex "#3d6566")
