@@ -266,7 +266,7 @@ viewCurrentLevel searchStr (AudienceBrowser _ _ fs) audienceType =
             fs |> FS.subFolders
 
         subAudiences =
-            fs |> FS.subFiles |> List.filter (includes (String.toLower searchStr) << String.toLower << .name)
+            fs |> FS.subFiles |> List.filter (includes searchStr << .name)
     in
     div [ css [ browser ] ]
         [ viewCurrentFolder audienceType (fs |> FS.currentFolder) (List.length subFolders + List.length subAudiences)
@@ -279,12 +279,19 @@ viewCurrentLevel searchStr (AudienceBrowser _ _ fs) audienceType =
 
 includes : String -> String -> Bool
 includes s1 s2 =
-    case s1 of
+    let
+        s1Lower =
+            String.toLower s1
+
+        s2Lower =
+            String.toLower s2
+    in
+    case s1Lower of
         "" ->
             True
 
         _ ->
-            String.indexes s1 s2 |> List.length |> (/=) 0
+            String.indexes s1Lower s2Lower |> List.length |> (/=) 0
 
 
 viewCurrentFolder : AudienceType -> Maybe AudienceFolder -> Int -> Html Msg
