@@ -1,7 +1,17 @@
 module Data.Audience exposing
-    ( AudienceType(..), Audience
+    ( Audience
+    , AudienceType(..)
     , audiencesJSON
+    , decoder
+    , isParent
+    , isRoot
+    , roots
     )
+
+import Data.AudienceFolder exposing (AudienceFolder)
+import Json.Decode as D
+import Json.Decode.Extra as DX
+
 
 {-| Data.Audiences module
 
@@ -14,11 +24,13 @@ This module implements everything related to audience resource.
 
 -}
 
+
+
 -- Type definition
+--{-| Audience type
+---}
 
 
-{-| Audience type
--}
 type AudienceType
     = Authored
     | Shared
@@ -33,6 +45,71 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+{-| Determines if the given audience does not have parent folder
+-}
+roots : List Audience -> List Audience
+roots audiences =
+    List.filter isRoot audiences
+
+
+{-| Determines if the given audience does not have parent folder
+-}
+isRoot : Audience -> Bool
+isRoot audience =
+    case audience.folder of
+        Just _ ->
+            False
+
+        Nothing ->
+            True
+
+
+{-| Determines if the folder is the parent of the audience
+-}
+isParent : AudienceFolder -> Audience -> Bool
+isParent parent children =
+    case children.folder of
+        Just parentId ->
+            parentId == parent.id
+
+        Nothing ->
+            False
+
+
+
+-- Decoders
+
+
+decoder : D.Decoder (List Audience)
+decoder =
+    D.field "data" <| D.list audienceDecoder
+
+
+audienceDecoder : D.Decoder Audience
+audienceDecoder =
+    D.succeed Audience
+        |> DX.andMap (D.field "id" D.int)
+        |> DX.andMap (D.field "name" D.string)
+        |> DX.andMap (D.field "type" (D.andThen audienceTypeDecoder D.string))
+        |> DX.andMap (D.field "folder" (D.nullable D.int))
+
+
+audienceTypeDecoder : String -> D.Decoder AudienceType
+audienceTypeDecoder typeString =
+    case typeString of
+        "user" ->
+            D.succeed Authored
+
+        "shared" ->
+            D.succeed Shared
+
+        "curated" ->
+            D.succeed Curated
+
+        _ ->
+            D.fail ("this is not an audience type: " ++ typeString)
 
 
 
