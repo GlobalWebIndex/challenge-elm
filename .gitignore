@@ -1,1 +1,13 @@
 elm-stuff/
+
+# Ignore temporary vim files.
+*.swp
+*.swo
+
+# Ignore krita files
+*.kra
+*.kra~
+
+# temporary repl-session file
+tmp_repl.elm
+
