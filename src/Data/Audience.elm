@@ -2,7 +2,6 @@ module Data.Audience exposing
     ( AudienceType(..), Audience
     , audiencesJSON
     , subaudiences0
-    , Subaudiences
     )
 
 

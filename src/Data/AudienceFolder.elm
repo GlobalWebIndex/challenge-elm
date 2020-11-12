@@ -1,5 +1,5 @@
 
-module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON, subfolders0 )
+module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON, subfolders0, folders0 )
 
 {-| Data.AudienceFolder module
 
@@ -44,6 +44,19 @@ maudienceFolders0 : Result D.Error (List AudienceFolder)
 maudienceFolders0 = D.decodeString foldersDecoder audienceFoldersJSON
 
 type alias Subfolders = Dict Int (List AudienceFolder)
+type alias Folders = Dict Int AudienceFolder
+
+-- TODO: I need to convert 
+getFolders : List AudienceFolder -> Folders
+getFolders folders =
+  let initState = Dict.empty
+      
+      action folder state =
+        Dict.insert folder.id folder state
+  in List.foldr action initState folders -- TODO: explain why you chose foldr here instead of foldl
+
+folders0 : Result D.Error Folders
+folders0 = Result.map getFolders maudienceFolders0
 
 -- Creates a key/value map where the keys are folder ids, and values are their list of subfolders
 dictOfFolders : List AudienceFolder -> Subfolders
@@ -57,7 +70,7 @@ dictOfFolders folders =
               folderId
               (\mfolders ->
                 case mfolders of
-                  Just folders0 -> Just (folder :: folders0) -- The reason for 0 is Elm's policy on shadowing.
+                  Just folders1 -> Just (folder :: folders1) -- The reason for 1 is Elm's policy on shadowing.
                   Nothing -> Just [folder]
                 )
               state
