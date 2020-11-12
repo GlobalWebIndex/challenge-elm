@@ -17,8 +17,9 @@ This module implements everything related to audience resource.
 -}
 
 import Json.Decode as D exposing ( Decoder )
-import Dict exposing ( Dict )
+import Json.Decode.Extra as D
 
+import Dict exposing ( Dict )
 import Dict.Helpers exposing ( fromListAppendBy )
 
 
@@ -89,7 +90,12 @@ audienceOfFields id name type_Str folder =
 
 audienceDecoder : Decoder Audience
 audienceDecoder =
-  let maybeAudienceDecoder = D.map4 audienceOfFields idField nameField type_Field folderField
+  let maybeAudienceDecoder =
+        D.succeed audienceOfFields 
+          |> D.andMap idField
+          |> D.andMap nameField
+          |> D.andMap type_Field
+          |> D.andMap folderField
   in collapse maybeAudienceDecoder (\s -> s)
 
 audiencesDecoder : Decoder (List Audience)

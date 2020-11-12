@@ -21,7 +21,7 @@ type alias ExplicitFolder =
 
 type alias State = Maybe ExplicitFolder
 
--- helper
+-- a helper function
 listOfMaybeList : Maybe (List a) -> List a
 listOfMaybeList mxs =
   case mxs of

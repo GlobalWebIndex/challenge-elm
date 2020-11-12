@@ -13,6 +13,7 @@ This module implements everything related to audience folder resource.
 -}
 
 import Json.Decode as D exposing ( Decoder )
+import Json.Decode.Extra as D
 
 import Dict exposing ( Dict )
 import Dict.Helpers exposing ( fromListBy, fromListAppendBy )
@@ -36,7 +37,11 @@ parentField = D.field "parent" (D.nullable D.int)
 
 -- = AUDIENCE FOLDER DECODER --
 folderDecoder : Decoder AudienceFolder
-folderDecoder = D.map3 AudienceFolder idField nameField parentField
+folderDecoder =
+  D.succeed AudienceFolder
+    |> D.andMap idField
+    |> D.andMap nameField
+    |> D.andMap parentField
 
 foldersDecoder : Decoder (List AudienceFolder)
 foldersDecoder = D.field "data" (D.list folderDecoder)
