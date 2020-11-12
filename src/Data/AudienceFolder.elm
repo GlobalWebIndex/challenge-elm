@@ -1,4 +1,4 @@
-module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
+module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON, audienceFolders)
 
 {-| Data.AudienceFolder module
 
@@ -10,6 +10,11 @@ This module implements everything related to audience folder resource.
 @docs AudienceFolder, audienceFoldersJSON
 
 -}
+
+import Json.Decode as D exposing ( Decoder )
+
+-- TODO: remove
+import Debug exposing ( log, todo, toString )
 
 -- Type definition
 
@@ -23,6 +28,21 @@ type alias AudienceFolder =
     }
 
 
+
+-- = BASIC FIELDS DECODERS =
+idField = D.field "id" D.int
+nameField = D.field "name" D.string
+parentField = D.field "parent" (D.nullable D.int)
+
+-- = AUDIENCE FOLDER DECODER --
+folderDecoder : Decoder AudienceFolder
+folderDecoder = D.map3 AudienceFolder idField nameField parentField
+
+foldersDecoder : Decoder (List AudienceFolder)
+foldersDecoder = D.field "data" (D.list folderDecoder)
+
+audienceFolders : Result D.Error (List AudienceFolder)
+audienceFolders = D.decodeString foldersDecoder audienceFoldersJSON
 
 -- Fixtures
 
