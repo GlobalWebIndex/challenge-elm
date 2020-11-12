@@ -1,4 +1,5 @@
-module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON, audienceFolders)
+
+module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON, subfolders0 )
 
 {-| Data.AudienceFolder module
 
@@ -12,9 +13,7 @@ This module implements everything related to audience folder resource.
 -}
 
 import Json.Decode as D exposing ( Decoder )
-
--- TODO: remove
-import Debug exposing ( log, todo, toString )
+import Dict exposing ( Dict )
 
 -- Type definition
 
@@ -41,8 +40,33 @@ folderDecoder = D.map3 AudienceFolder idField nameField parentField
 foldersDecoder : Decoder (List AudienceFolder)
 foldersDecoder = D.field "data" (D.list folderDecoder)
 
-audienceFolders : Result D.Error (List AudienceFolder)
-audienceFolders = D.decodeString foldersDecoder audienceFoldersJSON
+maudienceFolders0 : Result D.Error (List AudienceFolder)
+maudienceFolders0 = D.decodeString foldersDecoder audienceFoldersJSON
+
+type alias Subfolders = Dict Int (List AudienceFolder)
+
+-- Creates a key/value map where the keys are folder ids, and values are their list of subfolders
+dictOfFolders : List AudienceFolder -> Subfolders
+dictOfFolders folders =
+  let initState = Dict.empty
+
+      action folder state =
+        case folder.parent of
+          Just folderId ->
+            Dict.update
+              folderId
+              (\mfolders ->
+                case mfolders of
+                  Just folders0 -> Just (folder :: folders0) -- The reason for 0 is Elm's policy on shadowing.
+                  Nothing -> Just [folder]
+                )
+              state
+          Nothing -> state
+  in
+    List.foldl action initState folders -- foldl is used here because I want to preserve the order of audiences from the list
+
+subfolders0 : Result D.Error Subfolders
+subfolders0 = Result.map dictOfFolders maudienceFolders0
 
 -- Fixtures
 
