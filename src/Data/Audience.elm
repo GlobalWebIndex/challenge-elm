@@ -1,7 +1,9 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
     , audiencesJSON
+    , audiences
     )
+
 
 {-| Data.Audiences module
 
@@ -14,7 +16,20 @@ This module implements everything related to audience resource.
 
 -}
 
+import Json.Decode as D exposing ( Decoder )
+
+-- === HELPERS ===
+collapse : Decoder (Result e a) -> (e -> String) -> Decoder a
+collapse decoder stringOfErrorMessage =
+  D.andThen (\mx ->
+      case mx of
+        Ok x -> D.succeed x
+        Err e -> D.fail (stringOfErrorMessage e)
+    )
+    decoder
+
 -- Type definition
+
 
 
 {-| Audience type
@@ -35,6 +50,49 @@ type alias Audience =
     }
 
 
+-- === DECODERS ===
+-- Assumptions: Every audience json string contains valid
+--                id : Int, name : String, type : { "authored", "shared", "curated" }, folder : { null } + Int
+--              fields. All other fields can be ignored.
+-- TODO: what about audiences with type="user"? All such audiences are not curated, nor shared.
+--       Can I assume that they are Authored? There are no audiences with type="authored". Let's roll with that.
+
+-- The problem here is that Json can't represent sum types well.
+-- Even if the json data is valid and each type field contains one of the strings in the set { "authored", "shared", "curated" },
+-- Elm doesn't know this. So we'll assume that there could be an error in the json data
+audienceTypeOfString : String -> Maybe AudienceType
+audienceTypeOfString s =
+  case s of
+    "user" -> Just Authored
+    "shared" -> Just Shared
+    "curated" -> Just Curated
+    _ -> Nothing
+
+-- = BASIC FIELDS DECODERS =
+idField = D.field "id" D.int
+nameField = D.field "name" D.string
+type_Field = D.field "type" D.string
+folderField = D.field "folder" (D.nullable D.int)
+
+-- = AUDIENCE DECODER --
+audienceOfFields : Int -> String -> String -> Maybe Int -> Result String Audience
+audienceOfFields id name type_Str folder =
+  case audienceTypeOfString type_Str of
+    Just type_ -> Ok (Audience id name type_ folder)
+    Nothing ->
+      let errMsg = "Unknown type of audience id=" ++ String.fromInt id ++ ": " ++ type_Str
+      in Err errMsg
+
+audienceDecoder : Decoder Audience
+audienceDecoder =
+  let maybeAudienceDecoder = D.map4 audienceOfFields idField nameField type_Field folderField
+  in collapse maybeAudienceDecoder (\s -> s)
+
+audiencesDecoder : Decoder (List Audience)
+audiencesDecoder = D.field "data" (D.list audienceDecoder)
+
+audiences : Result D.Error (List Audience)
+audiences = D.decodeString audiencesDecoder audiencesJSON
 
 -- Fixtures
 
@@ -5924,3 +5982,4 @@ audiencesJSON =
         ]
     }
     """
+
