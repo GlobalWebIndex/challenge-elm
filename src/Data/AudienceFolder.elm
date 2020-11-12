@@ -46,7 +46,7 @@ maudienceFolders0 = D.decodeString foldersDecoder audienceFoldersJSON
 type alias Subfolders = Dict Int (List AudienceFolder)
 type alias Folders = Dict Int AudienceFolder
 
--- TODO: I need to convert 
+-- Creates a key/value map where the keys are folder ids, and values are the folders themselves.
 getFolders : List AudienceFolder -> Folders
 getFolders folders =
   let initState = Dict.empty
