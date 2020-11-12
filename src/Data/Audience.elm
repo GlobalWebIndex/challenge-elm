@@ -18,20 +18,10 @@ This module implements everything related to audience resource.
 
 import Json.Decode as D exposing ( Decoder )
 import Json.Decode.Extra as D
+import Json.Decode.Helpers exposing ( collapseError )
 
 import Dict exposing ( Dict )
 import Dict.Helpers exposing ( fromListAppendBy )
-
-
--- === HELPERS ===
-collapse : Decoder (Result e a) -> (e -> String) -> Decoder a
-collapse decoder stringOfErrorMessage =
-  D.andThen (\mx ->
-      case mx of
-        Ok x -> D.succeed x
-        Err e -> D.fail (stringOfErrorMessage e)
-    )
-    decoder
 
 -- Type definition
 
@@ -96,7 +86,7 @@ audienceDecoder =
           |> D.andMap nameField
           |> D.andMap type_Field
           |> D.andMap folderField
-  in collapse maybeAudienceDecoder (\s -> s)
+  in collapseError maybeAudienceDecoder (\s -> s)
 
 audiencesDecoder : Decoder (List Audience)
 audiencesDecoder = D.field "data" (D.list audienceDecoder)
