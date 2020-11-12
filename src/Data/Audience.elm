@@ -19,6 +19,9 @@ This module implements everything related to audience resource.
 import Json.Decode as D exposing ( Decoder )
 import Dict exposing ( Dict )
 
+import Dict.Helpers exposing ( fromListAppendBy )
+
+
 -- === HELPERS ===
 collapse : Decoder (Result e a) -> (e -> String) -> Decoder a
 collapse decoder stringOfErrorMessage =
@@ -100,23 +103,7 @@ type alias Subaudiences = Dict Int (List Audience)
 -- Creates a key/value map where the keys are folder ids, and values are their list of audiences
 -- TODO: can be eta-reduces (eliminate audiences arg), but why bother? This to me is more readable
 dictOfAudiences : List Audience -> Subaudiences
-dictOfAudiences audiences =
-  let initState = Dict.empty
-
-      action audience state =
-        case audience.folder of
-          Just folderId ->
-            Dict.update
-              folderId
-              (\maudiences ->
-                case maudiences of
-                  Just audiences0 -> Just (audience :: audiences0) -- The reason for 0 is Elm's policy on shadowing.
-                  Nothing -> Just [audience]
-                )
-              state
-          Nothing -> state
-  in
-    List.foldl action initState audiences -- foldl is used here because I want to preserve the order of audiences from the list
+dictOfAudiences audiences = fromListAppendBy .folder audiences
 
 subaudiences0 : Result D.Error Subaudiences
 subaudiences0 = Result.map dictOfAudiences maudiences0

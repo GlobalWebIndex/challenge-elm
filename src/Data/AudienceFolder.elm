@@ -13,7 +13,9 @@ This module implements everything related to audience folder resource.
 -}
 
 import Json.Decode as D exposing ( Decoder )
+
 import Dict exposing ( Dict )
+import Dict.Helpers exposing ( fromListBy, fromListAppendBy )
 
 -- Type definition
 
@@ -25,7 +27,6 @@ type alias AudienceFolder =
     , name : String
     , parent : Maybe Int
     }
-
 
 
 -- = BASIC FIELDS DECODERS =
@@ -43,40 +44,22 @@ foldersDecoder = D.field "data" (D.list folderDecoder)
 maudienceFolders0 : Result D.Error (List AudienceFolder)
 maudienceFolders0 = D.decodeString foldersDecoder audienceFoldersJSON
 
-type alias Subfolders = Dict Int (List AudienceFolder)
+-- === Folders ===
 type alias Folders = Dict Int AudienceFolder
 
 -- Creates a key/value map where the keys are folder ids, and values are the folders themselves.
 getFolders : List AudienceFolder -> Folders
-getFolders folders =
-  let initState = Dict.empty
-      
-      action folder state =
-        Dict.insert folder.id folder state
-  in List.foldr action initState folders -- TODO: explain why you chose foldr here instead of foldl
+getFolders folders = fromListBy .id folders
 
 folders0 : Result D.Error Folders
 folders0 = Result.map getFolders maudienceFolders0
 
+-- === Subfolders ===
+type alias Subfolders = Dict Int (List AudienceFolder)
+
 -- Creates a key/value map where the keys are folder ids, and values are their list of subfolders
 dictOfFolders : List AudienceFolder -> Subfolders
-dictOfFolders folders =
-  let initState = Dict.empty
-
-      action folder state =
-        case folder.parent of
-          Just folderId ->
-            Dict.update
-              folderId
-              (\mfolders ->
-                case mfolders of
-                  Just folders1 -> Just (folder :: folders1) -- The reason for 1 is Elm's policy on shadowing.
-                  Nothing -> Just [folder]
-                )
-              state
-          Nothing -> state
-  in
-    List.foldl action initState folders -- foldl is used here because I want to preserve the order of audiences from the list
+dictOfFolders folders = fromListAppendBy .parent folders
 
 subfolders0 : Result D.Error Subfolders
 subfolders0 = Result.map dictOfFolders maudienceFolders0
