@@ -50,11 +50,11 @@ type alias Audience =
 --                id : Int, name : String, type : { "authored", "shared", "curated" }, folder : { null } + Int
 --              fields. All other fields can be ignored.
 -- TODO: what about audiences with type="user"? All such audiences are not curated, nor shared.
---       Can I assume that they are Authored? There are no audiences with type="authored". Let's roll with that.
+--       Can I assume that they are Authored? (There are no audiences with type="authored"). Yep, let's roll with that.
 
 -- The problem here is that Json can't represent sum types well.
 -- Even if the json data is valid and each type field contains one of the strings in the set { "authored", "shared", "curated" },
--- Elm doesn't know this. So we'll assume that there could be an error in the json data
+-- Elm doesn't know this. So we'll assume that there could be an error in the json data - so that's why we have Maybe in the following type signature.
 audienceTypeOfString : String -> Maybe AudienceType
 audienceTypeOfString s =
   case s of
@@ -97,7 +97,7 @@ maudiences0 = D.decodeString audiencesDecoder audiencesJSON
 type alias Subaudiences = Dict Int (List Audience)
 
 -- Creates a key/value map where the keys are folder ids, and values are their list of audiences
--- TODO: can be eta-reduces (eliminate audiences arg), but why bother? This to me is more readable
+-- TODO: can be eta-reduces (eliminate audiences arg), but why bother? This to me is more readable.
 dictOfAudiences : List Audience -> Subaudiences
 dictOfAudiences audiences = fromListAppendBy .folder audiences
 

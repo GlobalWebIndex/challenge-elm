@@ -3,8 +3,8 @@ module Main exposing (main)
 import Data.Audience exposing ( Audience, subaudiences0 )
 import Data.AudienceFolder exposing ( AudienceFolder, subfolders0, folders0 )
 import Html exposing (Html)
-import Html exposing (Html)
 import Html.Events as Events
+import Html.Attributes as Attr
 
 import Browser
 
@@ -12,6 +12,15 @@ import Dict exposing ( Dict )
 
 -- TODO: remove
 import Debug exposing ( log, todo, toString )
+
+-- ====== Overview ======
+-- 1. Data.Audience and Data.AudienceFolder expose dictionaries
+--    whose keys are folder ids and whose values are folders, subfolders, and subaudience of the mentioned folder id.
+-- 2. If all parsing of JSON goes well, the state of the application is just
+--    a triple of parent folder, its subfolders and subaudiences.
+-- 3. The only permissible action is to change the current parent folder.
+--
+-- *. TODO: what about stylesheets?
 
 -- ===STATE=== --
 type alias ExplicitFolder =
@@ -21,15 +30,15 @@ type alias ExplicitFolder =
 
 type alias State = Maybe ExplicitFolder
 
--- a helper function
+-- a helper function - not worth to put into a separate module
 listOfMaybeList : Maybe (List a) -> List a
 listOfMaybeList mxs =
   case mxs of
     Just xs -> xs
     Nothing -> []
 
-getState : Int -> State
-getState folderId =
+stateOfFolderId : Int -> State
+stateOfFolderId folderId =
   case (folders0, subfolders0, subaudiences0) of
     (Ok foldersDict, Ok subfoldersDict, Ok subaudiencesDict) ->
       Maybe.map
@@ -43,15 +52,15 @@ getState folderId =
     _ -> Nothing
 
 initState : State
--- initState = getState 357
-initState = getState 3111
+-- initState = stateOfFolderId 357
+initState = stateOfFolderId 3111
 -- initState = Nothing
 
 -- ===ACTION===
 type Action = ChangeFolder Int
 
 action : Action -> State -> State
-action (ChangeFolder folderId) _ = getState folderId
+action (ChangeFolder folderId) _ = stateOfFolderId folderId
 
 -- ===VIEW===
 view : State -> Html Action
@@ -60,30 +69,51 @@ view state =
     Just explicitFolder ->
       -- log (toString state)
       Html.div
-        []
-        [ viewParent explicitFolder.parentFolder
+        [ Attr.class "container" ]
+        [ viewParent explicitFolder
         , viewSubfolders explicitFolder.subfolders
         , viewSubaudiences explicitFolder.subaudiences
         ]
-    Nothing -> Html.text "nothing to display"
+    Nothing -> Html.text "Nothing to display"
 
-viewParent : AudienceFolder -> Html Action
-viewParent folder =
-  case folder.parent of
-    Just folderId -> Html.h1 [ Events.onClick (ChangeFolder folderId) ] [ Html.text folder.name ]
-    Nothing -> Html.h1 [] [ Html.text folder.name ]
+-- TODO: It is a bit unfortunate to recompute lengths every time the state changes,
+--       but in practive for the size of the data that I am given this is not a big deal.
+viewParent : ExplicitFolder -> Html Action
+viewParent state =
+  let parentFolder = state.parentFolder
+      size = List.length state.subfolders + List.length state.subaudiences
+      attributes =
+        Attr.class "parent-folder" ::
+          -- Different behaviour depending on whether the current parent folder has a parent.
+          case parentFolder.parent of
+            Just folderId -> [ Events.onClick (ChangeFolder folderId), Attr.class "parent-clickable" ]
+            Nothing -> []
+  in
+    Html.h1
+      attributes
+      [ Html.text parentFolder.name
+      , Html.text " "
+      , Html.span [ Attr.class "parent-size" ] [ Html.text (String.fromInt size) ] ]
 
 viewSubfolder : AudienceFolder -> Html Action
-viewSubfolder folder = Html.li [ Events.onClick (ChangeFolder folder.id) ] [ Html.text folder.name ]
+viewSubfolder folder =
+  Html.li
+    [ Events.onClick (ChangeFolder folder.id)
+    , Attr.class "subfolder" ]
+    [ Html.text folder.name ]
 
 viewSubfolders : List AudienceFolder -> Html Action
-viewSubfolders folders = Html.ul [] (List.map viewSubfolder folders)
+viewSubfolders folders = Html.ul [ Attr.class "subfolders", Attr.class "parent-clickable" ] (List.map viewSubfolder folders)
 
 viewSubaudience : Audience -> Html Action
-viewSubaudience audience = Html.li [] [ Html.text audience.name ]
+viewSubaudience audience =
+  Html.li
+    [ Attr.class "subaudience" ]
+    [ Html.span [] [Html.text audience.name]
+    , Html.img [ Attr.src "pencil.svg"] [] ]
 
 viewSubaudiences : List Audience -> Html Action
-viewSubaudiences audiences = Html.ul [] (List.map viewSubaudience audiences)
+viewSubaudiences audiences = Html.ul [ Attr.class "subaudiences" ] (List.map viewSubaudience audiences)
 
 -- === MAIN ===
 main = Browser.sandbox { init = initState, update = action, view = view }
