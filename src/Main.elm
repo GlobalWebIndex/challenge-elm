@@ -14,13 +14,14 @@ import Dict exposing ( Dict )
 import Debug exposing ( log, todo, toString )
 
 -- ====== Overview ======
+-- 0. To compile the app, execute
+--      $ elm make src/Main.elm --output=public/main.js
+--    and open public/index.html. The css is in public/style.css and is not included when the app is executed via elm reactor.
 -- 1. Data.Audience and Data.AudienceFolder expose dictionaries
 --    whose keys are folder ids and whose values are folders, subfolders, and subaudience of the mentioned folder id.
 -- 2. If all parsing of JSON goes well, the state of the application is just
---    a triple of parent folder, its subfolders and subaudiences.
+--    a triple (record) of parent folder, its subfolders and subaudiences.
 -- 3. The only permissible action is to change the current parent folder.
---
--- *. TODO: what about stylesheets?
 
 -- ===STATE=== --
 type alias ExplicitFolder =
@@ -52,8 +53,8 @@ stateOfFolderId folderId =
     _ -> Nothing
 
 initState : State
--- initState = stateOfFolderId 357
-initState = stateOfFolderId 3111
+initState = stateOfFolderId 357
+-- initState = stateOfFolderId 3111
 -- initState = Nothing
 
 -- ===ACTION===
@@ -70,11 +71,15 @@ view state =
       -- log (toString state)
       Html.div
         [ Attr.class "container" ]
-        [ viewParent explicitFolder
+        [ Html.a [ Attr.href "https://www.flaticon.com/authors/gregor-cresnar" ] [ Html.text "icon attribution" ]
+        , viewParent explicitFolder
         , viewSubfolders explicitFolder.subfolders
         , viewSubaudiences explicitFolder.subaudiences
         ]
     Nothing -> Html.text "Nothing to display"
+
+folderIcon = Html.img [ Attr.src "folder.svg" ] []
+editIcon = Html.img [ Attr.src "pencil.svg" ] []
 
 -- TODO: It is a bit unfortunate to recompute lengths every time the state changes,
 --       but in practive for the size of the data that I am given this is not a big deal.
@@ -91,7 +96,8 @@ viewParent state =
   in
     Html.h1
       attributes
-      [ Html.text parentFolder.name
+      [ folderIcon, Html.text " "
+      , Html.text parentFolder.name
       , Html.text " "
       , Html.span [ Attr.class "parent-size" ] [ Html.text (String.fromInt size) ] ]
 
@@ -100,20 +106,26 @@ viewSubfolder folder =
   Html.li
     [ Events.onClick (ChangeFolder folder.id)
     , Attr.class "subfolder" ]
-    [ Html.text folder.name ]
+    [ Html.text folder.name, Html.img [ Attr.src "folder.svg"] [] ]
 
 viewSubfolders : List AudienceFolder -> Html Action
-viewSubfolders folders = Html.ul [ Attr.class "subfolders", Attr.class "parent-clickable" ] (List.map viewSubfolder folders)
+viewSubfolders folders =
+  Html.ul
+    [ Attr.class "subfolders", Attr.class "parent-clickable" ]
+    (List.map viewSubfolder folders)
 
 viewSubaudience : Audience -> Html Action
 viewSubaudience audience =
   Html.li
     [ Attr.class "subaudience" ]
     [ Html.span [] [Html.text audience.name]
-    , Html.img [ Attr.src "pencil.svg"] [] ]
+    , Html.img [ Attr.src "edit.svg"] [] ]
 
 viewSubaudiences : List Audience -> Html Action
-viewSubaudiences audiences = Html.ul [ Attr.class "subaudiences" ] (List.map viewSubaudience audiences)
+viewSubaudiences audiences =
+  Html.ul
+    [ Attr.class "subaudiences" ]
+    (List.map viewSubaudience audiences)
 
 -- === MAIN ===
 main = Browser.sandbox { init = initState, update = action, view = view }

@@ -30,7 +30,6 @@ ul {
 }
 
 .parent-folder, .subfolder, .subaudience {
-  padding: 20px 23px;
 
   border-radius: 4px;
 
@@ -40,6 +39,8 @@ ul {
 }
 
 .subfolder, .subaudience {
+  padding: 20px 23px 20px 33px;
+
   margin-top: 4px;
 
   display: flex;
@@ -47,18 +48,22 @@ ul {
   justify-content: space-between;
 }
 
+.parent-folder {
+  padding: 20px 23px 20px 10px;
+}
+
 .subaudience {
   background-color: #0095CC;
   color: white;
 }
 
-.subaudience img {
+.subaudience img, .subfolders img {
   width: 15px;
-  color: white;
 }
 
 .subfolders {
 }
+
 
 .subfolder {
   background-color: #338DAD;
@@ -68,6 +73,10 @@ ul {
 .parent-folder {
   background-color: #007098;
   color: white;
+}
+
+.parent-folder img {
+  width: 15px;
 }
 
 .parent-clickable {
@@ -81,5 +90,4 @@ ul {
   padding: 4px 5px;
   font-size: 23px;
 }
-
 
