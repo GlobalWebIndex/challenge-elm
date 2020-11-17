@@ -1,7 +1,9 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
     , audiencesJSON
+    , subaudiences0
     )
+
 
 {-| Data.Audiences module
 
@@ -14,7 +16,15 @@ This module implements everything related to audience resource.
 
 -}
 
+import Json.Decode as D exposing ( Decoder )
+import Json.Decode.Extra as D
+import Json.Decode.Helpers exposing ( collapseError )
+
+import Dict exposing ( Dict )
+import Dict.Helpers exposing ( fromListAppendBy )
+
 -- Type definition
+
 
 
 {-| Audience type
@@ -35,6 +45,64 @@ type alias Audience =
     }
 
 
+-- === DECODERS ===
+-- Assumptions: Every audience json string contains valid
+--                id : Int, name : String, type : { "authored", "shared", "curated" }, folder : { null } + Int
+--              fields. All other fields can be ignored.
+-- TODO: what about audiences with type="user"? All such audiences are not curated, nor shared.
+--       Can I assume that they are Authored? (There are no audiences with type="authored"). Yep, let's roll with that.
+
+-- The problem here is that Json can't represent sum types well.
+-- Even if the json data is valid and each type field contains one of the strings in the set { "authored", "shared", "curated" },
+-- Elm doesn't know this. So we'll assume that there could be an error in the json data - so that's why we have Maybe in the following type signature.
+audienceTypeOfString : String -> Maybe AudienceType
+audienceTypeOfString s =
+  case s of
+    "user" -> Just Authored
+    "shared" -> Just Shared
+    "curated" -> Just Curated
+    _ -> Nothing
+
+-- = BASIC FIELDS DECODERS =
+idField = D.field "id" D.int
+nameField = D.field "name" D.string
+type_Field = D.field "type" D.string
+folderField = D.field "folder" (D.nullable D.int)
+
+-- = AUDIENCE DECODER --
+audienceOfFields : Int -> String -> String -> Maybe Int -> Result String Audience
+audienceOfFields id name type_Str folder =
+  case audienceTypeOfString type_Str of
+    Just type_ -> Ok (Audience id name type_ folder)
+    Nothing ->
+      let errMsg = "Unknown type of audience id=" ++ String.fromInt id ++ ": " ++ type_Str
+      in Err errMsg
+
+audienceDecoder : Decoder Audience
+audienceDecoder =
+  let maybeAudienceDecoder =
+        D.succeed audienceOfFields 
+          |> D.andMap idField
+          |> D.andMap nameField
+          |> D.andMap type_Field
+          |> D.andMap folderField
+  in collapseError maybeAudienceDecoder (\s -> s)
+
+audiencesDecoder : Decoder (List Audience)
+audiencesDecoder = D.field "data" (D.list audienceDecoder)
+
+maudiences0 : Result D.Error (List Audience)
+maudiences0 = D.decodeString audiencesDecoder audiencesJSON
+
+type alias Subaudiences = Dict Int (List Audience)
+
+-- Creates a key/value map where the keys are folder ids, and values are their list of audiences
+-- TODO: can be eta-reduces (eliminate audiences arg), but why bother? This to me is more readable.
+dictOfAudiences : List Audience -> Subaudiences
+dictOfAudiences audiences = fromListAppendBy .folder audiences
+
+subaudiences0 : Result D.Error Subaudiences
+subaudiences0 = Result.map dictOfAudiences maudiences0
 
 -- Fixtures
 
@@ -5924,3 +5992,4 @@ audiencesJSON =
         ]
     }
     """
+

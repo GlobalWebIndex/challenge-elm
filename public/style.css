@@ -1,0 +1,93 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+/* == BASICS == */
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+h1, h2, h3 {
+  margin: 0;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* === APP === */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 430px;
+}
+
+.parent-folder, .subfolder, .subaudience {
+
+  border-radius: 4px;
+
+  white-space: nowrap; 
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.subfolder, .subaudience {
+  padding: 20px 23px 20px 33px;
+
+  margin-top: 4px;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.parent-folder {
+  padding: 20px 23px 20px 10px;
+}
+
+.subaudience {
+  background-color: #0095CC;
+  color: white;
+}
+
+.subaudience img, .subfolders img {
+  width: 15px;
+}
+
+.subfolders {
+}
+
+
+.subfolder {
+  background-color: #338DAD;
+  color: white;
+}
+
+.parent-folder {
+  background-color: #007098;
+  color: white;
+}
+
+.parent-folder img {
+  width: 15px;
+}
+
+.parent-clickable {
+  cursor: pointer;
+}
+
+.parent-size {
+  background-color: #005A79;
+  color: grey;
+  border-radius: 5px;
+  padding: 4px 5px;
+  font-size: 23px;
+}
+
