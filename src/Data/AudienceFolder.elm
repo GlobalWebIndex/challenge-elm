@@ -1,4 +1,4 @@
-module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
+module Data.AudienceFolder exposing (AudienceFolder, list)
 
 {-| Data.AudienceFolder module
 
@@ -7,9 +7,17 @@ This module implements everything related to audience folder resource.
 
 # Interface
 
-@docs AudienceFolder, audienceFoldersJSON
+@docs AudienceFolder, list
 
 -}
+
+import Error exposing (Error)
+import HttpMock
+import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Extra as Decode
+import Task exposing (Task)
+
+
 
 -- Type definition
 
@@ -21,6 +29,31 @@ type alias AudienceFolder =
     , name : String
     , parent : Maybe Int
     }
+
+
+
+-- JSON Decoder
+
+
+decoder : Decoder AudienceFolder
+decoder =
+    Decode.succeed AudienceFolder
+        |> Decode.andMap (Decode.field "id" Decode.int)
+        |> Decode.andMap (Decode.field "name" Decode.string)
+        |> Decode.andMap (Decode.field "parent" (Decode.nullable Decode.int))
+
+
+
+-- API
+
+
+list : Task Error (List AudienceFolder)
+list =
+    let
+        listDecoder =
+            Decode.field "data" (Decode.list decoder)
+    in
+    HttpMock.task audienceFoldersJSON listDecoder
 
 
 
