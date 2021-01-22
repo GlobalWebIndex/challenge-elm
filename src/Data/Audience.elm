@@ -1,7 +1,4 @@
-module Data.Audience exposing
-    ( AudienceType(..), Audience
-    , audiencesJSON
-    )
+module Data.Audience exposing (AudienceType(..), Audience, list)
 
 {-| Data.Audiences module
 
@@ -10,9 +7,17 @@ This module implements everything related to audience resource.
 
 # Interface
 
-@docs AudienceType, Audience, audienceJSON
+@docs AudienceType, Audience, list
 
 -}
+
+import Error exposing (Error)
+import HttpMock
+import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Extra as Decode
+import Task exposing (Task)
+
+
 
 -- Type definition
 
@@ -33,6 +38,52 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+
+-- JSON Decoder
+
+
+decoder : Decoder Audience
+decoder =
+    Decode.succeed Audience
+        |> Decode.andMap (Decode.field "id" Decode.int)
+        |> Decode.andMap (Decode.field "name" Decode.string)
+        |> Decode.andMap (Decode.field "type" typeDecoder)
+        |> Decode.andMap (Decode.field "folder" (Decode.nullable Decode.int))
+
+
+typeDecoder : Decoder AudienceType
+typeDecoder =
+    Decode.string
+        |> Decode.andThen
+            (\str ->
+                case str of
+                    "user" ->
+                        Decode.succeed Authored
+
+                    "shared" ->
+                        Decode.succeed Shared
+
+                    "curated" ->
+                        Decode.succeed Curated
+
+                    _ ->
+                        Decode.fail <| "Invalid audience type \"" ++ str ++ "\""
+            )
+
+
+
+-- API
+
+
+list : Task Error (List Audience)
+list =
+    let
+        listDecoder =
+            Decode.field "data" (Decode.list decoder)
+    in
+    HttpMock.task audiencesJSON listDecoder
 
 
 
