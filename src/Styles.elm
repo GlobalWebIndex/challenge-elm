@@ -4,6 +4,8 @@ module Styles exposing
     , breadcrumb
     , content
     , current
+    , filter
+    , filters
     , list
     , loader
     , parent
@@ -55,6 +57,16 @@ loader =
 list : String
 list =
     "list"
+
+
+filter : String
+filter =
+    "filter"
+
+
+filters : String
+filters =
+    "filters"
 
 
 breadcrumb : String
@@ -123,6 +135,27 @@ styles =
                     ]
                 , CssG.class current
                     []
+                ]
+            ]
+        , CssG.class filters
+            [ Css.marginBottom (Css.px 10)
+            , Css.padding (Css.px 10)
+            , Css.displayFlex
+            , Css.justifyContent Css.center
+            ]
+        , CssG.button
+            [ CssG.withClass filter
+                [ Css.padding (Css.px 10)
+                , Css.marginRight (Css.px 10)
+                , Css.backgroundColor lightPurple
+                , Css.border (Css.px 0)
+                , Css.borderRadius (Css.px 4)
+                , Css.color white
+                , Css.cursor Css.pointer
+                , CssG.withClass current
+                    [ Css.backgroundColor darkPurple
+                    , Css.cursor Css.default
+                    ]
                 ]
             ]
         , CssG.ul
