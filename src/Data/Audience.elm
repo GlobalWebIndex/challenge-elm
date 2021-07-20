@@ -1,6 +1,6 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
-    , audiencesJSON
+    , audiencesDecoder, audiencesJSON
     )
 
 {-| Data.Audiences module
@@ -13,6 +13,12 @@ This module implements everything related to audience resource.
 @docs AudienceType, Audience, audienceJSON
 
 -}
+
+import Data.DecodeUtil exposing (dataListDecoder)
+import Json.Decode as Decode
+import Json.Decode.Pipeline exposing (optional, required)
+
+
 
 -- Type definition
 
@@ -33,6 +39,45 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+
+-- Decoders
+
+
+audiencesDecoder : Decode.Decoder (List Audience)
+audiencesDecoder =
+    dataListDecoder audienceDecoder
+
+
+audienceDecoder : Decode.Decoder Audience
+audienceDecoder =
+    Decode.succeed Audience
+        |> required "id" Decode.int
+        |> required "name" Decode.string
+        |> required "type" audienceTypeDecoder
+        |> optional "folder" (Decode.maybe Decode.int) Nothing
+
+
+audienceTypeDecoder : Decode.Decoder AudienceType
+audienceTypeDecoder =
+    Decode.string
+        |> Decode.andThen
+            (\typeValue ->
+                case typeValue of
+                    "curated" ->
+                        Decode.succeed Curated
+
+                    "user" ->
+                        Decode.succeed Authored
+
+                    "shared" ->
+                        Decode.succeed Shared
+
+                    type_ ->
+                        -- I think this should never happen? At least not with the given data set
+                        Decode.fail ("Unknown audience type" ++ type_)
+            )
 
 
 
