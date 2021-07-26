@@ -1,3 +1,16 @@
+# Solution
+
+My solution to the GlobalWebIndex Elm coding challenge.
+
+## Building
+
+Tested in Ubuntu Linux, but it should work in any Linux / Mac.
+
+1. [install the Nix package manager](https://nixos.org/download.html). The reason for using Nix is that it gives a reproducible build environment.
+2. Clone this repository and ```cd``` into it.
+3. Run ```nix-shell --pure``` and wait while Nix installs the dependencies.
+4. Run ```./build.sh``` to run the tests and build.
+
 # Challenge: Elm
 
 Hello! Welcome to the Elm Challenge.
