@@ -1,4 +1,4 @@
-module Main exposing (decodeAudiences, main)
+module Main exposing (decodeAudiences, decodeOneAudience, main)
 
 import Data.Audience
 import Data.AudienceFolder
@@ -13,12 +13,32 @@ main =
 
 decodeAudiences : Jd.Decoder (List Data.Audience.Audience)
 decodeAudiences =
-    Jd.field "data" decodeAudienceList
+    Jd.map
+        onlyJusts
+        (Jd.field "data" decodeAudienceList)
 
 
-decodeAudienceList : Jd.Decoder (List Data.Audience.Audience)
+onlyJusts : List (Maybe a) -> List a
+onlyJusts maybes =
+    onlyJustsHelp maybes []
+
+
+onlyJustsHelp : List (Maybe a) -> List a -> List a
+onlyJustsHelp maybes justs =
+    case maybes of
+        [] ->
+            List.reverse justs
+
+        Nothing :: aybes ->
+            onlyJustsHelp aybes justs
+
+        (Just m) :: aybes ->
+            onlyJustsHelp aybes (m :: justs)
+
+
+decodeAudienceList : Jd.Decoder (List (Maybe Data.Audience.Audience))
 decodeAudienceList =
-    Jd.list decodeOneAudience
+    Jd.list <| Jd.maybe decodeOneAudience
 
 
 decodeOneAudience : Jd.Decoder Data.Audience.Audience

@@ -17,4 +17,34 @@ suite =
                     Jd.decodeString
                         Main.decodeAudiences
                         Data.Audience.audiencesJSON
+        , test "ambiguous audience type" <|
+            \_ ->
+                Expect.err <|
+                    Jd.decodeString
+                        Main.decodeOneAudience
+                        ambiguousAudience
         ]
+
+
+ambiguousAudience =
+    """
+{
+    "id": 80901,
+    "name": "blackberry",
+    "expression": {
+        "and": [
+            {
+                "options": [
+                    "q126h_3"
+                ],
+                "question": "q126h"
+            }
+        ]
+    },
+    "curated": null,
+    "type": "user",
+    "shared": false,
+    "category": null,
+    "folder": null
+}
+"""
