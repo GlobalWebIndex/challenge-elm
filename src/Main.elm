@@ -13,32 +13,12 @@ main =
 
 decodeAudiences : Jd.Decoder (List Data.Audience.Audience)
 decodeAudiences =
-    Jd.map
-        onlyJusts
-        (Jd.field "data" decodeAudienceList)
+    Jd.field "data" decodeAudienceList
 
 
-onlyJusts : List (Maybe a) -> List a
-onlyJusts maybes =
-    onlyJustsHelp maybes []
-
-
-onlyJustsHelp : List (Maybe a) -> List a -> List a
-onlyJustsHelp maybes justs =
-    case maybes of
-        [] ->
-            List.reverse justs
-
-        Nothing :: aybes ->
-            onlyJustsHelp aybes justs
-
-        (Just m) :: aybes ->
-            onlyJustsHelp aybes (m :: justs)
-
-
-decodeAudienceList : Jd.Decoder (List (Maybe Data.Audience.Audience))
+decodeAudienceList : Jd.Decoder (List Data.Audience.Audience)
 decodeAudienceList =
-    Jd.list <| Jd.maybe decodeOneAudience
+    Jd.list decodeOneAudience
 
 
 decodeOneAudience : Jd.Decoder Data.Audience.Audience
@@ -66,7 +46,7 @@ decodeAudienceTypeHelp raw =
         "shared" ->
             Jd.succeed Data.Audience.Shared
 
-        "authored" ->
+        "user" ->
             Jd.succeed Data.Audience.Authored
 
         _ ->
