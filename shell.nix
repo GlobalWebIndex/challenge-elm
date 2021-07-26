@@ -5,5 +5,6 @@ pkgs.mkShell {
     pkgs.elmPackages.elm
     pkgs.elmPackages.elm-test
     pkgs.elmPackages.elm-format
+    pkgs.html-tidy
   ];
 }
