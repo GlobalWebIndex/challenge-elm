@@ -1,14 +1,42 @@
 module Main exposing (decodeAudiences, decodeFolders, decodeOneAudience, decodeOneFolder, main)
 
+import Browser
 import Data.Audience
 import Data.AudienceFolder as F
 import Html exposing (Html)
 import Json.Decode as Jd
 
 
-main : Html msg
+main : Program () Model Msg
 main =
-    Html.text "There will be app soon!"
+    Browser.sandbox
+        { init = init
+        , view = view
+        , update = update
+        }
+
+
+type Msg
+    = Msg
+
+
+type alias Model =
+    Int
+
+
+view : Model -> Html.Html Msg
+view _ =
+    Html.text "hi"
+
+
+update : Msg -> Model -> Model
+update _ model =
+    model
+
+
+init : Model
+init =
+    0
 
 
 decodeFolders : Jd.Decoder (List F.AudienceFolder)
