@@ -1,4 +1,4 @@
-module Main exposing (decodeAudiences, decodeFolders, decodeOneAudience, main)
+module Main exposing (decodeAudiences, decodeFolders, decodeOneAudience, decodeOneFolder, main)
 
 import Data.Audience
 import Data.AudienceFolder as F

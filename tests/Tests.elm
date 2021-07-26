@@ -25,6 +25,12 @@ folderDecoder =
                 Jd.decodeString
                     Main.decodeFolders
                     F.audienceFoldersJSON
+    , fuzz folderFuzz "fuzz encode-decode for folder" <|
+        \randomFolder ->
+            Expect.ok <|
+                Jd.decodeString
+                    Main.decodeOneFolder
+                    (encodeFolder randomFolder)
     ]
 
 
@@ -55,6 +61,14 @@ audienceFuzz =
         (Fuzz.maybe Fuzz.int)
 
 
+folderFuzz : Fuzz.Fuzzer F.AudienceFolder
+folderFuzz =
+    Fuzz.map3 F.AudienceFolder
+        Fuzz.int
+        Fuzz.string
+        (Fuzz.maybe Fuzz.int)
+
+
 encodeType : A.AudienceType -> Je.Value
 encodeType type_ =
     case type_ of
@@ -66,6 +80,26 @@ encodeType type_ =
 
         A.Curated ->
             Je.string "curated"
+
+
+encodeFolder : F.AudienceFolder -> String
+encodeFolder { id, name, parent } =
+    Je.encode 4 <|
+        Je.object <|
+            [ ( "id", Je.int id )
+            , ( "name", Je.string name )
+            , ( "parent", encodeParent parent )
+            ]
+
+
+encodeParent : Maybe Int -> Je.Value
+encodeParent maybe =
+    case maybe of
+        Nothing ->
+            Je.null
+
+        Just parent ->
+            Je.int parent
 
 
 encodeAudience : A.Audience -> String
