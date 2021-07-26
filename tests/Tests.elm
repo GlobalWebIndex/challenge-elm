@@ -1,4 +1,4 @@
-module Example exposing (..)
+module Tests exposing (..)
 
 import Data.Audience
 import Expect exposing (Expectation)
@@ -13,10 +13,8 @@ suite =
     describe "audience decoder"
         [ test "simple decode audiences" <|
             \_ ->
-                Expect.notEqual
-                    Nothing
-                    (Jd.decodeString
+                Expect.ok <|
+                    Jd.decodeString
                         Main.decodeAudiences
                         Data.Audience.audiencesJSON
-                    )
         ]
