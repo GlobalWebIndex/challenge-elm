@@ -1,7 +1,7 @@
 module Main exposing (decodeAudiences, decodeFolders, decodeOneAudience, decodeOneFolder, main)
 
 import Browser
-import Data.Audience
+import Data.Audience as A
 import Data.AudienceFolder as F
 import Html exposing (Html)
 import Json.Decode as Jd
@@ -17,11 +17,18 @@ main =
 
 
 type Msg
-    = Msg
+    = FolderClick Int
+    | AudienceClick Int
+    | GoUpClick
 
 
 type alias Model =
-    Int
+    { foldersInView : List Int
+    , audiencesInView : List Int
+    , folders : List F.AudienceFolder
+    , audiences : List A.Audience
+    , goodParse : Bool
+    }
 
 
 view : Model -> Html.Html Msg
@@ -34,9 +41,70 @@ update _ model =
     model
 
 
+zeroModel =
+    { foldersInView = []
+    , audiencesInView = []
+    , folders = []
+    , audiences = []
+    , goodParse = False
+    }
+
+
 init : Model
 init =
-    0
+    case ( folderParseResult, audiencesParseResult ) of
+        ( Err _, _ ) ->
+            { zeroModel | goodParse = False }
+
+        ( _, Err _ ) ->
+            { zeroModel | goodParse = False }
+
+        ( Ok folders, Ok audiences ) ->
+            { zeroModel
+                | foldersInView = orphanFolders folders
+                , audiencesInView = orphanAudiences audiences
+                , folders = folders
+                , audiences = audiences
+                , goodParse = True
+            }
+
+
+audiencesParseResult : Result Jd.Error (List A.Audience)
+audiencesParseResult =
+    Jd.decodeString decodeAudiences A.audiencesJSON
+
+
+folderParseResult : Result Jd.Error (List F.AudienceFolder)
+folderParseResult =
+    Jd.decodeString decodeFolders F.audienceFoldersJSON
+
+
+orphanFolders : List F.AudienceFolder -> List Int
+orphanFolders folders =
+    List.filterMap isOrphanFolder folders
+
+
+isOrphanFolder : F.AudienceFolder -> Maybe Int
+isOrphanFolder { parent, id } =
+    if parent == Nothing then
+        Just id
+
+    else
+        Nothing
+
+
+orphanAudiences : List A.Audience -> List Int
+orphanAudiences audiences =
+    List.filterMap isOrphanAudience audiences
+
+
+isOrphanAudience : A.Audience -> Maybe Int
+isOrphanAudience { folder, id } =
+    if folder == Nothing then
+        Just id
+
+    else
+        Nothing
 
 
 decodeFolders : Jd.Decoder (List F.AudienceFolder)
@@ -57,43 +125,43 @@ decodeOneFolder =
         (Jd.field "parent" (Jd.nullable Jd.int))
 
 
-decodeAudiences : Jd.Decoder (List Data.Audience.Audience)
+decodeAudiences : Jd.Decoder (List A.Audience)
 decodeAudiences =
     Jd.field "data" decodeAudienceList
 
 
-decodeAudienceList : Jd.Decoder (List Data.Audience.Audience)
+decodeAudienceList : Jd.Decoder (List A.Audience)
 decodeAudienceList =
     Jd.list decodeOneAudience
 
 
-decodeOneAudience : Jd.Decoder Data.Audience.Audience
+decodeOneAudience : Jd.Decoder A.Audience
 decodeOneAudience =
-    Jd.map4 Data.Audience.Audience
+    Jd.map4 A.Audience
         (Jd.field "id" Jd.int)
         (Jd.field "name" Jd.string)
         (Jd.field "type" decodeAudienceType)
         (Jd.maybe <| Jd.field "folder" Jd.int)
 
 
-decodeAudienceType : Jd.Decoder Data.Audience.AudienceType
+decodeAudienceType : Jd.Decoder A.AudienceType
 decodeAudienceType =
     Jd.andThen decodeAudienceTypeHelp Jd.string
 
 
 decodeAudienceTypeHelp :
     String
-    -> Jd.Decoder Data.Audience.AudienceType
+    -> Jd.Decoder A.AudienceType
 decodeAudienceTypeHelp raw =
     case raw of
         "curated" ->
-            Jd.succeed Data.Audience.Curated
+            Jd.succeed A.Curated
 
         "shared" ->
-            Jd.succeed Data.Audience.Shared
+            Jd.succeed A.Shared
 
         "user" ->
-            Jd.succeed Data.Audience.Authored
+            Jd.succeed A.Authored
 
         _ ->
             Jd.fail <|
