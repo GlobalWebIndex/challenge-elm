@@ -1,7 +1,7 @@
-module Main exposing (decodeAudiences, decodeOneAudience, main)
+module Main exposing (decodeAudiences, decodeFolders, decodeOneAudience, main)
 
 import Data.Audience
-import Data.AudienceFolder
+import Data.AudienceFolder as F
 import Html exposing (Html)
 import Json.Decode as Jd
 
@@ -9,6 +9,24 @@ import Json.Decode as Jd
 main : Html msg
 main =
     Html.text "There will be app soon!"
+
+
+decodeFolders : Jd.Decoder (List F.AudienceFolder)
+decodeFolders =
+    Jd.field "data" decodeFolderList
+
+
+decodeFolderList : Jd.Decoder (List F.AudienceFolder)
+decodeFolderList =
+    Jd.list decodeOneFolder
+
+
+decodeOneFolder : Jd.Decoder F.AudienceFolder
+decodeOneFolder =
+    Jd.map3 F.AudienceFolder
+        (Jd.field "id" Jd.int)
+        (Jd.field "name" Jd.string)
+        (Jd.field "parent" (Jd.nullable Jd.int))
 
 
 decodeAudiences : Jd.Decoder (List Data.Audience.Audience)
