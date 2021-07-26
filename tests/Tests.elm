@@ -1,6 +1,7 @@
 module Tests exposing (..)
 
 import Data.Audience as A
+import Data.AudienceFolder as F
 import Expect exposing (Expectation)
 import Fuzz
 import Json.Decode as Jd
@@ -11,20 +12,36 @@ import Test exposing (..)
 
 suite : Test
 suite =
-    describe "audience decoder"
-        [ test "simple decode audiences" <|
-            \_ ->
-                Expect.ok <|
-                    Jd.decodeString
-                        Main.decodeAudiences
-                        A.audiencesJSON
-        , fuzz audienceFuzz "fuzz encode-decode for audience" <|
-            \randomAudience ->
-                Expect.ok <|
-                    Jd.decodeString
-                        Main.decodeOneAudience
-                        (encodeAudience randomAudience)
+    describe "json decoders"
+        [ describe "audience decoder" audienceDecoder
+        , describe "folder decoder" folderDecoder
         ]
+
+
+folderDecoder =
+    [ test "simple folder decoder" <|
+        \_ ->
+            Expect.ok <|
+                Jd.decodeString
+                    Main.decodeFolders
+                    F.audienceFoldersJSON
+    ]
+
+
+audienceDecoder =
+    [ test "simple decode audiences" <|
+        \_ ->
+            Expect.ok <|
+                Jd.decodeString
+                    Main.decodeAudiences
+                    A.audiencesJSON
+    , fuzz audienceFuzz "fuzz encode-decode for audience" <|
+        \randomAudience ->
+            Expect.ok <|
+                Jd.decodeString
+                    Main.decodeOneAudience
+                    (encodeAudience randomAudience)
+    ]
 
 
 audienceFuzz : Fuzz.Fuzzer A.Audience
