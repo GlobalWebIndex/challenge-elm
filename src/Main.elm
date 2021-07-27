@@ -74,36 +74,6 @@ type OneItem
     | OneAudience Int
 
 
-getOneTopLevelFolderId : List F.AudienceFolder -> Maybe Int
-getOneTopLevelFolderId folders =
-    case folders of
-        [] ->
-            Nothing
-
-        { parent } :: olders ->
-            case parent of
-                Nothing ->
-                    getOneTopLevelFolderId olders
-
-                Just id ->
-                    Just id
-
-
-getOneTopLevelAudienceId : List A.Audience -> Maybe Int
-getOneTopLevelAudienceId audiences =
-    case audiences of
-        [] ->
-            Nothing
-
-        { folder } :: udiences ->
-            case folder of
-                Nothing ->
-                    getOneTopLevelAudienceId udiences
-
-                Just id ->
-                    Just id
-
-
 view : Model -> Html.Html Msg
 view model =
     case model of
@@ -114,6 +84,7 @@ view model =
             viewGood good
 
 
+viewGood : GoodModel -> Html.Html Msg
 viewGood model =
     Html.div
         [ Hat.id "container" ]
@@ -224,85 +195,6 @@ goUp model parent =
 
         Just grandParent ->
             { model | parent = Parent grandParent }
-
-
-getTopLevel : Dict.Dict Int String -> Dict.Dict Int Int -> Dict.Dict Int String
-getTopLevel all parents =
-    Dict.filter (isRoot parents) all
-
-
-isRoot : Dict.Dict Int Int -> Int -> String -> Bool
-isRoot parents child _ =
-    Dict.get child parents == Nothing
-
-
-getChildrenOf : Int -> Dict.Dict Int String -> Dict.Dict Int Int -> Dict.Dict Int String
-getChildrenOf parent all parents =
-    Dict.filter (getChildrenHelp (getChildIds parent parents)) all
-
-
-getChildrenHelp : Set.Set Int -> Int -> String -> Bool
-getChildrenHelp childIds potentialChild _ =
-    Set.member potentialChild childIds
-
-
-getChildIds : Int -> Dict.Dict Int Int -> Set.Set Int
-getChildIds parent parents =
-    Set.fromList <|
-        Dict.keys <|
-            Dict.filter (parentIs parent) parents
-
-
-parentIs : Int -> Int -> Int -> Bool
-parentIs parent _ potentialParent =
-    parent == potentialParent
-
-
-getTopLevelHelp : Dict.Dict Int Int -> ( Int, String ) -> Bool
-getTopLevelHelp parents ( id, _ ) =
-    Dict.get id parents == Nothing
-
-
-getFolderChildrenOf : Int -> Dict.Dict Int F.AudienceFolder -> Set.Set Int
-getFolderChildrenOf id folders =
-    Set.fromList <|
-        Dict.keys <|
-            Dict.filter (getFolderChildrenHelp id) folders
-
-
-getFolderChildrenHelp id _ { parent } =
-    case parent of
-        Nothing ->
-            False
-
-        Just p ->
-            p == id
-
-
-getAudienceChildrenOf : Int -> Dict.Dict Int A.Audience -> Set.Set Int
-getAudienceChildrenOf id audiences =
-    Set.fromList <|
-        Dict.keys <|
-            Dict.filter (getAudienceChildrenHelp id) audiences
-
-
-getAudienceChildrenHelp : Int -> Int -> A.Audience -> Bool
-getAudienceChildrenHelp id _ { folder } =
-    case folder of
-        Nothing ->
-            False
-
-        Just f ->
-            f == id
-
-
-zeroModel : GoodModel
-zeroModel =
-    { parents = Dict.empty
-    , audiences = Dict.empty
-    , all = Dict.empty
-    , parent = Root
-    }
 
 
 init : Model

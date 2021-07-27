@@ -18,48 +18,7 @@ suite =
     describe "all tests"
         [ describe "audience decoder" audienceDecoder
         , describe "folder decoder" folderDecoder
-        , describe "child selecter" childSelecter
         ]
-
-
-childSelecter =
-    [ test "getChildrenHelp" <|
-        \_ ->
-            let
-                got =
-                    Main.getChildrenHelp
-                        (Set.fromList [ 0, 1, 2 ])
-                        1
-                        "a"
-
-                expected =
-                    True
-            in
-            Expect.equal got expected
-    , test "getChildIds" <|
-        \_ ->
-            let
-                got =
-                    Main.getChildIds 0 (Dict.fromList [ ( 1, 2 ), ( 2, 0 ), ( 3, 0 ) ])
-
-                expected =
-                    Set.fromList [ 2, 3 ]
-            in
-            Expect.equal got expected
-    , test "getChildrenOf" <|
-        \_ ->
-            let
-                got =
-                    Main.getChildrenOf
-                        0
-                        (Dict.fromList [ ( 1, "a" ), ( 2, "b" ), ( 3, "d" ) ])
-                        (Dict.fromList [ ( 4, 5 ), ( 2, 0 ), ( 3, 0 ) ])
-
-                expected =
-                    Dict.fromList [ ( 2, "b" ), ( 3, "d" ) ]
-            in
-            Expect.equal got expected
-    ]
 
 
 folderDecoder =

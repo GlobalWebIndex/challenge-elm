@@ -258,7 +258,7 @@ addSubAudience m a parentId =
         }
 
 
-addRootFolder : MakeFolder -> F.Folder -> Data
+addRootFolder : MakeModel -> F.AudienceFolder -> Data
 addRootFolder m f =
     let
         model =
@@ -277,7 +277,7 @@ addRootFolder m f =
         }
 
 
-addRootAudience : MakeFolder -> A.Audience -> Data
+addRootAudience : MakeModel -> A.Audience -> Data
 addRootAudience m a =
     let
         model =
