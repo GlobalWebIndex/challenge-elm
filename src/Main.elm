@@ -1,4 +1,4 @@
-module Main exposing (decodeAudiences, decodeFolders, decodeOneAudience, decodeOneFolder, main)
+module Main exposing (..)
 
 import Browser
 import Data.Audience as A

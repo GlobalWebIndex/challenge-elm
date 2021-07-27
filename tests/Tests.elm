@@ -8,14 +8,32 @@ import Json.Decode as Jd
 import Json.Encode as Je
 import Main
 import Test exposing (..)
+import Dict
 
 
 suite : Test
 suite =
-    describe "json decoders"
+    describe "all tests"
         [ describe "audience decoder" audienceDecoder
         , describe "folder decoder" folderDecoder
+        , describe "child selecter" childSelecter
         ]
+
+
+childSelecter =
+    [ test "getChildrenOf" <|
+        \_ ->
+            let
+                got =
+                    Main.getChildrenOf
+                        0
+                        (Dict.fromList [(1, "a"), (2, "b"), (3, "d")])
+                        (Dict.fromList [(4, 5), (2, 0), (3, 0)])
+                expected =
+                    Dict.fromList [(2, "b"), (3, "d")]
+            in
+                Expect.equal got expected
+    ]
 
 
 folderDecoder =
