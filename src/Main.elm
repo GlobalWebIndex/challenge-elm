@@ -58,7 +58,9 @@ type alias GoodModel =
     -- The IDs and names for all the folders and audiences. This should
     -- only be mapped over, not used for lookup. Lookup is bad in this
     -- case because failure will have to be handled, and it shouldn't
-    -- ever be possible to have an ID without a name.
+    -- ever be possible to have an ID without a name. The reason for
+    -- using a dictionary instead of a list is to enforce that an
+    -- item can only have one name.
     , all : Dict.Dict Int String
     , parent : Parent
     }
