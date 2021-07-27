@@ -8,6 +8,7 @@ import Html
 import Html.Attributes as Hat
 import Html.Events as Hev
 import Json.Decode as Jd
+import Parser as P
 import Set
 
 
@@ -26,9 +27,8 @@ type Msg
 
 
 type Model
-    = BadAudiences Jd.Error
-    | BadFolders Jd.Error
-    | AllGood GoodModel
+    = Bad String
+    | Good GoodModel
 
 
 type alias GoodModel =
@@ -83,21 +83,10 @@ getOneTopLevelAudienceId audiences =
 view : Model -> Html.Html Msg
 view model =
     case model of
-        BadAudiences err ->
-            Html.text <|
-                String.concat
-                    [ "problem parsing audiences: "
-                    , Jd.errorToString err
-                    ]
+        Bad err ->
+            Html.text <| "internal error: " ++ err
 
-        BadFolders err ->
-            Html.text <|
-                String.concat
-                    [ "problem parsing folders: "
-                    , Jd.errorToString err
-                    ]
-
-        AllGood good ->
+        Good good ->
             viewGood good
 
 
@@ -181,14 +170,11 @@ oneAudienceView ( _, name ) =
 update : Msg -> Model -> Model
 update msg model =
     case model of
-        BadAudiences _ ->
+        Bad _ ->
             model
 
-        BadFolders _ ->
-            model
-
-        AllGood ok ->
-            AllGood <| updateGood msg ok
+        Good ok ->
+            Good <| updateGood msg ok
 
 
 updateGood : Msg -> GoodModel -> GoodModel
@@ -298,288 +284,15 @@ zeroModel =
 
 init : Model
 init =
-    case ( folderParseResult, audiencesParseResult ) of
-        ( Err err, _ ) ->
-            BadFolders err
-
-        ( _, Err err ) ->
-            BadAudiences err
-
-        ( Ok folders, Ok audiences ) ->
-            AllGood <| cleanUpData folders audiences
-
-
-cleanUpData : List F.AudienceFolder -> List A.Audience -> GoodModel
-cleanUpData folders audiences =
-    makeModel
-        { folders = folders
-        , audiences = audiences
-        , model = zeroModel
-        , unique = 0
-        , folderIds = Dict.empty
-        , audienceIds = Dict.empty
-        }
-
-
-type alias MakeModel =
-    { folders : List F.AudienceFolder
-    , audiences : List A.Audience
-    , model : GoodModel
-    , unique : Int
-    , folderIds : Dict.Dict Int Int
-    , audienceIds : Dict.Dict Int Int
-    }
-
-
-makeModel : MakeModel -> GoodModel
-makeModel m =
-    case m.folders of
-        [] ->
-            case m.audiences of
-                [] ->
-                    m.model
-
-                a :: udiences ->
-                    addAudience { m | audiences = udiences } a
-
-        f :: olders ->
-            addFolder { m | folders = olders } f
-
-
-addAudience : MakeModel -> A.Audience -> GoodModel
-addAudience m a =
-    case a.folder of
-        Nothing ->
-            addRootAudience m a
-
-        Just parentId ->
-            addSubAudience m a parentId
-
-
-addFolder : MakeModel -> F.AudienceFolder -> GoodModel
-addFolder m f =
-    case f.parent of
-        Nothing ->
-            addRootFolder m f
-
-        Just parentId ->
-            addSubFolder m f parentId
-
-
-addSubFolder m f parentId =
-    let
-        newId =
-            m.unique
-
-        ( newParentId, newUnique ) =
-            case Dict.get parentId m.folderIds of
-                Nothing ->
-                    ( m.unique + 1, m.unique + 2 )
-
-                Just exists ->
-                    ( exists, m.unique + 1 )
-
-        model =
-            m.model
-
-        newModel =
-            { model
-                | parents = Dict.insert newId newParentId model.parents
-                , folders = Set.insert newId model.folders
-                , all = Dict.insert newId f.name model.all
-            }
-    in
-    makeModel
-        { m
-            | model = newModel
-            , unique = newUnique
-            , folderIds =
-                Dict.insert
-                    f.id
-                    newId
-                    (Dict.insert parentId newParentId m.folderIds)
-        }
-
-
-addSubAudience m a parentId =
-    let
-        newId =
-            m.unique
-
-        ( newParentId, newUnique ) =
-            case Dict.get parentId m.folderIds of
-                Nothing ->
-                    ( m.unique + 1, m.unique + 2 )
-
-                Just exists ->
-                    ( exists, m.unique + 1 )
-
-        model =
-            m.model
-
-        newModel =
-            { model
-                | parents = Dict.insert newId newParentId model.parents
-                , all = Dict.insert newId a.name model.all
-            }
-    in
-    makeModel
-        { m
-            | model = newModel
-            , unique = newUnique
-            , folderIds =
-                Dict.insert parentId newParentId m.folderIds
-            , audienceIds =
-                Dict.insert a.id newId m.audienceIds
-        }
-
-
-addRootFolder m f =
-    let
-        model =
-            m.model
-
-        newModel =
-            { model
-                | folders = Set.insert m.unique model.folders
-                , all = Dict.insert m.unique f.name model.all
-            }
-    in
-    makeModel
-        { m
-            | model = newModel
-            , unique = m.unique + 1
-            , folderIds = Dict.insert f.id m.unique m.folderIds
-        }
-
-
-addRootAudience m a =
-    let
-        model =
-            m.model
-
-        newModel =
-            { model
-                | audiences =
-                    Dict.insert m.unique a.type_ model.audiences
-                , all = Dict.insert m.unique a.name model.all
-            }
-    in
-    makeModel
-        { m
-            | model = newModel
-            , unique = m.unique + 1
-            , audienceIds = Dict.insert a.id m.unique m.audienceIds
-        }
-
-
-toDict list =
-    Dict.fromList <| List.map toDictHelp list
-
-
-toDictHelp item =
-    ( item.id, item )
-
-
-audiencesParseResult : Result Jd.Error (List A.Audience)
-audiencesParseResult =
-    Jd.decodeString decodeAudiences A.audiencesJSON
-
-
-folderParseResult : Result Jd.Error (List F.AudienceFolder)
-folderParseResult =
-    Jd.decodeString decodeFolders F.audienceFoldersJSON
-
-
-orphanFolders : List F.AudienceFolder -> List Int
-orphanFolders folders =
-    List.filterMap isOrphanFolder folders
-
-
-isOrphanFolder : F.AudienceFolder -> Maybe Int
-isOrphanFolder { parent, id } =
-    if parent == Nothing then
-        Just id
-
-    else
-        Nothing
-
-
-orphanAudiences : List A.Audience -> List Int
-orphanAudiences audiences =
-    List.filterMap isOrphanAudience audiences
-
-
-isOrphanAudience : A.Audience -> Maybe Int
-isOrphanAudience { folder, id } =
-    if folder == Nothing then
-        Just id
-
-    else
-        Nothing
-
-
-decodeFolders : Jd.Decoder (List F.AudienceFolder)
-decodeFolders =
-    Jd.field "data" decodeFolderList
-
-
-decodeFolderList : Jd.Decoder (List F.AudienceFolder)
-decodeFolderList =
-    Jd.list decodeOneFolder
-
-
-decodeOneFolder : Jd.Decoder F.AudienceFolder
-decodeOneFolder =
-    Jd.map3 F.AudienceFolder
-        (Jd.field "id" Jd.int)
-        (Jd.field "name" Jd.string)
-        (Jd.field "parent" (Jd.nullable Jd.int))
-
-
-decodeAudiences : Jd.Decoder (List A.Audience)
-decodeAudiences =
-    Jd.field "data" decodeAudienceList
-
-
-decodeAudienceList : Jd.Decoder (List A.Audience)
-decodeAudienceList =
-    Jd.list decodeOneAudience
-
-
-decodeOneAudience : Jd.Decoder A.Audience
-decodeOneAudience =
-    Jd.map4 A.Audience
-        (Jd.field "id" Jd.int)
-        (Jd.field "name" Jd.string)
-        (Jd.field "type" decodeAudienceType)
-        (Jd.maybe <| Jd.field "folder" Jd.int)
-
-
-decodeAudienceType : Jd.Decoder A.AudienceType
-decodeAudienceType =
-    Jd.andThen decodeAudienceTypeHelp Jd.string
-
-
-decodeAudienceTypeHelp :
-    String
-    -> Jd.Decoder A.AudienceType
-decodeAudienceTypeHelp raw =
-    case raw of
-        "curated" ->
-            Jd.succeed A.Curated
-
-        "shared" ->
-            Jd.succeed A.Shared
-
-        "user" ->
-            Jd.succeed A.Authored
-
-        _ ->
-            Jd.fail <|
-                String.concat
-                    [ "expecting \"curated\", \"shared\" or "
-                    , "\"authored\", but got \""
-                    , raw
-                    , "\""
-                    ]
+    case P.parse F.audienceFoldersJSON A.audiencesJSON of
+        Err err ->
+            Bad err
+
+        Ok { parents, folders, audiences, all } ->
+            Good
+                { parents = parents
+                , folders = folders
+                , audiences = audiences
+                , all = all
+                , parent = Root
+                }

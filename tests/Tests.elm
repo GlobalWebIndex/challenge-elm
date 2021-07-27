@@ -8,6 +8,7 @@ import Fuzz
 import Json.Decode as Jd
 import Json.Encode as Je
 import Main
+import Parser as P
 import Set
 import Test exposing (..)
 
@@ -66,13 +67,13 @@ folderDecoder =
         \_ ->
             Expect.ok <|
                 Jd.decodeString
-                    Main.decodeFolders
+                    P.decodeFolders
                     F.audienceFoldersJSON
     , fuzz folderFuzz "fuzz encode-decode for folder" <|
         \randomFolder ->
             Expect.ok <|
                 Jd.decodeString
-                    Main.decodeOneFolder
+                    P.decodeOneFolder
                     (encodeFolder randomFolder)
     ]
 
@@ -82,13 +83,13 @@ audienceDecoder =
         \_ ->
             Expect.ok <|
                 Jd.decodeString
-                    Main.decodeAudiences
+                    P.decodeAudiences
                     A.audiencesJSON
     , fuzz audienceFuzz "fuzz encode-decode for audience" <|
         \randomAudience ->
             Expect.ok <|
                 Jd.decodeString
-                    Main.decodeOneAudience
+                    P.decodeOneAudience
                     (encodeAudience randomAudience)
     ]
 
