@@ -34,6 +34,14 @@ childSelecter =
                     True
             in
                 Expect.equal got expected
+
+    , test "getChildIds" <|
+        \_ ->
+            let
+                got = Main.getChildIds 0 (Dict.fromList [(1, 2), (2, 0), (3, 0)])
+                expected = Set.fromList [2, 3]
+            in
+                Expect.equal got expected
                     
     , test "getChildrenOf" <|
         \_ ->
