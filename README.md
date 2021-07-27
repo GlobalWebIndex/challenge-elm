@@ -11,6 +11,10 @@ Tested in Ubuntu Linux, but it should work in any Linux / Mac.
 3. Run ```nix-shell --pure``` and wait while Nix installs the dependencies.
 4. Run ```./build.sh``` to run the tests and build.
 
+## Run
+
+Run a local webserver in the ```static``` directory, for example ```python3 -m http.server```.
+
 ## UI
 
 I decided not to spend time making it pretty, so there aren't even folder counts, or folder names at the top of opened folders. But these things are there in the model, so would be easy to put in.
