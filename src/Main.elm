@@ -36,8 +36,13 @@ type alias GoodModel =
     , folders : Set.Set Int
     , audiences : Dict.Dict Int A.AudienceType
     , all : Dict.Dict Int String
-    , current : Dict.Dict Int String
+    , parent : Parent
     }
+
+
+type Parent
+    = Root
+    | Parent Int
 
 
 type OneItem
@@ -109,27 +114,38 @@ viewGood model =
 
 goUpView : GoodModel -> List (Html.Html Msg)
 goUpView model =
-    case Dict.toList model.current of
-        [] ->
-            []
+    if model.parent == Root then
+        []
 
-        ( id, _ ) :: _ ->
-            case Dict.get id model.parents of
-                Nothing ->
-                    []
-
-                Just _ ->
-                    [ Html.button
-                        [ Hev.onClick GoUpClick ]
-                        [ Html.text "Go up" ]
-                    ]
+    else
+        [ Html.button
+            [ Hev.onClick GoUpClick ]
+            [ Html.text "Go up" ]
+        ]
 
 
 foldersView : GoodModel -> List (Html.Html Msg)
 foldersView model =
     List.map oneFolderView <|
         Dict.toList <|
-            Dict.filter (isFolder model.folders) model.current
+            Dict.filter (isFolder model.folders) <|
+                Dict.filter (isChildOf model.parents model.parent) model.all
+
+
+isChildOf : Dict.Dict Int Int -> Parent -> Int -> String -> Bool
+isChildOf parents parent potentialChild _ =
+    case ( Dict.get potentialChild parents, parent ) of
+        ( Nothing, Root ) ->
+            True
+
+        ( Nothing, Parent _ ) ->
+            False
+
+        ( Just potentialParent, Parent p ) ->
+            potentialParent == p
+
+        ( Just _, Root ) ->
+            False
 
 
 isFolder : Set.Set Int -> Int -> String -> Bool
@@ -148,7 +164,8 @@ audiencesView : GoodModel -> List (Html.Html Msg)
 audiencesView model =
     List.map oneAudienceView <|
         Dict.toList <|
-            Dict.filter (isAudience model.folders) model.current
+            Dict.filter (isAudience model.folders) <|
+                Dict.filter (isChildOf model.parents model.parent) model.all
 
 
 isAudience : Set.Set Int -> Int -> String -> Bool
@@ -178,36 +195,25 @@ updateGood : Msg -> GoodModel -> GoodModel
 updateGood msg model =
     case msg of
         FolderClick id ->
-            { model
-                | current = getChildrenOf id model.all model.parents
-            }
+            { model | parent = Parent id }
 
         GoUpClick ->
-            case Dict.toList model.current of
-                [] ->
+            case model.parent of
+                Root ->
                     model
 
-                ( id, _ ) :: _ ->
-                    case Dict.get id model.parents of
-                        Nothing ->
-                            model
-
-                        Just parent ->
-                            goUp model parent
+                Parent parentId ->
+                    goUp model parentId
 
 
 goUp : GoodModel -> Int -> GoodModel
-goUp model upperChild =
-    case Dict.get upperChild model.parents of
+goUp model parent =
+    case Dict.get parent model.parents of
         Nothing ->
-            { model
-                | current = getTopLevel model.all model.parents
-            }
+            { model | parent = Root }
 
-        Just upperParent ->
-            { model
-                | current = getChildrenOf upperParent model.all model.parents
-            }
+        Just grandParent ->
+            { model | parent = Parent grandParent }
 
 
 getTopLevel : Dict.Dict Int String -> Dict.Dict Int Int -> Dict.Dict Int String
@@ -286,7 +292,7 @@ zeroModel =
     , folders = Set.empty
     , audiences = Dict.empty
     , all = Dict.empty
-    , current = Dict.empty
+    , parent = Root
     }
 
 
@@ -437,7 +443,6 @@ addRootFolder m f =
             { model
                 | folders = Set.insert m.unique model.folders
                 , all = Dict.insert m.unique f.name model.all
-                , current = Dict.insert m.unique f.name model.current
             }
     in
     makeModel
@@ -458,7 +463,6 @@ addRootAudience m a =
                 | audiences =
                     Dict.insert m.unique a.type_ model.audiences
                 , all = Dict.insert m.unique a.name model.all
-                , current = Dict.insert m.unique a.name model.current
             }
     in
     makeModel
