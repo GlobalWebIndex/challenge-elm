@@ -6,6 +6,6 @@ pkgs.mkShell {
     pkgs.elmPackages.elm-test
     pkgs.elmPackages.elm-format
     pkgs.html-tidy
-	pkgs.nodePackages.uglify-js
+    pkgs.nodePackages.uglify-js
   ];
 }
