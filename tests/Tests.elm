@@ -9,6 +9,7 @@ import Json.Encode as Je
 import Main
 import Test exposing (..)
 import Dict
+import Set
 
 
 suite : Test
@@ -21,7 +22,20 @@ suite =
 
 
 childSelecter =
-    [ test "getChildrenOf" <|
+    [ test "getChildrenHelp" <|
+        \_ ->
+            let
+                got =
+                    Main.getChildrenHelp
+                        (Set.fromList [0, 1, 2])
+                        1
+                        "a"
+                expected =
+                    True
+            in
+                Expect.equal got expected
+                    
+    , test "getChildrenOf" <|
         \_ ->
             let
                 got =
