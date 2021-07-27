@@ -21,6 +21,7 @@ suite =
         ]
 
 
+folderDecoder : List Test
 folderDecoder =
     [ test "simple folder decoder" <|
         \_ ->
@@ -37,6 +38,7 @@ folderDecoder =
     ]
 
 
+audienceDecoder : List Test
 audienceDecoder =
     [ test "simple decode audiences" <|
         \_ ->
