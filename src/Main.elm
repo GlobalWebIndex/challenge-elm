@@ -26,15 +26,39 @@ type Msg
     | GoUpClick
 
 
-type Model
-    = Bad String
-    | Good GoodModel
+type alias Model =
+    Result String GoodModel
 
 
+{-| The integer IDs are not the same as the ones provided in the data.
+It seems likely that the provided IDs are row IDS from the database,
+and that folders and audiences are kept in different tables, so
+the IDs may well conflict. A globally unique ID is needed here.
+
+This model design is inspired by the book Data-Oriented Design by
+Richard Fabian, see <https://www.dataorienteddesign.com/dodbook> .
+It's an idea from game dev that says that using tabular data
+structures gives better performance. I am experimenting with using
+it in high-level languages, like Elm and Go. I am finding so far
+that it gives a really elegant and minimal internal state.
+
+-}
 type alias GoodModel =
+    -- The keys are child IDs and the values are parent IDs. Root
+    -- items are not included. If a map lookup fails then the item
+    -- is root, so there are no internal errors caused by failing map
+    -- lookups. The reason for using a dictionary rather than a list
+    -- is to enforce that a child can have only one parent.
     { parents : Dict.Dict Int Int
-    , folders : Set.Set Int
+
+    -- As well as providing the AudienceType for audiences, this is
+    -- used to detect whether something is a folder or an audience.
     , audiences : Dict.Dict Int A.AudienceType
+
+    -- The IDs and names for all the folders and audiences. This should
+    -- only be mapped over, not use for lookup. Lookup is bad in this
+    -- case because failure will have to be handled, and it shouldn't
+    -- ever be possible to have an ID without a name.
     , all : Dict.Dict Int String
     , parent : Parent
     }
@@ -83,10 +107,10 @@ getOneTopLevelAudienceId audiences =
 view : Model -> Html.Html Msg
 view model =
     case model of
-        Bad err ->
+        Err err ->
             Html.text <| "internal error: " ++ err
 
-        Good good ->
+        Ok good ->
             viewGood good
 
 
@@ -117,7 +141,7 @@ foldersView : GoodModel -> List (Html.Html Msg)
 foldersView model =
     List.map oneFolderView <|
         Dict.toList <|
-            Dict.filter (isFolder model.folders) <|
+            Dict.filter (isFolder model.audiences) <|
                 Dict.filter (isChildOf model.parents model.parent) model.all
 
 
@@ -137,9 +161,9 @@ isChildOf parents parent potentialChild _ =
             False
 
 
-isFolder : Set.Set Int -> Int -> String -> Bool
-isFolder folders id _ =
-    Set.member id folders
+isFolder : Dict.Dict Int A.AudienceType -> Int -> String -> Bool
+isFolder audiences id _ =
+    Dict.get id audiences == Nothing
 
 
 oneFolderView : ( Int, String ) -> Html.Html Msg
@@ -153,13 +177,13 @@ audiencesView : GoodModel -> List (Html.Html Msg)
 audiencesView model =
     List.map oneAudienceView <|
         Dict.toList <|
-            Dict.filter (isAudience model.folders) <|
+            Dict.filter (isAudience model.audiences) <|
                 Dict.filter (isChildOf model.parents model.parent) model.all
 
 
-isAudience : Set.Set Int -> Int -> String -> Bool
-isAudience folders id _ =
-    not <| Set.member id folders
+isAudience : Dict.Dict Int A.AudienceType -> Int -> String -> Bool
+isAudience audiences id _ =
+    not <| Dict.get id audiences == Nothing
 
 
 oneAudienceView : ( Int, String ) -> Html.Html Msg
@@ -170,11 +194,11 @@ oneAudienceView ( _, name ) =
 update : Msg -> Model -> Model
 update msg model =
     case model of
-        Bad _ ->
+        Err _ ->
             model
 
-        Good ok ->
-            Good <| updateGood msg ok
+        Ok ok ->
+            Ok <| updateGood msg ok
 
 
 updateGood : Msg -> GoodModel -> GoodModel
@@ -275,7 +299,6 @@ getAudienceChildrenHelp id _ { folder } =
 zeroModel : GoodModel
 zeroModel =
     { parents = Dict.empty
-    , folders = Set.empty
     , audiences = Dict.empty
     , all = Dict.empty
     , parent = Root
@@ -286,12 +309,11 @@ init : Model
 init =
     case P.parse F.audienceFoldersJSON A.audiencesJSON of
         Err err ->
-            Bad err
+            Err err
 
-        Ok { parents, folders, audiences, all } ->
-            Good
+        Ok { parents, audiences, all } ->
+            Ok
                 { parents = parents
-                , folders = folders
                 , audiences = audiences
                 , all = all
                 , parent = Root

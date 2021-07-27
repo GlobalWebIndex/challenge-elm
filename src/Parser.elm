@@ -74,32 +74,33 @@ allParentsExist all parents =
 
 
 allParentsAreFolders : Data -> Maybe String
-allParentsAreFolders { parents, folders } =
-    allParentsAreFoldersHelp folders (Dict.toList parents)
+allParentsAreFolders { parents, audiences } =
+    allParentsAreFoldersHelp audiences (Dict.toList parents)
 
 
 allParentsAreFoldersHelp :
-    Set.Set Int
+    Dict.Dict Int A.AudienceType
     -> List ( Int, Int )
     -> Maybe String
-allParentsAreFoldersHelp folders parents =
+allParentsAreFoldersHelp audiences parents =
     case parents of
         [] ->
             Nothing
 
         ( child, parent ) :: arents ->
-            if Set.member parent folders then
-                allParentsAreFoldersHelp folders arents
+            case Dict.get parent audiences of
+                Nothing ->
+                    allParentsAreFoldersHelp audiences arents
 
-            else
-                Just <|
-                    String.concat
-                        [ "parent with ID "
-                        , String.fromInt parent
-                        , " and child "
-                        , String.fromInt child
-                        , " is not a folder"
-                        ]
+                Just _ ->
+                    Just <|
+                        String.concat
+                            [ "parent with ID "
+                            , String.fromInt parent
+                            , " and child "
+                            , String.fromInt child
+                            , " is not a folder"
+                            ]
 
 
 maybeChain : List (Maybe a) -> Maybe a
@@ -140,7 +141,6 @@ type alias MakeModel =
 zeroDataSet : Data
 zeroDataSet =
     { parents = Dict.empty
-    , folders = Set.empty
     , audiences = Dict.empty
     , all = Dict.empty
     }
@@ -148,7 +148,6 @@ zeroDataSet =
 
 type alias Data =
     { parents : Dict.Dict Int Int
-    , folders : Set.Set Int
     , audiences : Dict.Dict Int A.AudienceType
     , all : Dict.Dict Int String
     }
@@ -189,6 +188,7 @@ addFolder m f =
             addSubFolder m f parentId
 
 
+addSubFolder : MakeModel -> F.AudienceFolder -> Int -> Data
 addSubFolder m f parentId =
     let
         newId =
@@ -208,7 +208,6 @@ addSubFolder m f parentId =
         newModel =
             { model
                 | parents = Dict.insert newId newParentId model.parents
-                , folders = Set.insert newId model.folders
                 , all = Dict.insert newId f.name model.all
             }
     in
@@ -224,6 +223,7 @@ addSubFolder m f parentId =
         }
 
 
+addSubAudience : MakeModel -> A.Audience -> Int -> Data
 addSubAudience m a parentId =
     let
         newId =
@@ -243,6 +243,7 @@ addSubAudience m a parentId =
         newModel =
             { model
                 | parents = Dict.insert newId newParentId model.parents
+                , audiences = Dict.insert newId a.type_ model.audiences
                 , all = Dict.insert newId a.name model.all
             }
     in
@@ -257,6 +258,7 @@ addSubAudience m a parentId =
         }
 
 
+addRootFolder : MakeFolder -> F.Folder -> Data
 addRootFolder m f =
     let
         model =
@@ -264,8 +266,7 @@ addRootFolder m f =
 
         newModel =
             { model
-                | folders = Set.insert m.unique model.folders
-                , all = Dict.insert m.unique f.name model.all
+                | all = Dict.insert m.unique f.name model.all
             }
     in
     makeModel
@@ -276,6 +277,7 @@ addRootFolder m f =
         }
 
 
+addRootAudience : MakeFolder -> A.Audience -> Data
 addRootAudience m a =
     let
         model =
