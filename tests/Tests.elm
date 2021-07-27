@@ -2,14 +2,14 @@ module Tests exposing (..)
 
 import Data.Audience as A
 import Data.AudienceFolder as F
+import Dict
 import Expect exposing (Expectation)
 import Fuzz
 import Json.Decode as Jd
 import Json.Encode as Je
 import Main
-import Test exposing (..)
-import Dict
 import Set
+import Test exposing (..)
 
 
 suite : Test
@@ -27,34 +27,37 @@ childSelecter =
             let
                 got =
                     Main.getChildrenHelp
-                        (Set.fromList [0, 1, 2])
+                        (Set.fromList [ 0, 1, 2 ])
                         1
                         "a"
+
                 expected =
                     True
             in
-                Expect.equal got expected
-
+            Expect.equal got expected
     , test "getChildIds" <|
         \_ ->
             let
-                got = Main.getChildIds 0 (Dict.fromList [(1, 2), (2, 0), (3, 0)])
-                expected = Set.fromList [2, 3]
+                got =
+                    Main.getChildIds 0 (Dict.fromList [ ( 1, 2 ), ( 2, 0 ), ( 3, 0 ) ])
+
+                expected =
+                    Set.fromList [ 2, 3 ]
             in
-                Expect.equal got expected
-                    
+            Expect.equal got expected
     , test "getChildrenOf" <|
         \_ ->
             let
                 got =
                     Main.getChildrenOf
                         0
-                        (Dict.fromList [(1, "a"), (2, "b"), (3, "d")])
-                        (Dict.fromList [(4, 5), (2, 0), (3, 0)])
+                        (Dict.fromList [ ( 1, "a" ), ( 2, "b" ), ( 3, "d" ) ])
+                        (Dict.fromList [ ( 4, 5 ), ( 2, 0 ), ( 3, 0 ) ])
+
                 expected =
-                    Dict.fromList [(2, "b"), (3, "d")]
+                    Dict.fromList [ ( 2, "b" ), ( 3, "d" ) ]
             in
-                Expect.equal got expected
+            Expect.equal got expected
     ]
 
 

@@ -233,7 +233,7 @@ getChildrenHelp childIds potentialChild _ =
 getChildIds : Int -> Dict.Dict Int Int -> Set.Set Int
 getChildIds parent parents =
     Set.fromList <|
-        Dict.values <|
+        Dict.keys <|
             Dict.filter (parentIs parent) parents
 
 
