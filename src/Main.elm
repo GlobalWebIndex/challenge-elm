@@ -56,7 +56,7 @@ type alias GoodModel =
     , audiences : Dict.Dict Int A.AudienceType
 
     -- The IDs and names for all the folders and audiences. This should
-    -- only be mapped over, not use for lookup. Lookup is bad in this
+    -- only be mapped over, not used for lookup. Lookup is bad in this
     -- case because failure will have to be handled, and it shouldn't
     -- ever be possible to have an ID without a name.
     , all : Dict.Dict Int String
@@ -67,11 +67,6 @@ type alias GoodModel =
 type Parent
     = Root
     | Parent Int
-
-
-type OneItem
-    = OneFolder Int
-    | OneAudience Int
 
 
 view : Model -> Html.Html Msg
