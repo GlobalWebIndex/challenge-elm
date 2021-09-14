@@ -3,12 +3,12 @@ module Main exposing (main)
 import Browser
 import Data.Audience as A
 import Data.AudienceFolder as F
+import DataParser as P
 import Dict
 import Html
 import Html.Attributes as Hat
 import Html.Events as Hev
 import Json.Decode as Jd
-import Parser as P
 import Set
 
 

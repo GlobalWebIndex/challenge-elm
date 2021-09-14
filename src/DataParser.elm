@@ -1,4 +1,4 @@
-module Parser exposing
+module DataParser exposing
     ( decodeAudiences
     , decodeFolders
     , decodeOneAudience

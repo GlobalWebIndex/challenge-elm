@@ -2,13 +2,13 @@ module Tests exposing (..)
 
 import Data.Audience as A
 import Data.AudienceFolder as F
+import DataParser as P
 import Dict
 import Expect exposing (Expectation)
 import Fuzz
 import Json.Decode as Jd
 import Json.Encode as Je
 import Main
-import Parser as P
 import Set
 import Test exposing (..)
 
