@@ -3,6 +3,7 @@
 pkgs.mkShell {
   buildInputs = [
     pkgs.elmPackages.elm
+    pkgs.elmPackages.elm-review
     pkgs.elmPackages.elm-test
     pkgs.elmPackages.elm-format
     pkgs.html-tidy
