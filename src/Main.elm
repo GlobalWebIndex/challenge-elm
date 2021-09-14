@@ -73,23 +73,24 @@ viewGood model =
     Html.div
         [ Hat.id "container" ]
     <|
-        List.concat
-            [ goUpView model
-            , foldersView model
-            , audiencesView model
-            ]
+        goUpView model
+            :: (foldersView model ++ audiencesView model)
 
 
-goUpView : GoodModel -> List (Html.Html Msg)
+nothing : Html.Html Msg
+nothing =
+    Html.text ""
+
+
+goUpView : GoodModel -> Html.Html Msg
 goUpView model =
     if model.currentLevel == Root then
-        []
+        nothing
 
     else
-        [ Html.button
+        Html.button
             [ Hev.onClick GoUpClick ]
             [ Html.text "Go up" ]
-        ]
 
 
 foldersView : GoodModel -> List (Html.Html Msg)
