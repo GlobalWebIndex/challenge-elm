@@ -145,16 +145,6 @@ addFolder folderMap { name, id, parent } old =
                         }
 
 
-type alias MakeModel =
-    { folders : List F.AudienceFolder
-    , audiences : List A.Audience
-    , model : Data
-    , unique : Int
-    , folderIds : Dict.Dict Int Int
-    , audienceIds : Dict.Dict Int Int
-    }
-
-
 zeroDataSet : Data
 zeroDataSet =
     { rootAudiences = Set.empty

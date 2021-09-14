@@ -8,7 +8,6 @@ import Dict
 import Html
 import Html.Attributes as Hat
 import Html.Events as Hev
-import Json.Decode as Jd
 import Set
 
 
@@ -117,11 +116,6 @@ isChildAudienceOf parent ( _, candidateParent ) =
     parent == candidateParent
 
 
-isFolder : Dict.Dict Int A.AudienceType -> Int -> String -> Bool
-isFolder audiences id _ =
-    Dict.get id audiences == Nothing
-
-
 oneFolderView : ( Int, String ) -> Html.Html Msg
 oneFolderView ( folderId, name ) =
     Html.button
@@ -142,11 +136,6 @@ audiencesView model =
                         Set.filter
                             (isChildAudienceOf parent)
                             model.subAudiences
-
-
-isAudience : Dict.Dict Int A.AudienceType -> Int -> String -> Bool
-isAudience audiences id _ =
-    not <| Dict.get id audiences == Nothing
 
 
 oneAudienceView : String -> Html.Html Msg
