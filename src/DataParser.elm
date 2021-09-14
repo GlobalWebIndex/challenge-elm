@@ -36,12 +36,172 @@ parse rawFolders rawAudiences =
                 folderMap =
                     makeFolderMap folders
             in
-            case foldFail (addFolder folderMap) zeroDataSet folders of
+            Result.map2
+                repackData
+                (badMap (audienceNameParent folderMap) audiences)
+                (badMap (folderNameParent folderMap) folders)
+
+
+repackData : List AudienceNamedParent -> List FolderNamedParent -> Data
+repackData audiences folders =
+    let
+        ( rootAudiences, subAudiences ) =
+            partitionMap splitAudiences audiences
+
+        ( rootFolders, subFolders ) =
+            partitionMap splitFolders folders
+    in
+    { rootAudiences = Set.fromList rootAudiences
+    , subAudiences = Set.fromList subAudiences
+    , rootFolders = Set.fromList rootFolders
+    , subFolders = Dict.fromList subFolders
+    }
+
+
+splitAudiences :
+    AudienceNamedParent
+    -> Either String ( String, ( Int, String ) )
+splitAudiences { name, parent } =
+    case parent of
+        Nothing ->
+            Left name
+
+        Just parentId ->
+            Right ( name, parentId )
+
+
+splitFolders :
+    FolderNamedParent
+    -> Either ( Int, String ) ( ( Int, String ), ( Int, String ) )
+splitFolders { id, name, parent } =
+    case parent of
+        Nothing ->
+            Left ( id, name )
+
+        Just parentId ->
+            Right ( ( id, name ), parentId )
+
+
+partitionMap : (a -> Either b c) -> List a -> ( List b, List c )
+partitionMap splitter as_ =
+    partitionMapHelp splitter as_ ( [], [] )
+
+
+partitionMapHelp :
+    (a -> Either b c)
+    -> List a
+    -> ( List b, List c )
+    -> ( List b, List c )
+partitionMapHelp splitter as_ ( bs, cs ) =
+    case as_ of
+        [] ->
+            ( List.reverse bs, List.reverse cs )
+
+        a :: s ->
+            partitionMapHelp splitter s <|
+                case splitter a of
+                    Left b ->
+                        ( b :: bs, cs )
+
+                    Right c ->
+                        ( bs, c :: cs )
+
+
+badMap : (a -> Result b c) -> List a -> Result b (List c)
+badMap f as_ =
+    badMapHelp f as_ []
+
+
+badMapHelp : (a -> Result b c) -> List a -> List c -> Result b (List c)
+badMapHelp f as_ accum =
+    case as_ of
+        [] ->
+            Ok (List.reverse accum)
+
+        a :: s ->
+            case f a of
                 Err err ->
                     Err err
 
                 Ok ok ->
-                    foldFail (addAudience folderMap) ok audiences
+                    badMapHelp f s (ok :: accum)
+
+
+type alias FolderNamedParent =
+    { id : Int
+    , name : String
+    , parent : Maybe ( Int, String )
+    }
+
+
+folderNameParent :
+    Dict.Dict Int String
+    -> F.AudienceFolder
+    -> Result String FolderNamedParent
+folderNameParent folderMap { id, name, parent } =
+    case parent of
+        Nothing ->
+            Ok { id = id, name = name, parent = Nothing }
+
+        Just folderId ->
+            case Dict.get folderId folderMap of
+                Nothing ->
+                    Err <|
+                        String.concat
+                            [ "audience with ID "
+                            , String.fromInt id
+                            , " and name \""
+                            , name
+                            , "\" has a non-existent parent with ID "
+                            , String.fromInt folderId
+                            ]
+
+                Just folderName ->
+                    Ok
+                        { id = id
+                        , name = name
+                        , parent = Just ( folderId, folderName )
+                        }
+
+
+type alias AudienceNamedParent =
+    { name : String
+    , parent : Maybe ( Int, String )
+    }
+
+
+audienceNameParent :
+    Dict.Dict Int String
+    -> A.Audience
+    -> Result String AudienceNamedParent
+audienceNameParent folderMap { id, name, folder } =
+    case folder of
+        Nothing ->
+            Ok { name = name, parent = Nothing }
+
+        Just parentId ->
+            case Dict.get parentId folderMap of
+                Nothing ->
+                    Err <|
+                        String.concat
+                            [ "audience with ID "
+                            , String.fromInt id
+                            , " and name \""
+                            , name
+                            , "\" has a non-existent parent with ID "
+                            , String.fromInt parentId
+                            ]
+
+                Just parentName ->
+                    Ok
+                        { name = name
+                        , parent = Just ( parentId, parentName )
+                        }
+
+
+type Either a b
+    = Left a
+    | Right b
 
 
 makeFolderMap : List F.AudienceFolder -> Dict.Dict Int String
@@ -55,104 +215,6 @@ makeFolderMapHelp :
     -> Dict.Dict Int String
 makeFolderMapHelp { id, name } old =
     Dict.insert id name old
-
-
-foldFail : (a -> b -> Result err b) -> b -> List a -> Result err b
-foldFail f accumulator list =
-    case list of
-        [] ->
-            Ok accumulator
-
-        l :: ist ->
-            case f l accumulator of
-                Err err ->
-                    Err err
-
-                Ok ok ->
-                    foldFail f ok ist
-
-
-addAudience :
-    Dict.Dict Int String
-    -> A.Audience
-    -> Data
-    -> Result String Data
-addAudience folderMap { id, name, folder } old =
-    case folder of
-        Nothing ->
-            Ok
-                { old
-                    | rootAudiences = Set.insert name old.rootAudiences
-                }
-
-        Just parentId ->
-            case Dict.get parentId folderMap of
-                Nothing ->
-                    Err <|
-                        String.concat
-                            [ "audience with name "
-                            , name
-                            , " and ID "
-                            , String.fromInt id
-                            , " has non-existent parent with ID "
-                            , String.fromInt parentId
-                            ]
-
-                Just parentName ->
-                    Ok
-                        { old
-                            | subAudiences =
-                                Set.insert
-                                    ( name, ( parentId, parentName ) )
-                                    old.subAudiences
-                        }
-
-
-addFolder :
-    Dict.Dict Int String
-    -> F.AudienceFolder
-    -> Data
-    -> Result String Data
-addFolder folderMap { name, id, parent } old =
-    case parent of
-        Nothing ->
-            Ok
-                { old
-                    | rootFolders =
-                        Set.insert ( id, name ) old.rootFolders
-                }
-
-        Just parentId ->
-            case Dict.get parentId folderMap of
-                Nothing ->
-                    Err <|
-                        String.concat
-                            [ "folder with ID "
-                            , String.fromInt id
-                            , " and name "
-                            , name
-                            , " has non-existent parent with ID "
-                            , String.fromInt parentId
-                            ]
-
-                Just parentName ->
-                    Ok
-                        { old
-                            | subFolders =
-                                Dict.insert
-                                    ( id, name )
-                                    ( parentId, parentName )
-                                    old.subFolders
-                        }
-
-
-zeroDataSet : Data
-zeroDataSet =
-    { rootAudiences = Set.empty
-    , subAudiences = Set.empty
-    , rootFolders = Set.empty
-    , subFolders = Dict.empty
-    }
 
 
 type alias Data =
