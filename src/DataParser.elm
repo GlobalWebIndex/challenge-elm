@@ -32,100 +32,117 @@ parse rawFolders rawAudiences =
 
         ( Ok folders, Ok audiences ) ->
             let
-                clean =
-                    cleanUpData folders audiences
+                folderMap =
+                    makeFolderMap folders
             in
-            case checkData clean of
-                Nothing ->
-                    Ok clean
-
-                Just err ->
+            case foldFail (addFolder folderMap) zeroDataSet folders of
+                Err err ->
                     Err err
 
-
-checkData : Data -> Maybe String
-checkData data =
-    maybeChain
-        [ allParentsAreFolders data
-        , allParentsExist data.all (Dict.toList data.parents)
-        ]
+                Ok ok ->
+                    foldFail (addAudience folderMap) ok audiences
 
 
-allParentsExist : Dict.Dict Int String -> List ( Int, Int ) -> Maybe String
-allParentsExist all parents =
-    case parents of
+makeFolderMap : List F.AudienceFolder -> Dict.Dict Int String
+makeFolderMap folders =
+    List.foldl makeFolderMapHelp Dict.empty folders
+
+
+makeFolderMapHelp :
+    F.AudienceFolder
+    -> Dict.Dict Int String
+    -> Dict.Dict Int String
+makeFolderMapHelp { id, name } old =
+    Dict.insert id name old
+
+
+foldFail : (a -> b -> Result err b) -> b -> List a -> Result err b
+foldFail f accumulator list =
+    case list of
         [] ->
-            Nothing
+            Ok accumulator
 
-        ( child, parent ) :: arents ->
-            case Dict.get parent all of
+        l :: ist ->
+            case f l accumulator of
+                Err err ->
+                    Err err
+
+                Ok ok ->
+                    foldFail f ok ist
+
+
+addAudience :
+    Dict.Dict Int String
+    -> A.Audience
+    -> Data
+    -> Result String Data
+addAudience folderMap { id, name, folder } old =
+    case folder of
+        Nothing ->
+            Ok
+                { old
+                    | rootAudiences = Set.insert name old.rootAudiences
+                }
+
+        Just parentId ->
+            case Dict.get parentId folderMap of
                 Nothing ->
-                    Just <|
+                    Err <|
                         String.concat
-                            [ "parent with ID "
-                            , String.fromInt parent
-                            , " and child "
-                            , String.fromInt child
-                            , " does not exist"
+                            [ "audience with name "
+                            , name
+                            , " and ID "
+                            , String.fromInt id
+                            , " has non-existent parent with ID "
+                            , String.fromInt parentId
                             ]
 
-                Just _ ->
-                    allParentsExist all arents
+                Just parentName ->
+                    Ok
+                        { old
+                            | subAudiences =
+                                Set.insert
+                                    ( name, ( parentId, parentName ) )
+                                    old.subAudiences
+                        }
 
 
-allParentsAreFolders : Data -> Maybe String
-allParentsAreFolders { parents, audiences } =
-    allParentsAreFoldersHelp audiences (Dict.toList parents)
+addFolder :
+    Dict.Dict Int String
+    -> F.AudienceFolder
+    -> Data
+    -> Result String Data
+addFolder folderMap { name, id, parent } old =
+    case parent of
+        Nothing ->
+            Ok
+                { old
+                    | rootFolders =
+                        Set.insert ( id, name ) old.rootFolders
+                }
 
-
-allParentsAreFoldersHelp :
-    Dict.Dict Int A.AudienceType
-    -> List ( Int, Int )
-    -> Maybe String
-allParentsAreFoldersHelp audiences parents =
-    case parents of
-        [] ->
-            Nothing
-
-        ( child, parent ) :: arents ->
-            case Dict.get parent audiences of
+        Just parentId ->
+            case Dict.get parentId folderMap of
                 Nothing ->
-                    allParentsAreFoldersHelp audiences arents
-
-                Just _ ->
-                    Just <|
+                    Err <|
                         String.concat
-                            [ "parent with ID "
-                            , String.fromInt parent
-                            , " and child "
-                            , String.fromInt child
-                            , " is not a folder"
+                            [ "folder with ID "
+                            , String.fromInt id
+                            , " and name "
+                            , name
+                            , " has non-existent parent with ID "
+                            , String.fromInt parentId
                             ]
 
-
-maybeChain : List (Maybe a) -> Maybe a
-maybeChain maybes =
-    case maybes of
-        [] ->
-            Nothing
-
-        Nothing :: aybes ->
-            maybeChain aybes
-
-        (Just m) :: _ ->
-            Just m
-
-
-cleanUpData : List F.AudienceFolder -> List A.Audience -> Data
-cleanUpData folders audiences =
-    makeModel
-        { folders = folders
-        , audiences = audiences
-        , model = zeroDataSet
-        , unique = 0
-        , folderIds = Dict.empty
-        , audienceIds = Dict.empty
-        }
+                Just parentName ->
+                    Ok
+                        { old
+                            | subFolders =
+                                Dict.insert
+                                    ( id, name )
+                                    ( parentId, parentName )
+                                    old.subFolders
+                        }
 
 
 type alias MakeModel =
@@ -140,162 +157,19 @@ type alias MakeModel =
 
 zeroDataSet : Data
 zeroDataSet =
-    { parents = Dict.empty
-    , audiences = Dict.empty
-    , all = Dict.empty
+    { rootAudiences = Set.empty
+    , subAudiences = Set.empty
+    , rootFolders = Set.empty
+    , subFolders = Dict.empty
     }
 
 
 type alias Data =
-    { parents : Dict.Dict Int Int
-    , audiences : Dict.Dict Int A.AudienceType
-    , all : Dict.Dict Int String
+    { rootAudiences : Set.Set String
+    , subAudiences : Set.Set ( String, ( Int, String ) )
+    , rootFolders : Set.Set ( Int, String )
+    , subFolders : Dict.Dict ( Int, String ) ( Int, String )
     }
-
-
-makeModel : MakeModel -> Data
-makeModel m =
-    case m.folders of
-        [] ->
-            case m.audiences of
-                [] ->
-                    m.model
-
-                a :: udiences ->
-                    addAudience { m | audiences = udiences } a
-
-        f :: olders ->
-            addFolder { m | folders = olders } f
-
-
-addAudience : MakeModel -> A.Audience -> Data
-addAudience m a =
-    case a.folder of
-        Nothing ->
-            addRootAudience m a
-
-        Just parentId ->
-            addSubAudience m a parentId
-
-
-addFolder : MakeModel -> F.AudienceFolder -> Data
-addFolder m f =
-    case f.parent of
-        Nothing ->
-            addRootFolder m f
-
-        Just parentId ->
-            addSubFolder m f parentId
-
-
-addSubFolder : MakeModel -> F.AudienceFolder -> Int -> Data
-addSubFolder m f parentId =
-    let
-        newId =
-            m.unique
-
-        ( newParentId, newUnique ) =
-            case Dict.get parentId m.folderIds of
-                Nothing ->
-                    ( m.unique + 1, m.unique + 2 )
-
-                Just exists ->
-                    ( exists, m.unique + 1 )
-
-        model =
-            m.model
-
-        newModel =
-            { model
-                | parents = Dict.insert newId newParentId model.parents
-                , all = Dict.insert newId f.name model.all
-            }
-    in
-    makeModel
-        { m
-            | model = newModel
-            , unique = newUnique
-            , folderIds =
-                Dict.insert
-                    f.id
-                    newId
-                    (Dict.insert parentId newParentId m.folderIds)
-        }
-
-
-addSubAudience : MakeModel -> A.Audience -> Int -> Data
-addSubAudience m a parentId =
-    let
-        newId =
-            m.unique
-
-        ( newParentId, newUnique ) =
-            case Dict.get parentId m.folderIds of
-                Nothing ->
-                    ( m.unique + 1, m.unique + 2 )
-
-                Just exists ->
-                    ( exists, m.unique + 1 )
-
-        model =
-            m.model
-
-        newModel =
-            { model
-                | parents = Dict.insert newId newParentId model.parents
-                , audiences = Dict.insert newId a.type_ model.audiences
-                , all = Dict.insert newId a.name model.all
-            }
-    in
-    makeModel
-        { m
-            | model = newModel
-            , unique = newUnique
-            , folderIds =
-                Dict.insert parentId newParentId m.folderIds
-            , audienceIds =
-                Dict.insert a.id newId m.audienceIds
-        }
-
-
-addRootFolder : MakeModel -> F.AudienceFolder -> Data
-addRootFolder m f =
-    let
-        model =
-            m.model
-
-        newModel =
-            { model
-                | all = Dict.insert m.unique f.name model.all
-            }
-    in
-    makeModel
-        { m
-            | model = newModel
-            , unique = m.unique + 1
-            , folderIds = Dict.insert f.id m.unique m.folderIds
-        }
-
-
-addRootAudience : MakeModel -> A.Audience -> Data
-addRootAudience m a =
-    let
-        model =
-            m.model
-
-        newModel =
-            { model
-                | audiences =
-                    Dict.insert m.unique a.type_ model.audiences
-                , all = Dict.insert m.unique a.name model.all
-            }
-    in
-    makeModel
-        { m
-            | model = newModel
-            , unique = m.unique + 1
-            , audienceIds = Dict.insert a.id m.unique m.audienceIds
-        }
 
 
 parseAudiences : String -> Result Jd.Error (List A.Audience)

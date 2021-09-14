@@ -22,7 +22,7 @@ main =
 
 
 type Msg
-    = FolderClick Int
+    = FolderClick ( Int, String )
     | GoUpClick
 
 
@@ -30,10 +30,9 @@ type alias Model =
     Result String GoodModel
 
 
-{-| The integer IDs are not the same as the ones provided in the data.
-It seems likely that the provided IDs are row IDS from the database,
-and that folders and audiences are kept in different tables, so
-the IDs may well conflict. A globally unique ID is needed here.
+{-| I made the assumption that names are unique within a folder. This
+means that audience IDs are not needed, as they are uniquely defined
+by the combination of their name and containing folder.
 
 This model design is inspired by the book Data-Oriented Design by
 Richard Fabian, see <https://www.dataorienteddesign.com/dodbook> .
@@ -44,31 +43,20 @@ that it gives a really elegant and minimal internal state.
 
 -}
 type alias GoodModel =
-    -- The keys are child IDs and the values are parent IDs. Root
-    -- items are not included. If a map lookup fails then the item
-    -- is root, so there are no internal errors caused by failing map
-    -- lookups. The reason for using a dictionary rather than a list
-    -- is to enforce that a child can have only one parent.
-    { parents : Dict.Dict Int Int
+    { rootAudiences : Set.Set String
 
-    -- As well as providing the AudienceType for audiences, this is
-    -- used to detect whether something is a folder or an audience.
-    , audiences : Dict.Dict Int A.AudienceType
-
-    -- The IDs and names for all the folders and audiences. This should
-    -- only be mapped over, not used for lookup. Lookup is bad in this
-    -- case because failure will have to be handled, and it shouldn't
-    -- ever be possible to have an ID without a name. The reason for
-    -- using a dictionary instead of a list is to enforce that an
-    -- item can only have one name.
-    , all : Dict.Dict Int String
-    , parent : Parent
+    -- An audience that is not root is uniquely defined by its
+    -- name and its parent. Parents always have names.
+    , subAudiences : Set.Set ( String, ( Int, String ) )
+    , rootFolders : Set.Set ( Int, String )
+    , subFolders : Dict.Dict ( Int, String ) ( Int, String )
+    , currentLevel : Level
     }
 
 
-type Parent
+type Level
     = Root
-    | Parent Int
+    | Parent ( Int, String )
 
 
 view : Model -> Html.Html Msg
@@ -95,7 +83,7 @@ viewGood model =
 
 goUpView : GoodModel -> List (Html.Html Msg)
 goUpView model =
-    if model.parent == Root then
+    if model.currentLevel == Root then
         []
 
     else
@@ -108,25 +96,25 @@ goUpView model =
 foldersView : GoodModel -> List (Html.Html Msg)
 foldersView model =
     List.map oneFolderView <|
-        Dict.toList <|
-            Dict.filter (isFolder model.audiences) <|
-                Dict.filter (isChildOf model.parents model.parent) model.all
+        case model.currentLevel of
+            Root ->
+                Set.toList <| model.rootFolders
+
+            Parent parentId ->
+                Dict.keys <|
+                    Dict.filter
+                        (isChildFolderOf parentId)
+                        model.subFolders
 
 
-isChildOf : Dict.Dict Int Int -> Parent -> Int -> String -> Bool
-isChildOf parents parent potentialChild _ =
-    case ( Dict.get potentialChild parents, parent ) of
-        ( Nothing, Root ) ->
-            True
+isChildFolderOf : ( Int, String ) -> ( Int, String ) -> ( Int, String ) -> Bool
+isChildFolderOf candidateParent _ parent =
+    candidateParent == parent
 
-        ( Nothing, Parent _ ) ->
-            False
 
-        ( Just potentialParent, Parent p ) ->
-            potentialParent == p
-
-        ( Just _, Root ) ->
-            False
+isChildAudienceOf : ( Int, String ) -> ( String, ( Int, String ) ) -> Bool
+isChildAudienceOf parent ( _, candidateParent ) =
+    parent == candidateParent
 
 
 isFolder : Dict.Dict Int A.AudienceType -> Int -> String -> Bool
@@ -137,16 +125,23 @@ isFolder audiences id _ =
 oneFolderView : ( Int, String ) -> Html.Html Msg
 oneFolderView ( folderId, name ) =
     Html.button
-        [ Hev.onClick <| FolderClick folderId ]
+        [ Hev.onClick <| FolderClick ( folderId, name ) ]
         [ Html.text name ]
 
 
 audiencesView : GoodModel -> List (Html.Html Msg)
 audiencesView model =
     List.map oneAudienceView <|
-        Dict.toList <|
-            Dict.filter (isAudience model.audiences) <|
-                Dict.filter (isChildOf model.parents model.parent) model.all
+        Set.toList <|
+            case model.currentLevel of
+                Root ->
+                    model.rootAudiences
+
+                Parent parent ->
+                    Set.map Tuple.first <|
+                        Set.filter
+                            (isChildAudienceOf parent)
+                            model.subAudiences
 
 
 isAudience : Dict.Dict Int A.AudienceType -> Int -> String -> Bool
@@ -154,8 +149,8 @@ isAudience audiences id _ =
     not <| Dict.get id audiences == Nothing
 
 
-oneAudienceView : ( Int, String ) -> Html.Html Msg
-oneAudienceView ( _, name ) =
+oneAudienceView : String -> Html.Html Msg
+oneAudienceView name =
     Html.span [] [ Html.text name ]
 
 
@@ -173,25 +168,25 @@ updateGood : Msg -> GoodModel -> GoodModel
 updateGood msg model =
     case msg of
         FolderClick id ->
-            { model | parent = Parent id }
+            { model | currentLevel = Parent id }
 
         GoUpClick ->
-            case model.parent of
+            case model.currentLevel of
                 Root ->
                     model
 
-                Parent parentId ->
-                    goUp model parentId
+                Parent parent ->
+                    goUp model parent
 
 
-goUp : GoodModel -> Int -> GoodModel
+goUp : GoodModel -> ( Int, String ) -> GoodModel
 goUp model parent =
-    case Dict.get parent model.parents of
+    case Dict.get parent model.subFolders of
         Nothing ->
-            { model | parent = Root }
+            { model | currentLevel = Root }
 
         Just grandParent ->
-            { model | parent = Parent grandParent }
+            { model | currentLevel = Parent grandParent }
 
 
 init : Model
@@ -200,10 +195,11 @@ init =
         Err err ->
             Err err
 
-        Ok { parents, audiences, all } ->
+        Ok { rootAudiences, subAudiences, rootFolders, subFolders } ->
             Ok
-                { parents = parents
-                , audiences = audiences
-                , all = all
-                , parent = Root
+                { rootAudiences = rootAudiences
+                , subAudiences = subAudiences
+                , rootFolders = rootFolders
+                , subFolders = subFolders
+                , currentLevel = Root
                 }
