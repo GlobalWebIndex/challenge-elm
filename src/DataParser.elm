@@ -32,6 +32,7 @@ parse rawFolders rawAudiences =
 
         ( Ok folders, Ok audiences ) ->
             let
+                folderMap : Dict.Dict Int String
                 folderMap =
                     makeFolderMap folders
             in

@@ -19,6 +19,11 @@ import NoUnused.Modules
 import NoUnused.Parameters
 import NoUnused.Patterns
 import NoUnused.Variables
+import NoExposingEverything
+import NoImportingEverything
+import NoMissingTypeAnnotation
+import NoMissingTypeAnnotationInLetIn
+import NoPrematureLetComputation
 import Review.Rule exposing (Rule)
 
 
@@ -32,4 +37,8 @@ config =
     , NoUnused.Parameters.rule
     , NoUnused.Patterns.rule
     , NoUnused.Variables.rule
+    , NoExposingEverything.rule
+    , NoImportingEverything.rule []
+    , NoMissingTypeAnnotationInLetIn.rule
+    , NoPrematureLetComputation.rule
     ]
