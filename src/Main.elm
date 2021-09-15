@@ -46,16 +46,24 @@ type alias GoodModel =
 
     -- An audience that is not root is uniquely defined by its
     -- name and its parent. Parents always have names.
-    , subAudiences : Set.Set ( String, ( Int, String ) )
-    , rootFolders : Set.Set ( Int, String )
-    , subFolders : Dict.Dict ( Int, String ) ( Int, String )
+    , subAudiences : Set.Set ( AudienceName, Folder )
+    , rootFolders : Set.Set Folder
+    , subFolders : Dict.Dict Folder Folder
     , currentLevel : Level
     }
 
 
+type alias AudienceName =
+    String
+
+
+type alias Folder =
+    ( Int, String )
+
+
 type Level
     = Root
-    | Parent ( Int, String )
+    | Parent Folder
 
 
 view : Model -> Html.Html Msg
