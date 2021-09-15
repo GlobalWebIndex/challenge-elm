@@ -42,7 +42,7 @@ that it gives a really elegant and minimal internal state.
 
 -}
 type alias GoodModel =
-    { rootAudiences : Set.Set String
+    { rootAudiences : Set.Set AudienceName
 
     -- An audience that is not root is uniquely defined by its
     -- name and its parent. Parents always have names.
