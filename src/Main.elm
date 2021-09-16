@@ -82,13 +82,13 @@ breadcrumb model =
                 [ endCrumb model.folderNames Root ]
 
             last :: rest ->
-                List.concat
-                    [ [ nonEndCrumb model.folderNames Root ]
-                    , List.map
-                        (nonEndCrumb model.folderNames << Parent)
-                        (List.reverse rest)
-                    , [ endCrumb model.folderNames <| Parent last ]
-                    ]
+                [ [ nonEndCrumb model.folderNames Root ]
+                , List.map
+                    (nonEndCrumb model.folderNames << Parent)
+                    (List.reverse rest)
+                , [ endCrumb model.folderNames <| Parent last ]
+                ]
+                    |> List.concat
 
 
 nonEndCrumb : Array.Array String -> Level -> Html.Html Msg
@@ -180,6 +180,8 @@ oneFolderView names folderId =
         ]
 
 
+{-| See comment on nonExistentAudience
+-}
 nonExistentFolder : Int -> String
 nonExistentFolder i =
     String.concat
@@ -228,6 +230,9 @@ oneAudienceView names audienceId =
         ]
 
 
+{-| It's sad to have this. It arises because the type system can't
+guarantee that the parent IDs all have names.
+-}
 nonExistentAudience : Int -> String
 nonExistentAudience i =
     String.concat
