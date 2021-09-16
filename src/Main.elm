@@ -16,8 +16,7 @@ main =
 
 
 type Msg
-    = FolderClick Int
-    | GoUpClick
+    = FolderClick Level
 
 
 type alias Model =
@@ -70,23 +69,76 @@ view model =
 
 viewGood : GoodModel -> Html.Html Msg
 viewGood model =
-    goUpView model
+    breadcrumb model
         :: (foldersView model ++ audiencesView model)
         |> Html.div [ Hat.id "container" ]
 
 
-nothing : Html.Html Msg
-nothing =
-    Html.text ""
+breadcrumb : GoodModel -> Html.Html Msg
+breadcrumb model =
+    Html.div [] <|
+        case List.reverse <| getCrumbIds model of
+            [] ->
+                [ endCrumb model.folderNames Root ]
+
+            last :: rest ->
+                List.concat
+                    [ [ nonEndCrumb model.folderNames Root ]
+                    , List.map
+                        (nonEndCrumb model.folderNames << Parent)
+                        (List.reverse rest)
+                    , [ endCrumb model.folderNames <| Parent last ]
+                    ]
 
 
-goUpView : GoodModel -> Html.Html Msg
-goUpView model =
-    if model.currentLevel == Root then
-        nothing
+nonEndCrumb : Array.Array String -> Level -> Html.Html Msg
+nonEndCrumb folderNames level =
+    Html.button [ Hev.onClick <| FolderClick level ]
+        [ Html.text <| folderName folderNames level ]
 
-    else
-        Html.button [ Hev.onClick GoUpClick ] [ Html.text "Go up" ]
+
+endCrumb : Array.Array String -> Level -> Html.Html Msg
+endCrumb folderNames level =
+    Html.span
+        []
+        [ Html.text <| folderName folderNames level ]
+
+
+folderName : Array.Array String -> Level -> String
+folderName folderNames level =
+    case level of
+        Root ->
+            "Home"
+
+        Parent p ->
+            case Array.get p folderNames of
+                Nothing ->
+                    nonExistentFolder p
+
+                Just name ->
+                    name
+
+
+getCrumbIds : GoodModel -> List Int
+getCrumbIds { currentLevel, folderParents } =
+    case currentLevel of
+        Root ->
+            []
+
+        Parent level ->
+            getCrumbIdsHelp folderParents ( [ level ], level )
+
+
+getCrumbIdsHelp : Array.Array Int -> ( List Int, Int ) -> List Int
+getCrumbIdsHelp folderParents ( crumbs, currentLevel ) =
+    case Array.get currentLevel folderParents of
+        Nothing ->
+            crumbs
+
+        Just parent ->
+            getCrumbIdsHelp
+                folderParents
+                ( parent :: crumbs, parent )
 
 
 foldersView : GoodModel -> List (Html.Html Msg)
@@ -117,7 +169,7 @@ foldersView model =
 oneFolderView : Array.Array String -> Int -> Html.Html Msg
 oneFolderView names folderId =
     Html.button
-        [ Hev.onClick <| FolderClick folderId ]
+        [ Hev.onClick <| FolderClick (Parent folderId) ]
         [ Html.text <|
             case Array.get folderId names of
                 Nothing ->
@@ -198,26 +250,8 @@ update msg model =
 updateGood : Msg -> GoodModel -> GoodModel
 updateGood msg model =
     case msg of
-        FolderClick id ->
-            { model | currentLevel = Parent id }
-
-        GoUpClick ->
-            case model.currentLevel of
-                Root ->
-                    model
-
-                Parent parent ->
-                    goUp model parent
-
-
-goUp : GoodModel -> Int -> GoodModel
-goUp model parent =
-    case Array.get parent model.folderParents of
-        Nothing ->
-            { model | currentLevel = Root }
-
-        Just grandParent ->
-            { model | currentLevel = Parent grandParent }
+        FolderClick level ->
+            { model | currentLevel = level }
 
 
 init : Model
