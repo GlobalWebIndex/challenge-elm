@@ -1,27 +1,22 @@
 module Main exposing (main)
 
+import Array
 import Browser
 import Data.Audience as A
 import Data.AudienceFolder as F
 import DataParser as P
-import Dict
 import Html
 import Html.Attributes as Hat
 import Html.Events as Hev
-import Set
 
 
 main : Program () Model Msg
 main =
-    Browser.sandbox
-        { init = init
-        , view = view
-        , update = update
-        }
+    Browser.sandbox { init = init, view = view, update = update }
 
 
 type Msg
-    = FolderClick ( Int, String )
+    = FolderClick Int
     | GoUpClick
 
 
@@ -29,11 +24,19 @@ type alias Model =
     Result String GoodModel
 
 
-{-| I made the assumption that names are unique within a folder. This
-means that audience IDs are not needed, as they are uniquely defined
-by the combination of their name and containing folder.
+{-| The audiences and folders are assigned new IDs in the parser.
+The IDs are the array indexes. Root items are given the highest IDs
+so that _Names is longer than _Parents by the number of root items.
+So the first length(_Parents) items in _Names and \*Parents
+correspond. This design takes advantage of fast lookups for array
+items.
 
-This model design is inspired by the book Data-Oriented Design by
+The downside of the design is that there is no guarantee in the
+type system that the parent IDs in _Parents are valid array indexes
+in _Names. This means that failing name lookup has to be handled in
+the main logic rather than in the parser.
+
+This design is inspired by the book Data-Oriented Design by
 Richard Fabian, see <https://www.dataorienteddesign.com/dodbook> .
 It's an idea from game dev that says that using tabular data
 structures gives better performance. I am experimenting with using
@@ -42,28 +45,17 @@ that it gives a really elegant and minimal internal state.
 
 -}
 type alias GoodModel =
-    { rootAudiences : Set.Set AudienceName
-
-    -- An audience that is not root is uniquely defined by its
-    -- name and its parent. Parents always have names.
-    , subAudiences : Set.Set ( AudienceName, Folder )
-    , rootFolders : Set.Set Folder
-    , subFolders : Dict.Dict Folder Folder
+    { audienceNames : Array.Array String
+    , audienceParents : Array.Array Int
+    , folderNames : Array.Array String
+    , folderParents : Array.Array Int
     , currentLevel : Level
     }
 
 
-type alias AudienceName =
-    String
-
-
-type alias Folder =
-    ( Int, String )
-
-
 type Level
     = Root
-    | Parent Folder
+    | Parent Int
 
 
 view : Model -> Html.Html Msg
@@ -78,11 +70,9 @@ view model =
 
 viewGood : GoodModel -> Html.Html Msg
 viewGood model =
-    Html.div
-        [ Hat.id "container" ]
-    <|
-        goUpView model
-            :: (foldersView model ++ audiencesView model)
+    goUpView model
+        :: (foldersView model ++ audiencesView model)
+        |> Html.div [ Hat.id "container" ]
 
 
 nothing : Html.Html Msg
@@ -96,60 +86,103 @@ goUpView model =
         nothing
 
     else
-        Html.button
-            [ Hev.onClick GoUpClick ]
-            [ Html.text "Go up" ]
+        Html.button [ Hev.onClick GoUpClick ] [ Html.text "Go up" ]
 
 
 foldersView : GoodModel -> List (Html.Html Msg)
 foldersView model =
-    List.map oneFolderView <|
+    List.map (oneFolderView model.folderNames) <|
         case model.currentLevel of
             Root ->
-                Set.toList <| model.rootFolders
+                List.range
+                    (Array.length model.folderParents)
+                    (Array.length model.folderNames - 1)
 
             Parent parentId ->
-                Dict.keys <|
-                    Dict.filter
-                        (isChildFolderOf parentId)
-                        model.subFolders
+                Array.foldl
+                    (\candidateParent ( i, is ) ->
+                        ( i + 1
+                        , if parentId == candidateParent then
+                            i :: is
+
+                          else
+                            is
+                        )
+                    )
+                    ( 0, [] )
+                    model.folderParents
+                    |> Tuple.second
 
 
-isChildFolderOf : ( Int, String ) -> ( Int, String ) -> ( Int, String ) -> Bool
-isChildFolderOf candidateParent _ parent =
-    candidateParent == parent
-
-
-isChildAudienceOf : ( Int, String ) -> ( String, ( Int, String ) ) -> Bool
-isChildAudienceOf parent ( _, candidateParent ) =
-    parent == candidateParent
-
-
-oneFolderView : ( Int, String ) -> Html.Html Msg
-oneFolderView ( folderId, name ) =
+oneFolderView : Array.Array String -> Int -> Html.Html Msg
+oneFolderView names folderId =
     Html.button
-        [ Hev.onClick <| FolderClick ( folderId, name ) ]
-        [ Html.text name ]
+        [ Hev.onClick <| FolderClick folderId ]
+        [ Html.text <|
+            case Array.get folderId names of
+                Nothing ->
+                    nonExistentFolder folderId
+
+                Just name ->
+                    name
+        ]
+
+
+nonExistentFolder : Int -> String
+nonExistentFolder i =
+    String.concat
+        [ ">>>>>>>>>>>>>>>>>Internal error: folder with ID "
+        , String.fromInt i
+        , " doesn't have a name<<<<<<<<<<<<<<<<<<"
+        ]
 
 
 audiencesView : GoodModel -> List (Html.Html Msg)
 audiencesView model =
-    List.map oneAudienceView <|
-        Set.toList <|
-            case model.currentLevel of
-                Root ->
-                    model.rootAudiences
+    List.map (oneAudienceView model.audienceNames) <|
+        case model.currentLevel of
+            Root ->
+                List.range
+                    (Array.length model.audienceParents)
+                    (Array.length model.audienceNames - 1)
 
-                Parent parent ->
-                    Set.map Tuple.first <|
-                        Set.filter
-                            (isChildAudienceOf parent)
-                            model.subAudiences
+            Parent parentId ->
+                Array.foldl
+                    (\candidateParent ( i, is ) ->
+                        ( i + 1
+                        , if parentId == candidateParent then
+                            i :: is
+
+                          else
+                            is
+                        )
+                    )
+                    ( 0, [] )
+                    model.audienceParents
+                    |> Tuple.second
 
 
-oneAudienceView : String -> Html.Html Msg
-oneAudienceView name =
-    Html.span [] [ Html.text name ]
+oneAudienceView : Array.Array String -> Int -> Html.Html Msg
+oneAudienceView names audienceId =
+    Html.span
+        []
+        [ Html.text <|
+            case Array.get audienceId names of
+                Nothing ->
+                    nonExistentAudience audienceId
+
+                Just name ->
+                    name
+        ]
+
+
+nonExistentAudience : Int -> String
+nonExistentAudience i =
+    String.concat
+        [ ">>>>>>>>>>>>>>>>Internal error: audience with ID "
+        , String.fromInt i
+        , " doesn't have a name<<<<<<<<<<<<<<<<<<<<<"
+        ]
 
 
 update : Msg -> Model -> Model
@@ -177,9 +210,9 @@ updateGood msg model =
                     goUp model parent
 
 
-goUp : GoodModel -> ( Int, String ) -> GoodModel
+goUp : GoodModel -> Int -> GoodModel
 goUp model parent =
-    case Dict.get parent model.subFolders of
+    case Array.get parent model.folderParents of
         Nothing ->
             { model | currentLevel = Root }
 
@@ -193,11 +226,11 @@ init =
         Err err ->
             Err err
 
-        Ok { rootAudiences, subAudiences, rootFolders, subFolders } ->
+        Ok parsed ->
             Ok
-                { rootAudiences = rootAudiences
-                , subAudiences = subAudiences
-                , rootFolders = rootFolders
-                , subFolders = subFolders
+                { audienceNames = parsed.audienceNames
+                , audienceParents = parsed.audienceParents
+                , folderNames = parsed.folderNames
+                , folderParents = parsed.folderParents
                 , currentLevel = Root
                 }
