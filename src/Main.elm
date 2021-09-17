@@ -24,158 +24,27 @@ type alias Id =
     Int
 
 
-
-{--------------------------------------------------------------
-
-This program mimics directory structure where there are files and folders.
-Files are Audience and Folders are AudienceFolder. 
-Once decoded from JSON, they are converted to List Node
-
-List Node is then ordered in a Rose Tree using zwilias/elm-rosetree/1.5.0 library.
-
-At first all nodes are entered into rose tree with flat architecture, see flatTree
-Parent child relation is ignored.
-The reason for this is, you cannot put a node into its parent when the parent itself is not yet traversed and is not in the tree yet!
-Once you have all the nodes in a flat tree and information about { parent : Maybe Node, child : Node }, then 
-1. you can pluck a node from the tree
-2. find its parent in the tree
-3. put it inside the parent, outputting updated tree
-
-----------------------------------------------------------------}
-
-
-directoryTree : Tree Node
-directoryTree =
-    let
-        getParentChildNodes : Node -> { parent : Maybe Node, child : Node }
-        getParentChildNodes node =
-            case node of
-                Dir id audienceFolder ->
-                    case audienceFolder.parent of
-                        Just parentId ->
-                            { parent = getParentFromDict parentId, child = Dir id audienceFolder }
-
-                        Nothing ->
-                            { parent = Nothing, child = Dir id audienceFolder }
-
-                File id audience ->
-                    case audience.folder of
-                        Just parentId ->
-                            { parent = getParentFromDict parentId, child = File id audience }
-
-                        Nothing ->
-                            { parent = Nothing, child = File id audience }
-
-                Root ->
-                    -- This state would never be reached. Given just to make compiler happy
-                    { parent = Nothing, child = File 0 defaultAudience }
-
-        getParentFromDict : Id -> Maybe Node
-        getParentFromDict parentId =
-            Dict.get parentId allNodesInDict
-
-        listOfParentChild : List { parent : Maybe Node, child : Node }
-        listOfParentChild =
-            allNodes
-                |> List.map (\node -> getParentChildNodes node)
-
-        -- This is flat tree with no parent-child relation yet
-        flatTree : Tree Node
-        flatTree =
-            allNodes
-                |> List.map Tree.singleton
-                |> Tree.tree Root
-    in
-    flatTreeToParentChildTree listOfParentChild (Just flatTree)
-
-
-
--- This will order nodes in parent-child hierarchy
-
-
-flatTreeToParentChildTree : List { parent : Maybe Node, child : Node } -> Maybe (Tree Node) -> Tree Node
-flatTreeToParentChildTree listOfParentChild tree =
-    case listOfParentChild of
-        parentChild :: rest ->
-            case parentChild.parent of
-                Just parent ->
-                    flatTreeToParentChildTree rest (reorderNode { parent = parent, child = parentChild.child } tree)
-
-                Nothing ->
-                    flatTreeToParentChildTree rest tree
-
-        [] ->
-            Maybe.withDefault defaultTree tree
-
-
-reorderNode : { parent : Node, child : Node } -> Maybe (Tree Node) -> Maybe (Tree Node)
-reorderNode parentChild tree =
-    let
-        -- subTree is the child node
-        subTree : Maybe (Tree Node)
-        subTree =
-            findASubTree tree parentChild.child
-    in
-    -- tree is flat with no parent child hierarchy yet
-    tree
-        -- remove the child node from flat tree because we will insert it to parent soon
-        |> removeASubTree parentChild.child
-        -- and insert the subTree(child) to its parent tree
-        |> appendASubTreeAsChild subTree parentChild
-
-
-appendASubTreeAsChild : Maybe (Tree Node) -> { parent : Node, child : Node } -> Maybe (Tree Node) -> Maybe (Tree Node)
-appendASubTreeAsChild subTree parentChild tree =
-    let
-        appendTreeToTree tree_ =
-            Tree.appendChild (Maybe.withDefault defaultTree subTree) tree_
-    in
-    Zipper.fromTree (Maybe.withDefault defaultTree tree)
-        -- Find the parent node
-        |> Zipper.findFromRoot (\id -> id == parentChild.parent)
-        -- Insert subTree to the parent node
-        |> Maybe.map (Zipper.mapTree appendTreeToTree)
-        |> Maybe.map Zipper.toTree
-
-
-findASubTree : Maybe (Tree Node) -> Node -> Maybe (Tree Node)
-findASubTree tree subTreeNode =
-    Zipper.fromTree (Maybe.withDefault defaultTree tree)
-        |> Zipper.findFromRoot (\id -> id == subTreeNode)
-        |> Maybe.map Zipper.tree
-
-
-removeASubTree : Node -> Maybe (Tree Node) -> Maybe (Tree Node)
-removeASubTree node tree =
-    Zipper.fromTree (Maybe.withDefault defaultTree tree)
-        |> Zipper.findFromRoot (\id -> id == node)
-        |> Maybe.andThen Zipper.removeTree
-        |> Maybe.map Zipper.toTree
-
-
 defaultTree : Tree.Tree Node
 defaultTree =
     Tree.singleton (File defaultAudience.id defaultAudience)
 
 
-allNodesInDict : Dict Id Node
-allNodesInDict =
+directoryTree : Tree Node
+directoryTree =
     let
-        getId : Node -> Id
-        getId node =
-            case node of
-                Dir id audienceFolder ->
-                    id
-
-                File id audience ->
-                    id
-
-                Root ->
-                    0
+        buildTree : Id -> ( Node, List Id )
+        buildTree parentId =
+            parentChildNodesOnlyDict
+                |> Dict.get parentId
+                |> Maybe.withDefault []
+                |> List.map nodeToId
+                |> Tuple.pair (idToNode parentId)
     in
-    allNodes
-        |> List.map (\node -> ( getId node, node ))
-        |> Dict.fromList
+    Tree.unfold buildTree 0
+
+
+
+-- Node(s) in Dict and List
 
 
 allNodes : List Node
@@ -192,6 +61,77 @@ allNodes =
     List.append
         (List.map (\audienceFolder -> Dir audienceFolder.id audienceFolder) audienceFolders)
         (List.map (\audience -> File audience.id audience) audiences)
+
+
+allNodesInDict : Dict Id Node
+allNodesInDict =
+    allNodes
+        |> List.map (\node -> ( nodeToId node, node ))
+        |> Dict.fromList
+
+
+parentChildNodesOnlyDict : Dict Id (List Node)
+parentChildNodesOnlyDict =
+    let
+        insertChildIntoParent : Node -> Dict Id (List Node) -> Dict Id (List Node)
+        insertChildIntoParent node dict =
+            case node of
+                Dir id audienceFolder ->
+                    case audienceFolder.parent of
+                        Just parentId ->
+                            saveToDict dict ( parentId, Dir id audienceFolder )
+
+                        Nothing ->
+                            -- 0 represents Root id
+                            saveToDict dict ( 0, Dir id audienceFolder )
+
+                File id audience ->
+                    case audience.folder of
+                        Just parentId ->
+                            saveToDict dict ( parentId, File id audience )
+
+                        Nothing ->
+                            -- 0 represents Root id
+                            saveToDict dict ( 0, File id audience )
+
+                Root ->
+                    -- This state won't be reached as there are no Root node in allNodes
+                    dict
+
+        saveToDict : Dict Id (List Node) -> ( Id, Node ) -> Dict Id (List Node)
+        saveToDict dict ( id, node ) =
+            case Dict.get id dict of
+                Just childNodes ->
+                    Dict.insert id (node :: childNodes) dict
+
+                Nothing ->
+                    Dict.insert id (node :: []) dict
+    in
+    List.foldr insertChildIntoParent Dict.empty allNodes
+
+
+
+-- Generic functions
+
+
+idToNode : Id -> Node
+idToNode id =
+    allNodesInDict
+        |> Dict.get id
+        |> Maybe.withDefault Root
+
+
+nodeToId : Node -> Id
+nodeToId node =
+    case node of
+        Dir id audienceFolder ->
+            id
+
+        File id audience ->
+            id
+
+        Root ->
+            0
 
 
 
