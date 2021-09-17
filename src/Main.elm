@@ -28,7 +28,7 @@ type alias Id =
 {--------------------------------------------------------------
 
 This program mimics directory structure where there are files and folders.
-Files are Audience and Folders and AudienceFolder. 
+Files are Audience and Folders are AudienceFolder. 
 Once decoded from JSON, they are converted to List Node
 
 List Node is then ordered in a Rose Tree using zwilias/elm-rosetree/1.5.0 library.
