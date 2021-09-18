@@ -4,6 +4,7 @@ module DataParser exposing
     , decodeOneAudience
     , decodeOneFolder
     , parse
+    , rootId
     )
 
 import Array
@@ -11,6 +12,11 @@ import Data.Audience as A
 import Data.AudienceFolder as F
 import Dict
 import Json.Decode as Jd
+
+
+rootId : Int
+rootId =
+    -1
 
 
 parse : String -> String -> Result String Data
@@ -31,158 +37,77 @@ parse rawFolders rawAudiences =
                     ]
 
         ( Ok folders, Ok audiences ) ->
-            processParsedJson folders audiences
+            Ok <| processParsedJson folders audiences
 
 
+processParsedJson : List F.AudienceFolder -> List A.Audience -> Data
 processParsedJson folders audiences =
     let
-        ( rootFolders, subFolders ) =
-            partitionMap splitFolders folders
-
         newFolderIds : Dict.Dict Int Int
         newFolderIds =
-            List.map .id subFolders
-                ++ List.map .id rootFolders
+            List.map .id folders
                 |> List.indexedMap (\new old -> ( old, new ))
                 |> Dict.fromList
 
-        ( rootAudiences, subAudiences ) =
-            partitionMap splitAudiences audiences
+        oldAudienceParentIds : List Int
+        oldAudienceParentIds =
+            List.map
+                (\{ folder } ->
+                    case folder of
+                        Nothing ->
+                            rootId
 
-        subAudienceIds : List Int
-        subAudienceIds =
-            List.map .parent subAudiences
+                        Just id ->
+                            id
+                )
+                audiences
 
-        subFolderIds : List Int
-        subFolderIds =
-            List.map .parent subFolders
+        oldFolderParentIds : List Int
+        oldFolderParentIds =
+            List.map
+                (\{ parent } ->
+                    case parent of
+                        Nothing ->
+                            rootId
+
+                        Just id ->
+                            id
+                )
+                folders
     in
-    Result.map2
-        (\audienceParents folderParents ->
-            { audienceNames =
-                List.map .name subAudiences
-                    ++ rootAudiences
-                    |> Array.fromList
-            , audienceParents = audienceParents
-            , folderNames =
-                List.map .name subFolders
-                    ++ List.map .name rootFolders
-                    |> Array.fromList
-            , folderParents = folderParents
-            }
-        )
-        (updateParents newFolderIds subAudienceIds)
-        (updateParents newFolderIds subFolderIds)
+    { names =
+        Array.fromList <|
+            List.map .name folders
+                ++ List.map .name audiences
+    , parents =
+        updateParents newFolderIds
+            (oldFolderParentIds ++ oldAudienceParentIds)
+    , firstAudienceId = List.length folders
+    }
 
 
 updateParents :
     Dict.Dict Int Int
     -> List Int
-    -> Result String (Array.Array Int)
+    -> Array.Array Int
 updateParents newFolderIds parents =
-    badMap (updateParent newFolderIds) parents
-        |> Result.map Array.fromList
+    Array.fromList <| List.map (updateParent newFolderIds) parents
 
 
-updateParent :
-    Dict.Dict Int Int
-    -> Int
-    -> Result String Int
+updateParent : Dict.Dict Int Int -> Int -> Int
 updateParent newFolderIds oldParent =
     case Dict.get oldParent newFolderIds of
         Nothing ->
-            [ "Audience or folder has non-existent parent with ID "
-            , String.fromInt oldParent
-            ]
-                |> String.concat
-                |> Err
+            rootId
 
         Just newFolderId ->
-            Ok newFolderId
-
-
-splitAudiences :
-    A.Audience
-    -> Either String { name : String, parent : Int }
-splitAudiences { name, folder } =
-    case folder of
-        Nothing ->
-            Left name
-
-        Just parentId ->
-            Right { name = name, parent = parentId }
-
-
-splitFolders :
-    F.AudienceFolder
-    ->
-        Either
-            { id : Int, name : String }
-            { id : Int, name : String, parent : Int }
-splitFolders { id, name, parent } =
-    case parent of
-        Nothing ->
-            Left { id = id, name = name }
-
-        Just parentId ->
-            Right { id = id, name = name, parent = parentId }
-
-
-partitionMap : (a -> Either b c) -> List a -> ( List b, List c )
-partitionMap splitter as_ =
-    partitionMapHelp splitter as_ ( [], [] )
-
-
-partitionMapHelp :
-    (a -> Either b c)
-    -> List a
-    -> ( List b, List c )
-    -> ( List b, List c )
-partitionMapHelp splitter as_ ( bs, cs ) =
-    case as_ of
-        [] ->
-            ( List.reverse bs, List.reverse cs )
-
-        a :: s ->
-            partitionMapHelp splitter s <|
-                case splitter a of
-                    Left b ->
-                        ( b :: bs, cs )
-
-                    Right c ->
-                        ( bs, c :: cs )
-
-
-badMap : (a -> Result b c) -> List a -> Result b (List c)
-badMap f as_ =
-    badMapHelp f as_ []
-
-
-badMapHelp : (a -> Result b c) -> List a -> List c -> Result b (List c)
-badMapHelp f as_ accum =
-    case as_ of
-        [] ->
-            Ok (List.reverse accum)
-
-        a :: s ->
-            case f a of
-                Err err ->
-                    Err err
-
-                Ok ok ->
-                    badMapHelp f s (ok :: accum)
-
-
-type Either a b
-    = Left a
-    | Right b
+            newFolderId
 
 
 type alias Data =
-    { audienceNames : Array.Array String
-    , audienceParents : Array.Array Int
-    , folderNames : Array.Array String
-    , folderParents : Array.Array Int
+    { names : Array.Array String
+    , parents : Array.Array Int
+    , firstAudienceId : Int
     }
 
 
