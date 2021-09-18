@@ -11,7 +11,7 @@ import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (Decoder, decodeString, field, float, int, list, nullable, string)
 import Json.Decode.Pipeline exposing (optional, required, requiredAt)
 import Tree as Tree exposing (Tree)
-import Tree.Zipper as Zipper
+import Tree.Zipper as Zipper exposing (Zipper)
 
 
 type Node
@@ -24,18 +24,13 @@ type alias Id =
     Int
 
 
-defaultTree : Tree.Tree Node
-defaultTree =
-    Tree.singleton (File defaultAudience.id defaultAudience)
-
-
 directoryTree : Tree Node
 directoryTree =
     let
         buildTree : Id -> ( Node, List Id )
         buildTree parentId =
             parentChildNodesOnlyDict
-                |> Dict.get parentId
+                |> Maybe.andThen (Dict.get parentId)
                 |> Maybe.withDefault []
                 |> List.map nodeToId
                 |> Tuple.pair (idToNode parentId)
@@ -47,30 +42,30 @@ directoryTree =
 -- Node(s) in Dict and List
 
 
-allNodes : List Node
+allNodes : Maybe (List Node)
 allNodes =
     let
-        audienceFolders : List AudienceFolder
+        audienceFolders : Maybe (List AudienceFolder)
         audienceFolders =
-            Maybe.withDefault [ defaultAudienceFolder ] decodeAudienceFolders
+            decodeAudienceFolders
 
-        audiences : List Audience
+        audiences : Maybe (List Audience)
         audiences =
-            Maybe.withDefault [ defaultAudience ] decodeAudiences
+            decodeAudiences
     in
-    List.append
-        (List.map (\audienceFolder -> Dir audienceFolder.id audienceFolder) audienceFolders)
-        (List.map (\audience -> File audience.id audience) audiences)
+    Maybe.map2 List.append
+        (Maybe.map (List.map (\audienceFolder -> Dir audienceFolder.id audienceFolder)) audienceFolders)
+        (Maybe.map (List.map (\audience -> File audience.id audience)) audiences)
 
 
-allNodesInDict : Dict Id Node
+allNodesInDict : Maybe (Dict Id Node)
 allNodesInDict =
     allNodes
-        |> List.map (\node -> ( nodeToId node, node ))
-        |> Dict.fromList
+        |> Maybe.map (List.map (\node -> ( nodeToId node, node )))
+        |> Maybe.map Dict.fromList
 
 
-parentChildNodesOnlyDict : Dict Id (List Node)
+parentChildNodesOnlyDict : Maybe (Dict Id (List Node))
 parentChildNodesOnlyDict =
     let
         insertChildIntoParent : Node -> Dict Id (List Node) -> Dict Id (List Node)
@@ -107,7 +102,8 @@ parentChildNodesOnlyDict =
                 Nothing ->
                     Dict.insert id (node :: []) dict
     in
-    List.foldr insertChildIntoParent Dict.empty allNodes
+    allNodes
+        |> Maybe.map (List.foldr insertChildIntoParent Dict.empty)
 
 
 
@@ -117,7 +113,7 @@ parentChildNodesOnlyDict =
 idToNode : Id -> Node
 idToNode id =
     allNodesInDict
-        |> Dict.get id
+        |> Maybe.andThen (Dict.get id)
         |> Maybe.withDefault Root
 
 
@@ -144,19 +140,13 @@ nodeName node =
             audience.name
 
         Root ->
-            ""
+            "Home"
 
 
 
 -- Utility functions for traversing a Tree
 -- Finding a Tree with node
 -- Get children Nodes of certain parent tree
-
-
-findATree : Node -> Tree Node -> Maybe (Zipper.Zipper Node)
-findATree node tree =
-    Zipper.fromTree tree
-        |> Zipper.findFromRoot (\id -> id == node)
 
 
 getChildrenNodes : Tree Node -> List Node
@@ -178,36 +168,24 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        focusOnSubTree : Maybe (Zipper Node) -> Node -> Maybe (Zipper Node)
+        focusOnSubTree zipper goToNode =
+            Maybe.andThen (Zipper.findFromRoot (\node -> node == goToNode)) zipper
+
+        goToParent : Maybe (Zipper Node) -> Maybe (Zipper Node)
+        goToParent zipper =
+            Maybe.andThen Zipper.parent zipper
+    in
     case msg of
         NoOp ->
             ( model, Cmd.none )
 
         GoTo node ->
-            let
-                newZipperStep : Maybe (Zipper.Zipper Node)
-                newZipperStep =
-                    findATree node model.directory
-
-                updatedTree : Maybe (Tree Node)
-                updatedTree =
-                    newZipperStep
-                        |> Maybe.map Zipper.tree
-            in
-            ( { model | zipperStep = newZipperStep, currentTree = updatedTree }, Cmd.none )
+            ( focusOnSubTree model node, Cmd.none )
 
         GoUp ->
-            let
-                newZipperStep : Maybe (Zipper.Zipper Node)
-                newZipperStep =
-                    model.zipperStep
-                        |> Maybe.andThen Zipper.parent
-
-                updatedTree : Maybe (Tree Node)
-                updatedTree =
-                    newZipperStep
-                        |> Maybe.map Zipper.tree
-            in
-            ( { model | zipperStep = newZipperStep, currentTree = updatedTree }, Cmd.none )
+            ( goToParent model, Cmd.none )
 
 
 
@@ -215,66 +193,45 @@ update msg model =
 
 
 type alias Model =
-    { directory : Tree Node
-    , currentTree : Maybe (Tree Node)
-    , zipperStep : Maybe (Zipper.Zipper Node)
-    }
+    Maybe (Zipper.Zipper Node)
 
 
 view : Model -> Html Msg
 view model =
-    let
-        nodes : List Node
-        nodes =
-            case model.currentTree of
-                Just tree ->
-                    getChildrenNodes tree
-
-                Nothing ->
-                    []
-    in
-    div [ class "w-screen h-screen bg-gray-50" ]
-        [ div [ class "w-full h-auto" ]
-            [ viewBackButton model
-            , div []
-                (List.append
-                    (viewNodes nodes ViewFolder)
-                    (viewNodes nodes ViewFile)
-                )
-            ]
-        ]
-
-
-viewBackButton : Model -> Html Msg
-viewBackButton model =
-    let
-        hasParent : String
-        hasParent =
-            case parentLabel of
-                Just (Dir id audienceFolder) ->
-                    audienceFolder.name
-
-                Just Root ->
-                    "Home"
-
-                _ ->
-                    ""
-
-        parentLabel : Maybe Node
-        parentLabel =
-            model.zipperStep
-                |> Maybe.andThen Zipper.parent
-                |> Maybe.map Zipper.label
-    in
-    case String.length hasParent > 0 of
-        True ->
-            div [ class "w-full bg-gray-800 px-4 py-4 cursor-pointer", onClick GoUp ]
-                [ span [ class "text-white " ] [ FA.icon FA.arrowAltLeft ]
-                , span [ class "inline-block ml-2 text-white font-bold" ] [ text hasParent ]
+    case model of
+        Just zipper ->
+            let
+                nodes : List Node
+                nodes =
+                    Zipper.tree zipper
+                        |> getChildrenNodes
+            in
+            div [ class "w-screen h-screen bg-gray-50" ]
+                [ div [ class "w-full h-auto" ]
+                    [ viewBackButton zipper
+                    , div []
+                        (List.append
+                            (viewNodes nodes ViewFolder)
+                            (viewNodes nodes ViewFile)
+                        )
+                    ]
                 ]
 
-        False ->
-            text ""
+        Nothing ->
+            div [] [ text "Error loading data" ]
+
+
+viewBackButton : Zipper Node -> Html Msg
+viewBackButton zipper =
+    case Zipper.label zipper of
+        Root ->
+            div [] []
+
+        node ->
+            div [ class "w-full bg-gray-800 px-4 py-4 cursor-pointer", onClick GoUp ]
+                [ span [ class "text-white " ] [ FA.icon FA.arrowAltLeft ]
+                , span [ class "inline-block ml-2 text-white font-bold" ] [ text <| nodeName node ]
+                ]
 
 
 type ViewType
@@ -477,27 +434,6 @@ audienceFolderDecoder =
         |> field "data"
 
 
-
--- Defaults to be used with Maybe
-
-
-defaultAudienceFolder : AudienceFolder
-defaultAudienceFolder =
-    { id = 0
-    , name = ""
-    , parent = Nothing
-    }
-
-
-defaultAudience : Audience
-defaultAudience =
-    { id = 0
-    , name = ""
-    , type_ = Curated
-    , folder = Nothing
-    }
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( initialModel, Cmd.none )
@@ -505,10 +441,8 @@ init _ =
 
 initialModel : Model
 initialModel =
-    { directory = directoryTree
-    , currentTree = Just directoryTree
-    , zipperStep = Just (Zipper.fromTree directoryTree)
-    }
+    Just directoryTree
+        |> Maybe.map Zipper.fromTree
 
 
 main : Program () Model Msg
