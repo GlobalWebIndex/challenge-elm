@@ -301,7 +301,7 @@ viewNodes nodes viewType =
 type alias ViewConfig =
     { icon : Maybe FA.Icon
     , isDark : Bool
-    , cursorPointer : ( String, Bool )
+    , cursorPointerType : String
     }
 
 
@@ -321,14 +321,14 @@ viewNode node viewType toMsg =
         folderViewConfig =
             { icon = Just FA.folder
             , isDark = False
-            , cursorPointer = ( "cursor-pointer", True )
+            , cursorPointerType = "cursor-pointer"
             }
 
         fileViewConfig : ViewConfig
         fileViewConfig =
             { icon = Nothing
             , isDark = True
-            , cursorPointer = ( "cursor-default", True )
+            , cursorPointerType = "cursor-default"
             }
 
         attachOnClick : List (Attribute Msg)
@@ -354,7 +354,7 @@ viewNode node viewType toMsg =
         , classList
             [ ( "bg-gray-200", config.isDark )
             , ( "border-gray-300", config.isDark )
-            , config.cursorPointer
+            , ( config.cursorPointerType, True )
             ]
         ]
         [ div ([ class "group w-5/6 h-full mx-auto flex items-center justify-between" ] ++ attachOnClick)
