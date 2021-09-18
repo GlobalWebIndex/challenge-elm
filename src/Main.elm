@@ -27,6 +27,8 @@ type alias Model =
 The IDs are the array indexes. Root items are given a negative parent
 ID. This design takes advantage of fast array lookups.
 
+Folders are given the lowest IDs, then audiences. Each part can be got by slicing the array using 'firstAudienceId'.
+
 If an array lookup fails then the item is root.
 
 This design is inspired by the book Data-Oriented Design by
