@@ -440,8 +440,8 @@ strToAudienceType name =
         "user" ->
             Decode.succeed Authored
 
-        _ ->
-            Decode.fail "\"type\" is malformed"
+        val ->
+            Decode.fail <| "\"type:\" is malformed. The value is " ++ val
 
 
 
