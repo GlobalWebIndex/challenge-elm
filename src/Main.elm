@@ -299,7 +299,7 @@ viewNodes nodes viewType =
 
 
 type alias ViewConfig =
-    { icon : Html Msg
+    { icon : Maybe FA.Icon
     , isDark : Bool
     , cursorPointer : ( String, Bool )
     }
@@ -319,14 +319,14 @@ viewNode node viewType toMsg =
 
         folderViewConfig : ViewConfig
         folderViewConfig =
-            { icon = FA.icon FA.folder
+            { icon = Just FA.folder
             , isDark = False
             , cursorPointer = ( "cursor-pointer", True )
             }
 
         fileViewConfig : ViewConfig
         fileViewConfig =
-            { icon = text ""
+            { icon = Nothing
             , isDark = True
             , cursorPointer = ( "cursor-default", True )
             }
@@ -339,6 +339,15 @@ viewNode node viewType toMsg =
 
                 ViewFile ->
                     []
+
+        viewIcon : Maybe FA.Icon -> List (Html Msg)
+        viewIcon maybeIcon =
+            case maybeIcon of
+                Just icon ->
+                    [ FA.icon icon ]
+
+                Nothing ->
+                    []
     in
     div
         [ class "h-12 bg-gray-100 border-b border-gray-200 hover:bg-gray-600"
@@ -350,7 +359,7 @@ viewNode node viewType toMsg =
         ]
         [ div ([ class "group w-5/6 h-full mx-auto flex items-center justify-between" ] ++ attachOnClick)
             [ span [ class "font-semibold text-gray-800 leading-loose group-hover:text-white" ] [ text (nodeName node) ]
-            , span [ class "text-gray-400 group-hover:text-white" ] [ config.icon ]
+            , span [ class "text-gray-400 group-hover:text-white" ] (viewIcon config.icon)
             ]
         ]
 
