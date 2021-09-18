@@ -134,6 +134,19 @@ nodeToId node =
             0
 
 
+nodeName : Node -> String
+nodeName node =
+    case node of
+        Dir id audienceFolder ->
+            audienceFolder.name
+
+        File id audience ->
+            audience.name
+
+        Root ->
+            ""
+
+
 
 -- Utility functions for traversing a Tree
 -- Finding a Tree with node
@@ -280,21 +293,9 @@ viewNodes nodes viewType =
 
                 ViewFile ->
                     List.filter filesOnly nodes
-
-        name : Node -> String
-        name node =
-            case node of
-                Dir id audienceFolder ->
-                    audienceFolder.name
-
-                File id audience ->
-                    audience.name
-
-                Root ->
-                    ""
     in
     nodesToBeViewed
-        |> List.map (\node -> viewNode (name node) viewType (GoTo node))
+        |> List.map (\node -> viewNode node viewType (GoTo node))
 
 
 type alias ViewConfig =
@@ -304,8 +305,8 @@ type alias ViewConfig =
     }
 
 
-viewNode : String -> ViewType -> Msg -> Html Msg
-viewNode name viewType toMsg =
+viewNode : Node -> ViewType -> Msg -> Html Msg
+viewNode node viewType toMsg =
     let
         config : ViewConfig
         config =
@@ -348,7 +349,7 @@ viewNode name viewType toMsg =
             ]
         ]
         [ div ([ class "group w-5/6 h-full mx-auto flex items-center justify-between" ] ++ attachOnClick)
-            [ span [ class "font-semibold text-gray-800 leading-loose group-hover:text-white" ] [ text name ]
+            [ span [ class "font-semibold text-gray-800 leading-loose group-hover:text-white" ] [ text (nodeName node) ]
             , span [ class "text-gray-400 group-hover:text-white" ] [ config.icon ]
             ]
         ]
