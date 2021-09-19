@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Data.Audience exposing (Audience, AudienceType(..), audiencesJSON)
 import Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
-import Dict exposing (Dict)
+import Dict.Any as AnyDict exposing (AnyDict)
 import FontAwesome as FA
 import Html exposing (..)
 import Html.Attributes exposing (class, classList, id)
@@ -15,8 +15,8 @@ import Tree.Zipper as Zipper exposing (Zipper)
 
 
 type Node
-    = Dir Id AudienceFolder
-    | File Id Audience
+    = Dir AudienceFolderId AudienceFolder
+    | File AudienceId Audience
     | Root
 
 
@@ -24,18 +24,48 @@ type alias Id =
     Int
 
 
+type AudienceId
+    = AudienceId Id
+
+
+type AudienceFolderId
+    = AudienceFolderId Id
+
+
+type RootId
+    = RootId Id
+
+
+type NodeId
+    = NodeDir AudienceFolderId
+    | NodeFile AudienceId
+    | NodeRoot RootId
+
+
 directoryTree : Tree Node
 directoryTree =
     let
-        buildTree : Id -> ( Node, List Id )
-        buildTree parentId =
+        {--
+        retrieveAllChild : NodeId -> (Node, List NodeId)
+        retrieveAllChild parentNodeId =
             parentChildNodesOnlyDict
-                |> Maybe.andThen (Dict.get parentId)
+                |> Maybe.andThen (AnyDict.get parentNodeId)
+                -- Got all the children now
+                |> Maybe.map (List.map nodeToNodeId)
+                |> (\maybeNodeIds -> Maybe.map2 Tuple.pair (nodeIdToNode parentNodeId) maybeNodeIds)
+                |> Maybe.withDefault ( Root, [] )
+                --
+                --}
+        retrieveAllChild : NodeId -> ( Node, List NodeId )
+        retrieveAllChild parentNodeId =
+            parentChildNodesOnlyDict
+                |> Maybe.andThen (AnyDict.get parentNodeId)
                 |> Maybe.withDefault []
-                |> List.map nodeToId
-                |> Tuple.pair (idToNode parentId)
+                -- Got all the children now
+                |> List.map nodeToNodeId
+                |> Tuple.pair (nodeIdToNode parentNodeId)
     in
-    Tree.unfold buildTree 0
+    Tree.unfold retrieveAllChild (NodeRoot (RootId 0))
 
 
 
@@ -54,80 +84,97 @@ allNodes =
             decodeAudiences
     in
     Maybe.map2 List.append
-        (Maybe.map (List.map (\audienceFolder -> Dir audienceFolder.id audienceFolder)) audienceFolders)
-        (Maybe.map (List.map (\audience -> File audience.id audience)) audiences)
+        (Maybe.map (List.map (\audienceFolder -> Dir (AudienceFolderId audienceFolder.id) audienceFolder)) audienceFolders)
+        (Maybe.map (List.map (\audience -> File (AudienceId audience.id) audience)) audiences)
 
 
-allNodesInDict : Maybe (Dict Id Node)
+allNodesInDict : Maybe (AnyDict ( String, Int ) NodeId Node)
 allNodesInDict =
     allNodes
-        |> Maybe.map (List.map (\node -> ( nodeToId node, node )))
-        |> Maybe.map Dict.fromList
+        |> Maybe.map (List.map (\node -> ( nodeToNodeId node, node )))
+        |> Maybe.map (AnyDict.fromList comparableKey)
 
 
-parentChildNodesOnlyDict : Maybe (Dict Id (List Node))
+parentChildNodesOnlyDict : Maybe (AnyDict ( String, Int ) NodeId (List Node))
 parentChildNodesOnlyDict =
     let
-        insertChildIntoParent : Node -> Dict Id (List Node) -> Dict Id (List Node)
+        insertChildIntoParent : Node -> AnyDict ( String, Int ) NodeId (List Node) -> AnyDict ( String, Int ) NodeId (List Node)
         insertChildIntoParent node dict =
             case node of
-                Dir id audienceFolder ->
+                Dir nodeId audienceFolder ->
                     case audienceFolder.parent of
                         Just parentId ->
-                            saveToDict dict ( parentId, Dir id audienceFolder )
+                            saveToDict dict ( NodeDir (AudienceFolderId parentId), Dir nodeId audienceFolder )
 
                         Nothing ->
                             -- 0 represents Root id
-                            saveToDict dict ( 0, Dir id audienceFolder )
+                            saveToDict dict ( NodeRoot (RootId 0), Dir nodeId audienceFolder )
 
-                File id audience ->
+                File nodeId audience ->
                     case audience.folder of
                         Just parentId ->
-                            saveToDict dict ( parentId, File id audience )
+                            saveToDict dict ( NodeDir (AudienceFolderId parentId), File nodeId audience )
 
                         Nothing ->
                             -- 0 represents Root id
-                            saveToDict dict ( 0, File id audience )
+                            saveToDict dict ( NodeRoot (RootId 0), File nodeId audience )
 
                 Root ->
                     -- This state won't be reached as there are no Root node in allNodes
                     dict
 
-        saveToDict : Dict Id (List Node) -> ( Id, Node ) -> Dict Id (List Node)
-        saveToDict dict ( id, node ) =
-            case Dict.get id dict of
+        saveToDict : AnyDict ( String, Int ) NodeId (List Node) -> ( NodeId, Node ) -> AnyDict ( String, Int ) NodeId (List Node)
+        saveToDict dict ( parentNode, node ) =
+            case AnyDict.get parentNode dict of
                 Just childNodes ->
-                    Dict.insert id (node :: childNodes) dict
+                    AnyDict.insert parentNode (node :: childNodes) dict
 
                 Nothing ->
-                    Dict.insert id (node :: []) dict
+                    AnyDict.insert parentNode (node :: []) dict
     in
     allNodes
-        |> Maybe.map (List.foldr insertChildIntoParent Dict.empty)
+        |> Maybe.map (List.foldr insertChildIntoParent (AnyDict.empty comparableKey))
 
 
 
 -- Generic functions
 
 
-idToNode : Id -> Node
-idToNode id =
+comparableKey : NodeId -> ( String, Int )
+comparableKey nodeId =
+    case nodeId of
+        NodeFile (AudienceId id) ->
+            ( "audience", id )
+
+        NodeDir (AudienceFolderId id) ->
+            ( "audience-folder", id )
+
+        NodeRoot (RootId id) ->
+            ( "root", id )
+
+
+
+--nodeIdToNode : NodeId -> Maybe Node
+
+
+nodeIdToNode : NodeId -> Node
+nodeIdToNode nodeId =
     allNodesInDict
-        |> Maybe.andThen (Dict.get id)
+        |> Maybe.andThen (AnyDict.get nodeId)
         |> Maybe.withDefault Root
 
 
-nodeToId : Node -> Id
-nodeToId node =
+nodeToNodeId : Node -> NodeId
+nodeToNodeId node =
     case node of
-        Dir id audienceFolder ->
-            id
+        Dir (AudienceFolderId id) audienceFolder ->
+            NodeDir (AudienceFolderId id)
 
-        File id audience ->
-            id
+        File (AudienceId id) audience ->
+            NodeFile (AudienceId id)
 
         Root ->
-            0
+            NodeRoot (RootId 0)
 
 
 nodeName : Node -> String
