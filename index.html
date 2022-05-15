@@ -5420,13 +5420,6 @@ var $elm_community$maybe_extra$Maybe$Extra$isJust = function (m) {
 		return true;
 	}
 };
-var $elm_community$maybe_extra$Maybe$Extra$isNothing = function (m) {
-	if (m.$ === 'Nothing') {
-		return true;
-	} else {
-		return false;
-	}
-};
 var $zwilias$elm_rosetree$Tree$children = function (_v0) {
 	var c = _v0.b;
 	return c;
@@ -5700,66 +5693,69 @@ var $author$project$Main$viewGoUp = function (zipper) {
 };
 var $author$project$Main$view = function (zipper) {
 	var folders = $author$project$Zipper$kids(zipper);
+	var directories = _List_fromArray(
+		[
+			A2(
+			$elm$html$Html$ul,
+			_List_Nil,
+			A2($elm$core$List$map, $author$project$Main$viewFolder, folders)),
+			A2($elm$html$Html$br, _List_Nil, _List_Nil)
+		]);
 	var _v0 = $zwilias$elm_rosetree$Tree$Zipper$label(zipper);
 	var audiences = _v0.a.audiences;
 	var name = _v0.a.name;
 	var id = _v0.a.id;
+	var items = $elm$core$List$isEmpty(audiences) ? _List_Nil : _List_fromArray(
+		[
+			$elm$html$Html$text('Items: '),
+			A2($elm$html$Html$br, _List_Nil, _List_Nil),
+			A2(
+			$elm$html$Html$ul,
+			_List_Nil,
+			A2(
+				$elm$core$List$map,
+				A2(
+					$elm$core$Basics$composeL,
+					A2(
+						$elm$core$Basics$composeL,
+						$elm$html$Html$li(_List_Nil),
+						$elm$core$List$singleton),
+					$author$project$Main$viewAudience),
+				audiences))
+		]);
+	var goUp = $elm_community$maybe_extra$Maybe$Extra$isJust(id) ? _List_fromArray(
+		[
+			$author$project$Main$viewGoUp(zipper)
+		]) : _List_Nil;
+	var toTop = $elm_community$maybe_extra$Maybe$Extra$isJust(id) ? _List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Events$onClick(
+					$author$project$Main$Navigate(
+						$zwilias$elm_rosetree$Tree$Zipper$root(zipper)))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Back to TOP')
+				]))
+		]) : _List_Nil;
+	var levelName = $elm_community$maybe_extra$Maybe$Extra$isJust(id) ? _List_fromArray(
+		[
+			$elm$html$Html$text('Now viewing: ' + name)
+		]) : _List_Nil;
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
 		_Utils_ap(
-			$elm_community$maybe_extra$Maybe$Extra$isJust(id) ? _List_fromArray(
-				[
-					A2(
-					$elm$html$Html$div,
-					_List_fromArray(
-						[
-							$elm$html$Html$Events$onClick(
-							$author$project$Main$Navigate(
-								$zwilias$elm_rosetree$Tree$Zipper$root(zipper)))
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('Back to TOP')
-						]))
-				]) : _List_Nil,
+			toTop,
 			_Utils_ap(
-				$elm_community$maybe_extra$Maybe$Extra$isNothing(id) ? _List_Nil : _List_fromArray(
-					[
-						$author$project$Main$viewGoUp(zipper)
-					]),
+				goUp,
 				_Utils_ap(
-					$elm_community$maybe_extra$Maybe$Extra$isJust(id) ? _List_fromArray(
-						[
-							$elm$html$Html$text('Now viewing: ' + name)
-						]) : _List_Nil,
-					_Utils_ap(
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$ul,
-								_List_Nil,
-								A2($elm$core$List$map, $author$project$Main$viewFolder, folders)),
-								A2($elm$html$Html$br, _List_Nil, _List_Nil)
-							]),
-						$elm$core$List$isEmpty(audiences) ? _List_Nil : _List_fromArray(
-							[
-								$elm$html$Html$text('Items: '),
-								A2($elm$html$Html$br, _List_Nil, _List_Nil),
-								A2(
-								$elm$html$Html$ul,
-								_List_Nil,
-								A2(
-									$elm$core$List$map,
-									A2(
-										$elm$core$Basics$composeL,
-										A2(
-											$elm$core$Basics$composeL,
-											$elm$html$Html$li(_List_Nil),
-											$elm$core$List$singleton),
-										$author$project$Main$viewAudience),
-									audiences))
-							]))))));
+					levelName,
+					_Utils_ap(directories, items)))));
 };
 var $author$project$Main$main = $elm$browser$Browser$sandbox(
 	{init: $author$project$Main$init, update: $author$project$Main$update, view: $author$project$Main$view});

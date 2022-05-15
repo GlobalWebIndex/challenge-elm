@@ -35,27 +35,28 @@ view zipper =
     let
         (Label { audiences, name, id }) = Zipper.label zipper
         folders = kids zipper
-    in
-        Html.div [] <|
-                    (if Maybe.Extra.isJust id then [ Html.div [Events.onClick <| Navigate (Zipper.root zipper) ] [Html.text "Back to TOP"] ] else [] )
-                    ++
-                    (if Maybe.Extra.isNothing id then [{- ROOT LEVEL -}] else [ viewGoUp zipper ])
-                    ++
-                    (if Maybe.Extra.isJust id
-                        then    [ Html.text <| "Now viewing: " ++ name ]
-                        else    [])
-                    ++
-                    [ Html.ul [] <| List.map viewFolder folders
-                    , Html.br [] [] ]
-                    ++
-                    (if List.isEmpty audiences
+        
+        goUp = if Maybe.Extra.isJust id then [ viewGoUp zipper ] else [{- ROOT LEVEL -}]
+        levelName = if Maybe.Extra.isJust id then [ Html.text <| "Now viewing: " ++ name ] else [{- ROOT LEVEL -}]
+        toTop = if Maybe.Extra.isJust id then [ Html.div [Events.onClick <| Navigate (Zipper.root zipper) ] [Html.text "Back to TOP"] ] else [{- ROOT LEVEL -}]
+        directories = [ Html.ul [] <| List.map viewFolder folders, Html.br [] [] ]
+        items = (if List.isEmpty audiences
                         then []
-                                
                         else    [ Html.text "Items: "
                                 , Html.br [] []
                                 , Html.ul [] <| List.map ((Html.li []) << (List.singleton) << viewAudience) audiences
-                                ]
-                    )
+                                ])
+    in
+        Html.div [] <|
+                    toTop
+                    ++
+                    goUp
+                    ++
+                    levelName
+                    ++
+                    directories
+                    ++
+                    items
 
 
 viewGoUp : Zipper Label -> Html Msg
