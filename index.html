@@ -5127,9 +5127,9 @@ var $author$project$Zipper$unfolder = function (_v0) {
 		{audiences: myAudiences, id: currentId, name: currentName});
 	return _Utils_Tuple2(label, seeds);
 };
-var $author$project$Zipper$zipper = $zwilias$elm_rosetree$Tree$Zipper$fromTree(
+var $author$project$Zipper$tree = $zwilias$elm_rosetree$Tree$Zipper$fromTree(
 	A2($zwilias$elm_rosetree$Tree$unfold, $author$project$Zipper$unfolder, $author$project$Zipper$seed));
-var $author$project$Main$init = $author$project$Zipper$zipper;
+var $author$project$Main$init = $author$project$Zipper$tree;
 var $elm$json$Json$Decode$map2 = _Json_map2;
 var $elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
@@ -5478,8 +5478,8 @@ var $zwilias$elm_rosetree$Tree$Zipper$nextSibling = function (_v0) {
 				}));
 	}
 };
-var $author$project$Zipper$siblings = function (zipper_) {
-	var maybeSibling = $zwilias$elm_rosetree$Tree$Zipper$nextSibling(zipper_);
+var $author$project$Zipper$siblings = function (zipper) {
+	var maybeSibling = $zwilias$elm_rosetree$Tree$Zipper$nextSibling(zipper);
 	if (maybeSibling.$ === 'Nothing') {
 		return _List_Nil;
 	} else {
@@ -5490,8 +5490,8 @@ var $author$project$Zipper$siblings = function (zipper_) {
 			$author$project$Zipper$siblings(sibling));
 	}
 };
-var $author$project$Zipper$kids = function (zipper_) {
-	var maybeFirstChild = $zwilias$elm_rosetree$Tree$Zipper$firstChild(zipper_);
+var $author$project$Zipper$kids = function (zipper) {
+	var maybeFirstChild = $zwilias$elm_rosetree$Tree$Zipper$firstChild(zipper);
 	if (maybeFirstChild.$ === 'Nothing') {
 		return _List_Nil;
 	} else {

@@ -11,7 +11,7 @@ import Browser
 import Data.Audience exposing (Audience, audienceToString)
 
 import Label exposing (Label(..))
-import Zipper exposing (zipper, kids)
+import Zipper exposing (tree, kids)
 
 
 type Msg
@@ -22,7 +22,7 @@ type alias Model = Zipper.Zipper Label
 
 
 init : Model
-init = zipper
+init = tree
 
 
 main : Program () Model Msg

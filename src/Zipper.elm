@@ -1,4 +1,4 @@
-module Zipper exposing (zipper, kids, siblings)
+module Zipper exposing (tree, kids, siblings)
 
 
 import Tree.Zipper as Zipper exposing (Zipper)
@@ -13,7 +13,7 @@ import Label exposing (Label(..))
 type alias Seed = ((List Audience, List AudienceFolder), (Maybe Int, String))
 
 
-zipper = Tree.unfold unfolder seed |> Zipper.fromTree
+tree = Tree.unfold unfolder seed |> Zipper.fromTree
 
 
 seed : ((List Audience, List AudienceFolder), (Maybe Int, String))
@@ -35,18 +35,18 @@ unfolder ((audiences, folders), (currentId, currentName)) =
 
 
 kids : Zipper a -> List (Zipper a)
-kids zipper_ =
+kids zipper =
     let
-        maybeFirstChild = Zipper.firstChild zipper_
+        maybeFirstChild = Zipper.firstChild zipper
     in  case maybeFirstChild of
         Nothing -> []
         Just child -> child :: siblings child
 
 
 siblings : Zipper a -> List (Zipper a)
-siblings zipper_ =
+siblings zipper =
     let
-        maybeSibling = Zipper.nextSibling zipper_
+        maybeSibling = Zipper.nextSibling zipper
     in  case maybeSibling of
         Nothing -> []
         Just sibling -> sibling :: siblings sibling
