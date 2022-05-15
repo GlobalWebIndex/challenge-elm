@@ -1,13 +1,12 @@
 module Decoder.FolderDecoder exposing (..)
 
-
-import Json.Decode as Decode exposing (Decoder)
-
 import Data.AudienceFolder exposing (AudienceFolder)
+import Json.Decode as Decode exposing (Decoder)
 
 
 decode : String -> Result Decode.Error (List AudienceFolder)
-decode = Decode.decodeString <| Decode.field "data" <| Decode.list decodeFolder
+decode =
+    Decode.decodeString <| Decode.field "data" <| Decode.list decodeFolder
 
 
 decodeFolder : Decoder AudienceFolder
@@ -19,12 +18,15 @@ decodeFolder =
 
 
 decodeId : Decoder Int
-decodeId = Decode.field "id" Decode.int
+decodeId =
+    Decode.field "id" Decode.int
 
 
 decodeName : Decoder String
-decodeName = Decode.field "name" Decode.string
+decodeName =
+    Decode.field "name" Decode.string
 
 
 decodeParent : Decoder (Maybe Int)
-decodeParent = Decode.field "parent" (Decode.maybe Decode.int)
+decodeParent =
+    Decode.field "parent" (Decode.maybe Decode.int)
