@@ -1,6 +1,6 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
-    , audienceToString, audiencesJSON
+    , audiencesJSON
     )
 
 {-| Data.Audiences module
@@ -23,19 +23,6 @@ type AudienceType
     = Authored
     | Shared
     | Curated
-
-
-audienceToString : AudienceType -> String
-audienceToString audienceType =
-    case audienceType of
-        Authored ->
-            "authored"
-
-        Shared ->
-            "shared"
-
-        Curated ->
-            "curated"
 
 
 {-| Basic type of Audience record

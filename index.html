@@ -4987,8 +4987,8 @@ var $zwilias$elm_rosetree$Tree$unfold = F2(
 			{done: _List_Nil, label: v, todo: next},
 			_List_Nil);
 	});
-var $author$project$Label$Label = function (a) {
-	return {$: 'Label', a: a};
+var $author$project$FolderInfo$Info = function (a) {
+	return {$: 'Info', a: a};
 };
 var $elm$core$Basics$composeR = F3(
 	function (f, g, x) {
@@ -5123,7 +5123,7 @@ var $author$project$Zipper$unfolder = function (_v0) {
 					name));
 		},
 		myFolders);
-	var label = $author$project$Label$Label(
+	var label = $author$project$FolderInfo$Info(
 		{audiences: myAudiences, id: currentId, name: currentName});
 	return _Utils_Tuple2(label, seeds);
 };
@@ -5718,11 +5718,11 @@ var $author$project$Main$viewGoUp = function (zipper) {
 	var maybeParent = $zwilias$elm_rosetree$Tree$Zipper$parent(zipper);
 	var goMessage = A3(
 		$elm_community$maybe_extra$Maybe$Extra$unwrap,
-		'< /',
+		'go to root',
 		$elm$core$Basics$identity,
 		A2(
 			$elm$core$Maybe$map,
-			$elm$core$Basics$append('< '),
+			$elm$core$Basics$append('go to '),
 			A2(
 				$elm$core$Maybe$andThen,
 				A2(

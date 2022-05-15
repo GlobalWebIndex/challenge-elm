@@ -2,23 +2,39 @@ module Main exposing (main)
 
 import Basics.Extra exposing (flip)
 import Browser
-import Data.Audience exposing (Audience, audienceToString)
+import Data.Audience exposing (Audience)
 import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Html.Events as Events
-import Label exposing (Label(..))
+import FolderInfo exposing (FolderInfo(..))
 import Maybe.Extra
 import String.Extra
 import Tree.Zipper as Zipper exposing (Zipper)
 import Zipper exposing (kids, tree)
 
 
+{- NOTE:    So I am not the most proud of the following code.
+            The styling is pretty arbitrary.
+            The html structure is pretty "medium rare" if you will...
+            In the real world app I think there would be some "company guidelines" or even some code to handle UI - I suppose.
+            So I kinda just went with it and had some fun.
+            The UI is kinda terrible, but I am assuming it may not be the main point of this challenge? Maybe I am wrong.
+            It has been some time since I have gotten my hands this dirty with actual component structures and styling.
+            I feel like it is just a matter of reading couple of articles about what is idiomatic nowadays or something like that.
+            And also - seeing the rest of the project - I feel like one can really infer a lot from some existing code and then just go and replicate that everywhere.
+            Hopefully y'all agree.
+-}
+
+
+
 type Msg
-    = Navigate (Zipper Label)
+    = Navigate (Zipper FolderInfo)
 
 
+
+-- I went with the Zipper alone - simply because it is convenient.
 type alias Model =
-    Zipper.Zipper Label
+    Zipper.Zipper FolderInfo
 
 
 init : Model
@@ -34,7 +50,7 @@ main =
 view : Model -> Html Msg
 view zipper =
     let
-        (Label { audiences, name, id }) =
+        (Info { audiences, name, id }) =
             Zipper.label zipper
 
         folders =
@@ -93,12 +109,12 @@ view zipper =
                ]
 
 
-viewFolders : List (Zipper Label) -> List (Html Msg)
+viewFolders : List (Zipper FolderInfo) -> List (Html Msg)
 viewFolders folders =
     List.map viewFolder folders
 
 
-viewGoButton : String -> Zipper Label -> Html Msg
+viewGoButton : String -> Zipper FolderInfo -> Html Msg
 viewGoButton message goWhere =
     Html.div
         [ Events.onClick <| Navigate goWhere
@@ -108,7 +124,7 @@ viewGoButton message goWhere =
         [ Html.text message ]
 
 
-viewGoUp : Zipper Label -> Html Msg
+viewGoUp : Zipper FolderInfo -> Html Msg
 viewGoUp zipper =
     let
         maybeParent =
@@ -121,19 +137,19 @@ viewGoUp zipper =
         -}
         goMessage =
             Maybe.andThen
-                (Zipper.label >> (\(Label { name }) -> String.Extra.nonEmpty name))
+                (Zipper.label >> (\(Info { name }) -> String.Extra.nonEmpty name))
                 maybeParent
-                |> Maybe.map ((++) "< ")
-                |> Maybe.Extra.unwrap "< /" identity
+                |> Maybe.map ((++) "go to ")
+                |> Maybe.Extra.unwrap "go to root" identity
     in
     viewGoButton goMessage <| Maybe.withDefault (Zipper.root zipper) (Zipper.parent zipper)
 --                                              ^^^ this will never happen, this function won't get called when in the root.
 
 
-viewFolder : Zipper Label -> Html Msg
+viewFolder : Zipper FolderInfo -> Html Msg
 viewFolder zipper =
     let
-        (Label { name, audiences }) =
+        (Info { name, audiences }) =
             Zipper.label zipper
 
         size =
