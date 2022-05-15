@@ -1,107 +1,96 @@
 module Main exposing (main)
 
+import Maybe.Extra
+import Tree.Zipper as Zipper exposing (Zipper)
+
 import Html exposing (Html)
+import Html.Events as Events
 
-
-import Data.Audience exposing (audiencesJSON)
-import Data.AudienceFolder exposing (audienceFoldersJSON)
-
-
-import Decoder.FolderDecoder as FD
-import Decoder.AudienceDecoder as AD
-import Data.Audience exposing (Audience)
-import Data.AudienceFolder exposing (AudienceFolder)
-
-import Algo exposing (..)
 import Browser
 
+import Data.Audience exposing (Audience, audienceToString)
+
+import Label exposing (Label(..))
+import Zipper exposing (zipper, kids)
 
 
-type alias Model =
-    { audience : List Audience
-    , folders  : List AudienceFolder
-    , visibleFolder :  Maybe Int
-    , simple : SimpleFolder }
+type Msg
+    = Navigate (Zipper Label)
 
+
+type alias Model = Zipper.Zipper Label
 
 
 init : Model
-init =  { audience = []
-        , folders = []
-        , visibleFolder = Nothing
-        , simple = simpleFolder }
-
--- so what I do with the data
--- each audience member either belongs to some folder (which itself may belong into one), or it is a top level
--- so my data representation can reflect that
--- I can sort them at the beginning to their correct folders
--- and if they don't have any, just put them into the top level "folder"
--- 
-
--- the top level holds a list of folders and a list of top level members
--- non-top levels hold a list of items and a list of folders (because there are folders inside folders)
--- so the structure is essentially a file system tree structure
-type alias Structure = {  }
+init = zipper
 
 
-simpleFolder : SimpleFolder
-simpleFolder =
-    let
-        a = AD.decode audiencesJSON
-        b = FD.decode audienceFoldersJSON
-    in  case (a, b) of
-            (Ok audiences, Ok folders) -> buildSimple (audiences, folders) Nothing (Nothing, Just "Root")
-            _ -> SimpleFolder [] [] { id = Nothing, name = Nothing, parent = Nothing }
-    
-
-
-
-
-
-
-main : Program () Model ()
+main : Program () Model Msg
 main =
     Browser.sandbox { init = init, update = update, view = view }
 
 
-view : Model -> Html ()
-view { simple } =
-    viewSimple simple
+view : Model -> Html Msg
+view zipper =
+    let
+        (Label { audiences, name, id }) = Zipper.label zipper
+        folders = kids zipper
+    in
+        Html.div [] <|
+                    (if Maybe.Extra.isJust id then [ Html.div [Events.onClick <| Navigate (Zipper.root zipper) ] [Html.text "Back to TOP"] ] else [] )
+                    ++
+                    (if Maybe.Extra.isNothing id then [{- ROOT LEVEL -}] else [ viewGoUp zipper ])
+                    ++
+                    (if Maybe.Extra.isJust id
+                        then    [ Html.text <| "Now viewing: " ++ name ]
+                        else    [])
+                    ++
+                    [ Html.ul [] <| List.map viewFolder folders
+                    , Html.br [] [] ]
+                    ++
+                    (if List.isEmpty audiences
+                        then []
+                                
+                        else    [ Html.text "Items: "
+                                , Html.br [] []
+                                , Html.ul [] <| List.map ((Html.li []) << (List.singleton) << viewAudience) audiences
+                                ]
+                    )
 
 
-viewSimple : SimpleFolder -> Html ()
-viewSimple (SimpleFolder audiences folders { id, name, parent }) =
-    Html.div [] [ Html.text "name: "
-                , Html.text <| Debug.toString name
+viewGoUp : Zipper Label -> Html Msg
+viewGoUp zipper =
+    let
+        maybeParrent = Zipper.parent zipper
+        goMessage = case maybeParrent of
+            Nothing -> "go back to /"
+            Just parent ->
+                let
+                    (Label { name }) = Zipper.label parent
+                in  "go back to /" ++ name
 
-                , Html.ul [] <| List.map viewItem audiences ++ 
-                    [ Html.br [] []
-                    , Html.br [] []
-                    , Html.text <| "folders: "
-                    , Html.br [] []
-                    , Html.br [] [] ] ++
-                    List.map viewSimple folders
-
-    ]
+    in  Html.div [Events.onClick <| Navigate (Maybe.withDefault (Zipper.root zipper) (Zipper.parent zipper)) ] [Html.text goMessage]
 
 
-update : () -> Model -> Model
-update msg model = model
+viewFolder : Zipper Label -> Html Msg
+viewFolder zipper =
+    let
+        (Label { name, audiences }) = Zipper.label zipper
+        size = (Zipper.children zipper |> List.length) + (List.length audiences)
+    in  Html.li [Events.onClick <| Navigate zipper] [ Html.text <| "Folder Name: " ++ name ++ " number of items: " ++ (String.fromInt size) ]
 
 
-
-viewItem : Audience -> Html ()
-viewItem { id, name, type_, folder} =
-    Html.li []  [ Html.text "id: "
-                , Html.text <| String.fromInt id
+viewAudience : Audience -> Html Msg
+viewAudience { name, type_ } =
+    Html.div [] [ Html.text <| "name: " ++ name
                 , Html.br [] []
-                , Html.text "name: "
-                , Html.text name
+                , Html.text <| "type: " ++ audienceToString type_
                 , Html.br [] []
-                , Html.text "type: "
-                , Html.text <| Debug.toString type_
                 , Html.br [] []
-                , Html.text "folder: "
-                , Html.text <| Debug.toString folder
-                , Html.br [] []
-                , Html.br [] [] ]
+                ]
+
+
+update : Msg -> Model -> Model
+update msg _ =
+    case msg of
+        Navigate zipper -> zipper

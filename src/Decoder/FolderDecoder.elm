@@ -6,16 +6,6 @@ import Json.Decode as Decode exposing (Decoder)
 import Data.AudienceFolder exposing (AudienceFolder)
 
 
-example : String
-example = """   { "id": 357
-                , "name": "Demographics"
-                , "curated": true
-                , "parent": null } """
-
-
-debug = Decode.decodeString decodeFolder example
-
-
 decode : String -> Result Decode.Error (List AudienceFolder)
 decode = Decode.decodeString <| Decode.field "data" <| Decode.list decodeFolder
 
