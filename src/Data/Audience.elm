@@ -1,7 +1,17 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
     , audiencesJSON
+    , decodeDataAudience
+    , view
     )
+
+import Json.Decode as Decode exposing (..)
+import Json.Decode.Pipeline as Pipeline exposing (required, optional, hardcoded)
+import Html exposing (..)
+import Html.Attributes exposing (style)
+import Material.Icons.Outlined as Outlined
+import Material.Icons.Types exposing (Coloring(..))
+import Color
 
 {-| Data.Audiences module
 
@@ -17,8 +27,8 @@ This module implements everything related to audience resource.
 -- Type definition
 
 
-{-| Audience type
--}
+-- Audience type
+
 type AudienceType
     = Authored
     | Shared
@@ -34,7 +44,52 @@ type alias Audience =
     , folder : Maybe Int
     }
 
+-- Decoder
 
+decodeDataAudience: Decode.Decoder (List Audience)
+decodeDataAudience =
+    Decode.at ["data"] (Decode.list decodeAudience)
+
+decodeAudience: Decode.Decoder Audience
+decodeAudience =
+    Decode.succeed Audience
+        |> required "id" Decode.int
+        |> required "name" Decode.string
+        |> required "type" (Decode.string |> Decode.andThen decodeType_)
+        |> required "folder" (Decode.nullable int)
+
+decodeType_: String -> Decoder AudienceType
+decodeType_ val =
+    case val of
+        "curated" ->
+            Decode.succeed Curated
+        "shared" ->
+            Decode.succeed  Shared
+        "user" ->
+            Decode.succeed  Authored
+        _ ->
+            Decode.fail "unsupported type"
+
+--view
+
+view: Audience -> Html msg
+view audience =
+    div[ 
+        style "background-color" "#1a89e8",
+        style "opacity" "0.9",
+        style "color" "white",
+        style "margin" "25px", 
+        style "width" "25%",
+        style "width" "25%",
+        style "padding" "20px",
+        style "border-radius" "5px",
+        style "font-family" "monospace"
+    ][
+        text audience.name,
+        span[ style "float" "right" ][
+            Outlined.article 20 (Color <| Color.rgb 96 181 204)
+        ]
+    ]
 
 -- Fixtures
 
