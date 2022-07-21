@@ -98,7 +98,7 @@ view model =
                     [ onClick (Filter type_)
                     , class "button-group-button"
                     , if model.filter == type_ then
-                        style "opacity" "0.8"
+                        style "opacity" "0.5"
 
                       else
                         style "opacity" "1"
