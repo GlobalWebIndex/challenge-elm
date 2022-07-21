@@ -9,7 +9,7 @@ import Color
 import Data.Audience exposing (Audience, allTypes, audiencesJSON, decodeDataAudience)
 import Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON, decodeDataAudienceFolder)
 import Html exposing (..)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (string)
 import List exposing (sortBy)
@@ -24,8 +24,8 @@ import Set exposing (fromList)
    uses maps and filters to display the folder tree component. It might be better to use Dict for Part 2, as it spares us from having to filter the folder and audience
    lists every time the category is changed (and only display values stored at a specific key). Classic dict can only use a comparable key though, so no using AudienceType
    there. Only way would be to match AudienceType to Int values and use this method to initially create the Dict structure. I think presented solution should be satisfactory,
-   as the performance impact should in this case be hardly noticable and we have a guarantee that the view will always work with accurate data (if we used Http methods to
-   dynamically obtain the data, view would always display it accurately - on the opposite site, the Dict would grow outdated and would therefore need to be updated too, which
+   as the performance impact should in this case be hardly noticable and we have a guarantee that the view will always work with accurate data (if we dynamically obtained
+   the data, view would always display it accurately - on the opposite site, the Dict would grow outdated and would therefore need to be updated too, which
    kind of defeats the purpose of creating it in the first place).
 -}
 
@@ -51,7 +51,7 @@ init _ =
             --decode audienceFolder json into AudienceFolder List
             case Decode.decodeString decodeDataAudienceFolder audienceFoldersJSON of
                 Ok res ->
-                    sortBy .id res
+                    res
 
                 _ ->
                     []
@@ -59,7 +59,7 @@ init _ =
             --decode audience json into Audience List
             case Decode.decodeString decodeDataAudience audiencesJSON of
                 Ok res ->
-                    sortBy .id res
+                    res
 
                 _ ->
                     []
@@ -85,12 +85,12 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ -- text (Debug.toString model.currentFolderId),
+        [ -- display the buttons to filter by type_,
           List.map
             (\type_ ->
                 button
                     [ onClick (Filter type_)
-                    , style "cursor" "pointer"
+                    , class "button-group-button"
                     , if model.filter == type_ then
                         style "opacity" "0.1"
 
@@ -100,7 +100,7 @@ view model =
                     [ text (Debug.toString type_) ]
             )
             allTypes
-            |> div []
+            |> div [ class "button-group" ]
 
         --folders are handled here
         , List.map
@@ -125,7 +125,6 @@ view model =
 
                       else
                         onClick (Select folder.id)
-                    , style "cursor" "pointer"
                     ]
                     [ Data.AudienceFolder.view folder opened
                     ]
@@ -149,8 +148,8 @@ view model =
                     Data.Audience.Shared ->
                         filterAudienceCategory model.audiences Data.Audience.Shared
 
-                    value ->
-                        filterAudiences (filterAudienceCategory model.audiences value) model.currentFolderId
+                    filterValue ->
+                        filterAudiences (filterAudienceCategory model.audiences filterValue) model.currentFolderId
                 )
                 |> div []
             ]

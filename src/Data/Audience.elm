@@ -10,7 +10,7 @@ module Data.Audience exposing
 import Color
 import Helper exposing (trim)
 import Html exposing (..)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (class, style)
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Pipeline as Pipeline exposing (hardcoded, optional, required)
 import Material.Icons.Outlined as Outlined
@@ -99,14 +99,7 @@ decodeType_ val =
 view : Audience -> Html msg
 view audience =
     div
-        [ style "background-color" "#1a89e8"
-        , style "opacity" "0.9"
-        , style "color" "white"
-        , style "margin" "25px"
-        , style "width" "25%"
-        , style "padding" "20px"
-        , style "border-radius" "5px"
-        , style "font-family" "monospace"
+        [ class "audience"
         ]
         [ text (trim audience.name 60)
         , span [ style "float" "right" ]

@@ -3,7 +3,7 @@ module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON, decode
 import Color
 import Helper exposing (trim)
 import Html exposing (..)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (class, style)
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Pipeline as Pipeline exposing (hardcoded, optional, required)
 import Material.Icons.Outlined as Outlined
@@ -44,13 +44,7 @@ type alias AudienceFolder =
 view : AudienceFolder -> Bool -> Html msg
 view folder opened =
     div
-        [ style "background-color" "#0275d8"
-        , style "color" "white"
-        , style "margin" "25px"
-        , style "padding" "20px"
-        , style "border-radius" "5px"
-        , style "font-family" "monospace"
-        , style "width" "25%"
+        [ class "folder"
         ]
         [ if opened then
             span [ style "float" "left", style "margin-right" "10px" ]
@@ -65,13 +59,13 @@ view folder opened =
         ]
 
 
+
+-- Decoder
+
+
 decodeDataAudienceFolder : Decode.Decoder (List AudienceFolder)
 decodeDataAudienceFolder =
     Decode.at [ "data" ] (Decode.list decodeAudienceFolder)
-
-
-
--- Decoder
 
 
 decodeAudienceFolder : Decode.Decoder AudienceFolder
