@@ -4,6 +4,7 @@ import Color
 import Helper exposing (trim)
 import Html exposing (..)
 import Html.Attributes exposing (class, style)
+import Html.Events exposing (onClick)
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Pipeline as Pipeline exposing (hardcoded, optional, required)
 import Material.Icons.Outlined as Outlined
@@ -41,10 +42,15 @@ type alias AudienceFolder =
 -}
 
 
-view : AudienceFolder -> Bool -> Html msg
-view folder opened =
+view : AudienceFolder -> Bool -> msg -> msg -> Html msg
+view folder opened select goUp =
     div
         [ class "folder"
+        , if opened then
+            onClick goUp
+
+          else
+            onClick select
         ]
         [ if opened then
             span [ style "float" "left", style "margin-right" "10px" ]

@@ -28,6 +28,12 @@ import Set exposing (fromList)
    the data, view would always display it accurately - on the opposite site, the Dict would grow outdated and would therefore need to be updated too, which
    kind of defeats the purpose of creating it in the first place).
 -}
+{- | Use elm-live to launch the app. Install elm live and launch it with commands:
+
+   npm i -g elm-live
+   elm-live src/Main.elm --open -- --output elm.js
+
+-}
 
 
 type alias Model =
@@ -92,7 +98,7 @@ view model =
                     [ onClick (Filter type_)
                     , class "button-group-button"
                     , if model.filter == type_ then
-                        style "opacity" "0.1"
+                        style "opacity" "0.8"
 
                       else
                         style "opacity" "1"
@@ -120,13 +126,8 @@ view model =
                                 False
                 in
                 div
-                    [ if opened then
-                        onClick (GoUp folder.parent)
-
-                      else
-                        onClick (Select folder.id)
-                    ]
-                    [ Data.AudienceFolder.view folder opened
+                    []
+                    [ Data.AudienceFolder.view folder opened (Select folder.id) (GoUp folder.parent)
                     ]
             )
             (case model.filter of
