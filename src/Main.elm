@@ -31,7 +31,7 @@ import Set exposing (fromList)
 {- | Use elm-live to launch the app. Install elm live and launch it with commands:
 
    npm i -g elm-live
-   elm-live src/Main.elm --open -- --output elm.js
+   elm-live src/Main.elm --open -- --output main.js
 
 -}
 
