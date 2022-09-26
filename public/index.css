@@ -9,6 +9,29 @@ body {
   font-family: 'Poppins', sans-serif;;
 }
 
+table {
+  width: 450px;
+}
+
+button {
+  padding: 10px 30px;
+  background-color: #6c599b;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all ease-in-out .2s;
+  font-family : inherit;
+  color: white;
+}
+
+button:hover {
+  opacity: .5;
+}
+
+.selected {
+  background-color: #5163a1;
+}
+
 .dir-elem {
   padding: 10px;
   margin-bottom: 2px;

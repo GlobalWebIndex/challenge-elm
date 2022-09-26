@@ -4390,6 +4390,7 @@ var $elm$core$Set$toList = function (_v0) {
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
+var $author$project$Data$Audience$Authored = {$: 'Authored'};
 var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $elm$core$Basics$add = _Basics_add;
 var $elm$core$List$foldl = F3(
@@ -4481,6 +4482,8 @@ var $elm$core$List$filter = F2(
 			_List_Nil,
 			list);
 	});
+var $elm$core$Basics$True = {$: 'True'};
+var $elm$core$Basics$and = _Basics_and;
 var $elm$core$Basics$eq = _Utils_equal;
 var $author$project$Main$parentIs = F2(
 	function (id, de) {
@@ -4490,6 +4493,31 @@ var $author$project$Main$parentIs = F2(
 		} else {
 			var audienceFolder = de.a;
 			return _Utils_eq(audienceFolder.parent, id);
+		}
+	});
+var $elm$core$Basics$False = {$: 'False'};
+var $author$project$Main$typeIs = F2(
+	function (at, de) {
+		var _v0 = _Utils_Tuple2(de, at);
+		if (_v0.a.$ === 'File') {
+			var audience = _v0.a.a;
+			return _Utils_eq(audience.type_, at);
+		} else {
+			if (_v0.b.$ === 'Shared') {
+				var _v1 = _v0.b;
+				return false;
+			} else {
+				return true;
+			}
+		}
+	});
+var $author$project$Main$parentAndTypeAre = F3(
+	function (id, at, de) {
+		if (de.$ === 'File') {
+			var audience = de.a;
+			return A2($author$project$Main$typeIs, at, de) && A2($author$project$Main$parentIs, id, de);
+		} else {
+			return A2($author$project$Main$parentIs, id, de) && true;
 		}
 	});
 var $elm$core$Basics$append = _Utils_append;
@@ -4521,12 +4549,10 @@ var $elm$core$Result$Ok = function (a) {
 var $elm$json$Json$Decode$OneOf = function (a) {
 	return {$: 'OneOf', a: a};
 };
-var $elm$core$Basics$False = {$: 'False'};
 var $elm$core$Maybe$Just = function (a) {
 	return {$: 'Just', a: a};
 };
 var $elm$core$String$all = _String_all;
-var $elm$core$Basics$and = _Basics_and;
 var $elm$json$Json$Encode$encode = _Json_encode;
 var $elm$core$String$fromInt = _String_fromNumber;
 var $elm$core$String$join = F2(
@@ -4856,7 +4882,6 @@ var $elm$core$Array$initialize = F2(
 			return A5($elm$core$Array$initializeHelp, fn, initialFromIndex, len, _List_Nil, tail);
 		}
 	});
-var $elm$core$Basics$True = {$: 'True'};
 var $elm$core$Result$isOk = function (result) {
 	if (result.$ === 'Ok') {
 		return true;
@@ -4935,7 +4960,6 @@ var $author$project$Data$Audience$Audience = F4(
 		return {folder: folder, id: id, name: name, type_: type_};
 	});
 var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $author$project$Data$Audience$Authored = {$: 'Authored'};
 var $author$project$Data$Audience$Curated = {$: 'Curated'};
 var $author$project$Data$Audience$Shared = {$: 'Shared'};
 var $elm$json$Json$Decode$fail = _Json_fail;
@@ -4984,8 +5008,9 @@ var $author$project$Data$Mocked$parsedDirectory = _Utils_ap($author$project$Data
 var $author$project$Main$init = {
 	directory: A2(
 		$elm$core$List$filter,
-		$author$project$Main$parentIs($elm$core$Maybe$Nothing),
+		A2($author$project$Main$parentAndTypeAre, $elm$core$Maybe$Nothing, $author$project$Data$Audience$Authored),
 		$author$project$Data$Mocked$parsedDirectory),
+	filterBy: $author$project$Data$Audience$Authored,
 	parents: _List_Nil
 };
 var $elm$json$Json$Decode$map2 = _Json_map2;
@@ -5273,6 +5298,14 @@ var $elm$core$List$drop = F2(
 			}
 		}
 	});
+var $author$project$Main$filterBySelectedFilter = F2(
+	function (f, at) {
+		if (at.$ === 'Shared') {
+			return $author$project$Main$typeIs($author$project$Data$Audience$Shared);
+		} else {
+			return f;
+		}
+	});
 var $elm$core$List$head = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -5292,28 +5325,53 @@ var $elm_community$maybe_extra$Maybe$Extra$join = function (mx) {
 };
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'OpenFolder') {
-			var folder = msg.a;
-			var filteredDir = A2(
-				$elm$core$List$filter,
-				$author$project$Main$parentIs(
-					$elm$core$Maybe$Just(folder.id)),
-				$author$project$Data$Mocked$parsedDirectory);
-			return {
-				directory: filteredDir,
-				parents: A2($elm$core$List$cons, folder.parent, model.parents)
-			};
-		} else {
-			var filteredDir = A2(
-				$elm$core$List$filter,
-				$author$project$Main$parentIs(
-					$elm_community$maybe_extra$Maybe$Extra$join(
-						$elm$core$List$head(model.parents))),
-				$author$project$Data$Mocked$parsedDirectory);
-			return {
-				directory: filteredDir,
-				parents: A2($elm$core$List$drop, 1, model.parents)
-			};
+		switch (msg.$) {
+			case 'OpenFolder':
+				var folder = msg.a;
+				var filteredDir = A2(
+					$elm$core$List$filter,
+					A2(
+						$author$project$Main$filterBySelectedFilter,
+						A2(
+							$author$project$Main$parentAndTypeAre,
+							$elm$core$Maybe$Just(folder.id),
+							model.filterBy),
+						model.filterBy),
+					$author$project$Data$Mocked$parsedDirectory);
+				return _Utils_update(
+					model,
+					{
+						directory: filteredDir,
+						parents: A2($elm$core$List$cons, folder.parent, model.parents)
+					});
+			case 'GoUp':
+				var filteredDir = A2(
+					$elm$core$List$filter,
+					A2(
+						$author$project$Main$filterBySelectedFilter,
+						A2(
+							$author$project$Main$parentAndTypeAre,
+							$elm_community$maybe_extra$Maybe$Extra$join(
+								$elm$core$List$head(model.parents)),
+							model.filterBy),
+						model.filterBy),
+					$author$project$Data$Mocked$parsedDirectory);
+				return _Utils_update(
+					model,
+					{
+						directory: filteredDir,
+						parents: A2($elm$core$List$drop, 1, model.parents)
+					});
+			default:
+				var at = msg.a;
+				var filteredDir = A2(
+					$elm$core$List$filter,
+					A2(
+						$author$project$Main$filterBySelectedFilter,
+						A2($author$project$Main$parentAndTypeAre, $elm$core$Maybe$Nothing, at),
+						at),
+					$author$project$Data$Mocked$parsedDirectory);
+				return {directory: filteredDir, filterBy: at, parents: _List_Nil};
 		}
 	});
 var $author$project$Main$OpenFolder = function (a) {
@@ -5381,6 +5439,16 @@ var $author$project$Main$audienceFolderView = function (af) {
 				$elm$html$Html$text('🗀 Folder: ' + af.name)
 			]));
 };
+var $author$project$Main$showAudienceType = function (at) {
+	switch (at.$) {
+		case 'Authored':
+			return 'Authored';
+		case 'Shared':
+			return 'Shared';
+		default:
+			return 'Curated';
+	}
+};
 var $author$project$Main$audienceView = function (a) {
 	return A2(
 		$elm$html$Html$div,
@@ -5395,7 +5463,8 @@ var $author$project$Main$audienceView = function (a) {
 			]),
 		_List_fromArray(
 			[
-				$elm$html$Html$text(a.name)
+				$elm$html$Html$text(
+				a.name + (' - [' + ($author$project$Main$showAudienceType(a.type_) + ']')))
 			]));
 };
 var $author$project$Main$dirElemView = function (de) {
@@ -5406,6 +5475,81 @@ var $author$project$Main$dirElemView = function (de) {
 		var af = de.a;
 		return $author$project$Main$audienceFolderView(af);
 	}
+};
+var $author$project$Main$ChangeFilter = function (a) {
+	return {$: 'ChangeFilter', a: a};
+};
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$bool(bool));
+	});
+var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty('disabled');
+var $author$project$Main$filterButtonView = F2(
+	function (at, filter) {
+		return A2(
+			$elm$html$Html$button,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$classList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2(
+							'selected',
+							_Utils_eq(at, filter))
+						])),
+					$elm$html$Html$Attributes$disabled(
+					_Utils_eq(at, filter)),
+					$elm$html$Html$Events$onClick(
+					$author$project$Main$ChangeFilter(at))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(
+					$author$project$Main$showAudienceType(at))
+				]));
+	});
+var $elm$html$Html$table = _VirtualDom_node('table');
+var $elm$html$Html$th = _VirtualDom_node('th');
+var $elm$html$Html$tr = _VirtualDom_node('tr');
+var $author$project$Main$filterPanelView = function (model) {
+	return A2(
+		$elm$html$Html$table,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$tr,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$th,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2($author$project$Main$filterButtonView, $author$project$Data$Audience$Authored, model.filterBy)
+							])),
+						A2(
+						$elm$html$Html$th,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2($author$project$Main$filterButtonView, $author$project$Data$Audience$Shared, model.filterBy)
+							])),
+						A2(
+						$elm$html$Html$th,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2($author$project$Main$filterButtonView, $author$project$Data$Audience$Curated, model.filterBy)
+							]))
+					]))
+			]));
 };
 var $author$project$Main$GoUp = {$: 'GoUp'};
 var $author$project$Main$goUpView = function (model) {
@@ -5434,8 +5578,13 @@ var $author$project$Main$view = function (model) {
 		$elm$html$Html$div,
 		_List_Nil,
 		_Utils_ap(
-			$author$project$Main$goUpView(model),
-			A2($elm$core$List$map, $author$project$Main$dirElemView, model.directory)));
+			_List_fromArray(
+				[
+					$author$project$Main$filterPanelView(model)
+				]),
+			_Utils_ap(
+				$author$project$Main$goUpView(model),
+				A2($elm$core$List$map, $author$project$Main$dirElemView, model.directory))));
 };
 var $author$project$Main$main = $elm$browser$Browser$sandbox(
 	{init: $author$project$Main$init, update: $author$project$Main$update, view: $author$project$Main$view});
