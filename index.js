@@ -9745,74 +9745,50 @@ var $author$project$Main$MsgFoldersOpened = F2(
 var $author$project$Main$openFolders = F2(
 	function (opened, list) {
 		return (_Utils_eq(opened.parentID, list.parent) && opened.state) ? A2(
-			$elm$html$Html$li,
-			_List_Nil,
+			$elm$html$Html$button,
 			_List_fromArray(
 				[
-					A2(
-					$elm$html$Html$button,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('folder'),
-							$elm$html$Html$Events$onClick(
-							A2($author$project$Main$MsgFoldersOpened, list.id, list.name))
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text(list.name)
-						]))
+					$elm$html$Html$Attributes$class('folder'),
+					$elm$html$Html$Events$onClick(
+					A2($author$project$Main$MsgFoldersOpened, list.id, list.name))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(list.name)
 				])) : (((!list.parent) && (!opened.state)) ? A2(
-			$elm$html$Html$li,
-			_List_Nil,
+			$elm$html$Html$button,
 			_List_fromArray(
 				[
-					A2(
-					$elm$html$Html$button,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('folder'),
-							$elm$html$Html$Events$onClick(
-							A2($author$project$Main$MsgFoldersOpened, list.id, list.name))
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text(list.name)
-						]))
-				])) : A2($elm$html$Html$li, _List_Nil, _List_Nil));
+					$elm$html$Html$Attributes$class('folder'),
+					$elm$html$Html$Events$onClick(
+					A2($author$project$Main$MsgFoldersOpened, list.id, list.name))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(list.name)
+				])) : $elm$html$Html$text(''));
 	});
 var $author$project$Main$viewAudience = F2(
 	function (opened, listAudience) {
 		return (_Utils_eq(opened.parentID, listAudience.folder) && opened.state) ? A2(
-			$elm$html$Html$li,
-			_List_Nil,
+			$elm$html$Html$button,
 			_List_fromArray(
 				[
-					A2(
-					$elm$html$Html$button,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('audience')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text(listAudience.name)
-						]))
+					$elm$html$Html$Attributes$class('audience')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(listAudience.name)
 				])) : (((!listAudience.folder) && (!opened.state)) ? A2(
-			$elm$html$Html$li,
-			_List_Nil,
+			$elm$html$Html$button,
 			_List_fromArray(
 				[
-					A2(
-					$elm$html$Html$button,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('audience')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text(listAudience.name)
-						]))
-				])) : A2($elm$html$Html$li, _List_Nil, _List_Nil));
+					$elm$html$Html$Attributes$class('audience')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(listAudience.name)
+				])) : $elm$html$Html$text(''));
 	});
 var $author$project$Main$view = function (model) {
 	return A2(

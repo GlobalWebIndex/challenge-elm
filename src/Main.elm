@@ -1,9 +1,8 @@
 module Main exposing (main)
 
+import Browser
 import Data.Audience as Aud
 import Data.AudienceFolder as AudFolders
-
-import Browser
 import Debug exposing (toString)
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -26,6 +25,7 @@ type alias Model =
     , opened : Opened
     , audience : List Aud.Audience
     }
+
 
 type alias Opened =
     { parentID : Int
@@ -50,9 +50,6 @@ initModel =
     , opened = { parentID = 0, parentName = "Home", state = False }
     , audience = Aud.audience
     }
-
-
-
 
 
 update : Msg -> Model -> Model
@@ -91,18 +88,13 @@ view model =
 openFolders : Opened -> AudFolders.AudienceFolder -> Html Msg
 openFolders opened list =
     if opened.parentID == list.parent && opened.state == True then
-        Html.li []
-            [ Html.button [ class "folder", onClick (MsgFoldersOpened list.id list.name) ] [ text list.name ]
-            ]
+        Html.button [ class "folder", onClick (MsgFoldersOpened list.id list.name) ] [ text list.name ]
 
     else if list.parent == 0 && opened.state == False then
-        Html.li []
-            [ Html.button [ class "folder", onClick (MsgFoldersOpened list.id list.name) ] [ text list.name ]
-            ]
+        Html.button [ class "folder", onClick (MsgFoldersOpened list.id list.name) ] [ text list.name ]
 
     else
-        Html.li []
-            []
+        text ""
 
 
 breadCrumbs model =
@@ -112,15 +104,10 @@ breadCrumbs model =
 viewAudience : Opened -> Aud.Audience -> Html msg
 viewAudience opened listAudience =
     if opened.parentID == listAudience.folder && opened.state == True then
-        Html.li []
-            [ Html.button [ class "audience" ] [ text listAudience.name ]
-            ]
+        Html.button [ class "audience" ] [ text listAudience.name ]
+
     else if listAudience.folder == 0 && opened.state == False then
-        Html.li []
-            [ Html.button [ class "audience" ] [ text listAudience.name ]
-            ]
+        Html.button [ class "audience" ] [ text listAudience.name ]
+
     else
-        Html.li []
-            []
-
-
+        text ""
