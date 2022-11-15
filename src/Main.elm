@@ -9,6 +9,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Json.Decode exposing (string)
 import Platform.Cmd exposing (none)
+import List.Extra as List
 
 
 main : Program () Model Msg
@@ -28,14 +29,14 @@ type alias Model =
 
 
 type alias Opened =
-    { parentID : Int
+    { parentID : List Int
     , parentName : String
     , state : Bool
     }
 
 
 type Msg
-    = MsgFoldersOpened Int String
+    = MsgFolderOpened Int String
     | MsgFolderClosed
 
 
@@ -47,7 +48,7 @@ init =
 initModel : Model
 initModel =
     { folders = AudFolders.audFolders
-    , opened = { parentID = 0, parentName = "Home", state = False }
+    , opened = { parentID = [ 0 ], parentName = "Home", state = False }
     , audience = Aud.audience
     }
 
@@ -57,13 +58,17 @@ update msg model =
     let
         newOpened =
             model.opened
+        newParentID id =
+            id :: newOpened.parentID
+
     in
     case msg of
-        MsgFoldersOpened id name ->
-            { model | opened = { newOpened | parentID = id, parentName = name, state = True } }
+        MsgFolderOpened id name ->
+            { model | opened = {
+                newOpened | parentID = newParentID id, parentName = name, state = True } }
 
         MsgFolderClosed ->
-            { model | opened = { newOpened | parentID = 0, parentName = "Home", state = False } }
+            { model | opened = { newOpened | parentID = [0], parentName = "Home", state = False } }
 
 
 view : Model -> Html Msg
@@ -75,7 +80,7 @@ view model =
         , Html.div [ class "listContainer" ]
             [ Html.div [ id "head" ]
                 [ Html.a [ class "breadcrumbps" ] [ text (breadCrumbs model) ]
-                , Html.button [ class "backButton", onClick MsgFolderClosed ] [ text "Back" ]
+                , Html.button [ class "backButton", onClick (MsgFolderClosed) ] [ text "Go Up" ]
                 ]
             , Html.ul [ class "list" ]
                 (List.map (openFolders model.opened) model.folders)
@@ -87,11 +92,11 @@ view model =
 
 openFolders : Opened -> AudFolders.AudienceFolder -> Html Msg
 openFolders opened list =
-    if opened.parentID == list.parent && opened.state == True then
-        Html.button [ class "folder", onClick (MsgFoldersOpened list.id list.name) ] [ text list.name ]
+    if List.head opened.parentID == Just list.parent && opened.state == True then
+        Html.button [ class "folder", onClick (MsgFolderOpened list.id list.name) ] [ text list.name ]
 
     else if list.parent == 0 && opened.state == False then
-        Html.button [ class "folder", onClick (MsgFoldersOpened list.id list.name) ] [ text list.name ]
+        Html.button [ class "folder", onClick (MsgFolderOpened list.id list.name) ] [ text list.name ]
 
     else
         text ""
@@ -103,7 +108,7 @@ breadCrumbs model =
 
 viewAudience : Opened -> Aud.Audience -> Html msg
 viewAudience opened listAudience =
-    if opened.parentID == listAudience.folder && opened.state == True then
+    if List.head opened.parentID == Just listAudience.folder && opened.state == True then
         Html.button [ class "audience" ] [ text listAudience.name ]
 
     else if listAudience.folder == 0 && opened.state == False then

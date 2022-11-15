@@ -4870,7 +4870,6 @@ function _Browser_load(url)
 		}
 	}));
 }
-var $elm$core$Basics$False = {$: 'False'};
 var $elm$core$List$cons = _List_cons;
 var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
 var $elm$core$Array$foldr = F3(
@@ -4951,6 +4950,7 @@ var $elm$core$Set$toList = function (_v0) {
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
+var $elm$core$Basics$False = {$: 'False'};
 var $elm$core$Basics$apR = F2(
 	function (x, f) {
 		return f(x);
@@ -5411,7 +5411,12 @@ var $author$project$Data$Audience$audience = A2(
 var $author$project$Main$initModel = {
 	audience: $author$project$Data$Audience$audience,
 	folders: $author$project$Data$AudienceFolder$audFolders,
-	opened: {parentID: 0, parentName: 'Home', state: false}
+	opened: {
+		parentID: _List_fromArray(
+			[0]),
+		parentName: 'Home',
+		state: false
+	}
 };
 var $author$project$Main$init = $author$project$Main$initModel;
 var $elm$json$Json$Decode$map = _Json_map1;
@@ -9713,7 +9718,10 @@ var $elm$browser$Browser$sandbox = function (impl) {
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		var newOpened = model.opened;
-		if (msg.$ === 'MsgFoldersOpened') {
+		var newParentID = function (id) {
+			return A2($elm$core$List$cons, id, newOpened.parentID);
+		};
+		if (msg.$ === 'MsgFolderOpened') {
 			var id = msg.a;
 			var name = msg.b;
 			return _Utils_update(
@@ -9721,7 +9729,11 @@ var $author$project$Main$update = F2(
 				{
 					opened: _Utils_update(
 						newOpened,
-						{parentID: id, parentName: name, state: true})
+						{
+							parentID: newParentID(id),
+							parentName: name,
+							state: true
+						})
 				});
 		} else {
 			return _Utils_update(
@@ -9729,7 +9741,12 @@ var $author$project$Main$update = F2(
 				{
 					opened: _Utils_update(
 						newOpened,
-						{parentID: 0, parentName: 'Home', state: false})
+						{
+							parentID: _List_fromArray(
+								[0]),
+							parentName: 'Home',
+							state: false
+						})
 				});
 		}
 	});
@@ -9738,19 +9755,30 @@ var $author$project$Main$breadCrumbs = function (model) {
 	return model.opened.parentName;
 };
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
-var $author$project$Main$MsgFoldersOpened = F2(
+var $author$project$Main$MsgFolderOpened = F2(
 	function (a, b) {
-		return {$: 'MsgFoldersOpened', a: a, b: b};
+		return {$: 'MsgFolderOpened', a: a, b: b};
 	});
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
 var $author$project$Main$openFolders = F2(
 	function (opened, list) {
-		return (_Utils_eq(opened.parentID, list.parent) && opened.state) ? A2(
+		return (_Utils_eq(
+			$elm$core$List$head(opened.parentID),
+			$elm$core$Maybe$Just(list.parent)) && opened.state) ? A2(
 			$elm$html$Html$button,
 			_List_fromArray(
 				[
 					$elm$html$Html$Attributes$class('folder'),
 					$elm$html$Html$Events$onClick(
-					A2($author$project$Main$MsgFoldersOpened, list.id, list.name))
+					A2($author$project$Main$MsgFolderOpened, list.id, list.name))
 				]),
 			_List_fromArray(
 				[
@@ -9761,7 +9789,7 @@ var $author$project$Main$openFolders = F2(
 				[
 					$elm$html$Html$Attributes$class('folder'),
 					$elm$html$Html$Events$onClick(
-					A2($author$project$Main$MsgFoldersOpened, list.id, list.name))
+					A2($author$project$Main$MsgFolderOpened, list.id, list.name))
 				]),
 			_List_fromArray(
 				[
@@ -9770,7 +9798,9 @@ var $author$project$Main$openFolders = F2(
 	});
 var $author$project$Main$viewAudience = F2(
 	function (opened, listAudience) {
-		return (_Utils_eq(opened.parentID, listAudience.folder) && opened.state) ? A2(
+		return (_Utils_eq(
+			$elm$core$List$head(opened.parentID),
+			$elm$core$Maybe$Just(listAudience.folder)) && opened.state) ? A2(
 			$elm$html$Html$button,
 			_List_fromArray(
 				[
@@ -9845,7 +9875,7 @@ var $author$project$Main$view = function (model) {
 									]),
 								_List_fromArray(
 									[
-										$elm$html$Html$text('Back')
+										$elm$html$Html$text('Go Up')
 									]))
 							])),
 						A2(
@@ -9874,4 +9904,4 @@ var $author$project$Main$view = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$sandbox(
 	{init: $author$project$Main$init, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{},"unions":{"Main.Msg":{"args":[],"tags":{"MsgFoldersOpened":["Basics.Int","String.String"],"MsgFolderClosed":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{},"unions":{"Main.Msg":{"args":[],"tags":{"MsgFolderOpened":["Basics.Int","String.String"],"MsgFolderClosed":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
