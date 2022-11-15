@@ -1,0 +1,26 @@
+{
+  "name": "challenge-elm",
+  "version": "1.0.0",
+  "description": "Hello! Welcome to the Elm Challenge.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "elm-live src/Main.elm -- --debug --output=index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GlobalWebIndex/challenge-elm.git"
+  },
+  "devDependencies": {
+    "elm-live": "^4.0.2"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GlobalWebIndex/challenge-elm/issues"
+  },
+  "homepage": "https://github.com/GlobalWebIndex/challenge-elm#readme",
+  "dependencies": {
+    "elm-json": "^0.2.13"
+  }
+}
