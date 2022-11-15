@@ -1,7 +1,9 @@
 module Data.Audience exposing
     ( AudienceType(..), Audience
-    , audiencesJSON
+    , audience
     )
+
+import Json.Decode as JD exposing (..)
 
 {-| Data.Audiences module
 
@@ -17,8 +19,10 @@ This module implements everything related to audience resource.
 -- Type definition
 
 
-{-| Audience type
+{-
+| Audience type
 -}
+
 type AudienceType
     = Authored
     | Shared
@@ -30,9 +34,35 @@ type AudienceType
 type alias Audience =
     { id : Int
     , name : String
-    , type_ : AudienceType
-    , folder : Maybe Int
+--    , type_ : AudienceType
+    , folder : Int
     }
+
+audience : List Audience
+audience =
+    (decodeString decodeJson audiencesJSON) |> Result.withDefault []
+
+
+decodeJson : JD.Decoder (List Audience)
+decodeJson =
+    JD.field "data" decodeData
+
+
+decodeData : JD.Decoder (List Audience)
+decodeData =
+    JD.list decodeItem
+
+
+decodeItem : JD.Decoder Audience
+decodeItem =
+    JD.map3 Audience
+        (JD.field "id" JD.int)
+        (JD.field "name" JD.string)
+        (JD.field "folder" badInt)
+
+badInt : Decoder Int
+badInt =
+      oneOf [ int, null 0 ]
 
 
 

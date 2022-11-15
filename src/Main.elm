@@ -1,6 +1,6 @@
 module Main exposing (main)
 
--- import Data.Audience
+import Data.Audience as Aud
 import Data.AudienceFolder as AudFolders
 
 import Browser
@@ -24,22 +24,8 @@ main =
 type alias Model =
     { folders : List AudFolders.AudienceFolder
     , opened : Opened
-    , audience : List Audience
+    , audience : List Aud.Audience
     }
-
-type alias Audience =
-    { id : Int
-    , name : String
-    , type_ : AudienceType
-    , folder : Int
-    }
-
-
-type AudienceType
-    = Authored
-    | Shared
-    | Curated
-
 
 type alias Opened =
     { parentID : Int
@@ -62,17 +48,7 @@ initModel : Model
 initModel =
     { folders = AudFolders.audFolders
     , opened = { parentID = 0, parentName = "Home", state = False }
-    , audience =
-        [ { id = 1, name = "Audience1", type_ = Authored, folder = 2 }
-        , { id = 1, name = "Audience2", type_ = Shared, folder = 3 }
-        , { id = 1, name = "Audience3", type_ = Authored, folder = 5 }
-        , { id = 1, name = "Audience4", type_ = Authored, folder = 6 }
-        , { id = 1, name = "Audience5", type_ = Shared, folder = 2 }
-        , { id = 1, name = "Audience6", type_ = Authored, folder = 1 }
-        , { id = 1, name = "Audience7", type_ = Curated, folder = 2 }
-        , { id = 1, name = "Audience8", type_ = Authored, folder = 5 }
-        , { id = 1, name = "Audience9", type_ = Curated, folder = 0 }
-        ]
+    , audience = Aud.audience
     }
 
 
@@ -98,18 +74,6 @@ view model =
     Html.div [ class "container" ]
         [ Html.h1 [ class "h1" ]
             [ Html.text "Audience Browser"
-            ]
-        , Html.div [ class "search" ]
-            [ Html.button [ id "searchButton" ]
-                [ Html.img
-                    [ class "searchIcon"
-                    , Html.Attributes.src "src/Svg/searchIcon.svg"
-                    , Html.Attributes.attribute "description" "SearchIcon"
-                    ]
-                    []
-                ]
-            , Html.input [ Html.Attributes.type_ "search", placeholder "Search", id "searchbar" ]
-                []
             ]
         , Html.div [ class "listContainer" ]
             [ Html.div [ id "head" ]
@@ -145,7 +109,7 @@ breadCrumbs model =
     model.opened.parentName
 
 
-viewAudience : Opened -> Audience -> Html msg
+viewAudience : Opened -> Aud.Audience -> Html msg
 viewAudience opened listAudience =
     if opened.parentID == listAudience.folder && opened.state == True then
         Html.li []
