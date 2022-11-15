@@ -1,35 +1,49 @@
-module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
+module Data.AudienceFolder exposing (AudienceFolder, audFolders)
 
-{-| Data.AudienceFolder module
-
-This module implements everything related to audience folder resource.
+import Json.Decode as JD exposing (..)
 
 
-# Interface
 
-@docs AudienceFolder, audienceFoldersJSON
+-- type alias Folders =
+--     List AudienceFolder
 
--}
-
--- Type definition
-
-
-{-| Basic type of AudienceFolder record
--}
 type alias AudienceFolder =
     { id : Int
     , name : String
-    , parent : Maybe Int
+    , parent : Int
     }
 
+-- decoder
+-- https://gist.github.com/joanllenas/60edc839742bb67227b4cbf21977859b
 
+audFolders : List AudienceFolder
+audFolders =
+    (decodeString decodeJson audienceFoldersJSON) |> Result.withDefault []
+
+
+decodeJson : JD.Decoder (List AudienceFolder)
+decodeJson =
+    JD.field "data" decodeData
+
+
+decodeData : JD.Decoder (List AudienceFolder)
+decodeData =
+    JD.list decodeItem
+
+
+decodeItem : JD.Decoder AudienceFolder
+decodeItem =
+    JD.map3 AudienceFolder
+        (JD.field "id" JD.int)
+        (JD.field "name" JD.string)
+        (JD.field "parent" badInt)
+
+badInt : Decoder Int
+badInt =
+      oneOf [ int, null 0 ]
 
 -- Fixtures
 
-
-{-| Fixtures for audienceFolders
-In real world something like this is returned by `GET /api/audience_folders`
--}
 audienceFoldersJSON : String
 audienceFoldersJSON =
     """
