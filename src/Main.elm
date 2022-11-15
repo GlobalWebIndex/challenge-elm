@@ -30,7 +30,7 @@ type alias Model =
 
 type alias Opened =
     { parentID : List Int
-    , parentName : String
+    , parentName : List String
     , state : Bool
     }
 
@@ -48,7 +48,7 @@ init =
 initModel : Model
 initModel =
     { folders = AudFolders.audFolders
-    , opened = { parentID = [ 0 ], parentName = "Home", state = False }
+    , opened = { parentID = [ 0 ], parentName = ["Home"], state = False }
     , audience = Aud.audience
     }
 
@@ -60,15 +60,16 @@ update msg model =
             model.opened
         newParentID id =
             id :: newOpened.parentID
-
+        newParentName name =
+            name :: newOpened.parentName
     in
     case msg of
         MsgFolderOpened id name ->
             { model | opened = {
-                newOpened | parentID = newParentID id, parentName = name, state = True } }
+                newOpened | parentID = newParentID id, parentName = newParentName name, state = True } }
 
         MsgFolderClosed ->
-            { model | opened = { newOpened | parentID = [0], parentName = "Home", state = False } }
+            { model | opened = { newOpened | parentID = [0], parentName = ["Home"], state = False } }
 
 
 view : Model -> Html Msg
@@ -103,7 +104,7 @@ openFolders opened list =
 
 
 breadCrumbs model =
-    model.opened.parentName
+    toString (List.reverse model.opened.parentName)
 
 
 viewAudience : Opened -> Aud.Audience -> Html msg

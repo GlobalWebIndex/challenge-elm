@@ -5414,7 +5414,8 @@ var $author$project$Main$initModel = {
 	opened: {
 		parentID: _List_fromArray(
 			[0]),
-		parentName: 'Home',
+		parentName: _List_fromArray(
+			['Home']),
 		state: false
 	}
 };
@@ -9721,6 +9722,9 @@ var $author$project$Main$update = F2(
 		var newParentID = function (id) {
 			return A2($elm$core$List$cons, id, newOpened.parentID);
 		};
+		var newParentName = function (name) {
+			return A2($elm$core$List$cons, name, newOpened.parentName);
+		};
 		if (msg.$ === 'MsgFolderOpened') {
 			var id = msg.a;
 			var name = msg.b;
@@ -9731,7 +9735,7 @@ var $author$project$Main$update = F2(
 						newOpened,
 						{
 							parentID: newParentID(id),
-							parentName: name,
+							parentName: newParentName(name),
 							state: true
 						})
 				});
@@ -9744,15 +9748,18 @@ var $author$project$Main$update = F2(
 						{
 							parentID: _List_fromArray(
 								[0]),
-							parentName: 'Home',
+							parentName: _List_fromArray(
+								['Home']),
 							state: false
 						})
 				});
 		}
 	});
 var $author$project$Main$MsgFolderClosed = {$: 'MsgFolderClosed'};
+var $elm$core$Debug$toString = _Debug_toString;
 var $author$project$Main$breadCrumbs = function (model) {
-	return model.opened.parentName;
+	return $elm$core$Debug$toString(
+		$elm$core$List$reverse(model.opened.parentName));
 };
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $author$project$Main$MsgFolderOpened = F2(

@@ -31,7 +31,7 @@
     border-radius: 5px;
     line-height: 10px;
     text-align: left;
-    border: 3px solid mediumvioletred;
+    border: 2px solid mediumvioletred;
 }
 
 .folder:hover {
@@ -54,7 +54,7 @@
     border-radius: 5px;
     line-height: 10px;
     text-align: left;
-    border: 3px solid mediumvioletred;
+    border: 2px solid mediumvioletred;
 }
 
 .audience:hover {
