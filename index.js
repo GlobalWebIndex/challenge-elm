@@ -5409,13 +5409,13 @@ var $author$project$Data$Audience$audience = A2(
 	A2($elm$json$Json$Decode$decodeString, $author$project$Data$Audience$decodeJson, $author$project$Data$Audience$audiencesJSON));
 var $author$project$Main$initModel = {
 	audience: $author$project$Data$Audience$audience,
+	breadcrumbs: {
+		breadCrumbId: _List_Nil,
+		breadCrumbName: _List_fromArray(
+			['Home'])
+	},
 	folders: $author$project$Data$AudienceFolder$audFolders,
-	opened: {
-		parentID: $elm$core$Maybe$Nothing,
-		parentName: _List_fromArray(
-			['Home']),
-		state: false
-	}
+	opened: {currentId: $elm$core$Maybe$Nothing, parentId: $elm$core$Maybe$Nothing, parentName: _List_Nil, state: false, usedIdList: _List_Nil}
 };
 var $author$project$Main$init = $author$project$Main$initModel;
 var $elm$json$Json$Decode$map2 = _Json_map2;
@@ -9712,11 +9712,59 @@ var $elm$browser$Browser$sandbox = function (impl) {
 			view: impl.view
 		});
 };
+var $elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
+			} else {
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
+			}
+		}
+	});
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
 var $author$project$Main$update = F2(
 	function (msg, model) {
+		var stateOfcurrentId = function (id) {
+			if (id.$ === 'Just') {
+				return true;
+			} else {
+				return false;
+			}
+		};
 		var newOpened = model.opened;
+		var newParentId = newOpened.currentId;
 		var newParentName = function (name) {
 			return A2($elm$core$List$cons, name, newOpened.parentName);
+		};
+		var newUsedIdList = function (id) {
+			return A2($elm$core$List$cons, id, newOpened.usedIdList);
+		};
+		var newBreadcrumb = model.breadcrumbs;
+		var newBreadcrumbId = function (id) {
+			return A2($elm$core$List$cons, id, newBreadcrumb.breadCrumbId);
+		};
+		var newBreadcrumbpName = function (name) {
+			return A2($elm$core$List$cons, name, newBreadcrumb.breadCrumbName);
 		};
 		if (msg.$ === 'MsgFolderOpened') {
 			var id = msg.a;
@@ -9724,25 +9772,41 @@ var $author$project$Main$update = F2(
 			return _Utils_update(
 				model,
 				{
+					breadcrumbs: _Utils_update(
+						newBreadcrumb,
+						{
+							breadCrumbId: newBreadcrumbId(id),
+							breadCrumbName: newBreadcrumbpName(name)
+						}),
 					opened: _Utils_update(
 						newOpened,
 						{
-							parentID: $elm$core$Maybe$Just(id),
+							currentId: $elm$core$Maybe$Just(id),
+							parentId: newParentId,
 							parentName: newParentName(name),
-							state: true
+							state: true,
+							usedIdList: newUsedIdList(id)
 						})
 				});
 		} else {
 			return _Utils_update(
 				model,
 				{
+					breadcrumbs: _Utils_update(
+						newBreadcrumb,
+						{
+							breadCrumbId: A2($elm$core$List$drop, 1, newBreadcrumb.breadCrumbId),
+							breadCrumbName: A2($elm$core$List$drop, 1, newBreadcrumb.breadCrumbName)
+						}),
 					opened: _Utils_update(
 						newOpened,
 						{
-							parentID: $elm$core$Maybe$Nothing,
-							parentName: _List_fromArray(
-								['Home']),
-							state: false
+							currentId: $elm$core$List$head(newOpened.usedIdList),
+							parentId: $elm$core$List$head(
+								A2($elm$core$List$drop, 1, newOpened.usedIdList)),
+							parentName: A2($elm$core$List$drop, 1, newOpened.parentName),
+							state: stateOfcurrentId(newOpened.parentId),
+							usedIdList: A2($elm$core$List$drop, 1, newOpened.usedIdList)
 						})
 				});
 		}
@@ -9751,7 +9815,7 @@ var $author$project$Main$MsgFolderClosed = {$: 'MsgFolderClosed'};
 var $elm$core$Debug$toString = _Debug_toString;
 var $author$project$Main$breadCrumbs = function (model) {
 	return $elm$core$Debug$toString(
-		$elm$core$List$reverse(model.opened.parentName));
+		$elm$core$List$reverse(model.breadcrumbs.breadCrumbName));
 };
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $author$project$Main$MsgFolderOpened = F2(
@@ -9760,7 +9824,7 @@ var $author$project$Main$MsgFolderOpened = F2(
 	});
 var $author$project$Main$openFolders = F2(
 	function (opened, list) {
-		return (_Utils_eq(opened.parentID, list.parent) && opened.state) ? A2(
+		return (_Utils_eq(opened.currentId, list.parent) && opened.state) ? A2(
 			$elm$html$Html$button,
 			_List_fromArray(
 				[
@@ -9786,7 +9850,7 @@ var $author$project$Main$openFolders = F2(
 	});
 var $author$project$Main$viewAudience = F2(
 	function (opened, listAudience) {
-		return (_Utils_eq(opened.parentID, listAudience.folder) && opened.state) ? A2(
+		return (_Utils_eq(opened.currentId, listAudience.folder) && opened.state) ? A2(
 			$elm$html$Html$button,
 			_List_fromArray(
 				[
