@@ -5350,24 +5350,28 @@ var $elm$core$Result$isOk = function (result) {
 		return false;
 	}
 };
-var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$json$Json$Decode$null = _Json_decodeNull;
-var $elm$json$Json$Decode$oneOf = _Json_oneOf;
-var $author$project$Data$AudienceFolder$badInt = $elm$json$Json$Decode$oneOf(
-	_List_fromArray(
-		[
-			$elm$json$Json$Decode$int,
-			$elm$json$Json$Decode$null(0)
-		]));
 var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$int = _Json_decodeInt;
 var $elm$json$Json$Decode$map3 = _Json_map3;
+var $elm$json$Json$Decode$map = _Json_map1;
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$succeed = _Json_succeed;
+var $elm$json$Json$Decode$maybe = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
+				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
+			]));
+};
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$Data$AudienceFolder$decodeItem = A4(
 	$elm$json$Json$Decode$map3,
 	$author$project$Data$AudienceFolder$AudienceFolder,
 	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'parent', $author$project$Data$AudienceFolder$badInt));
+	$elm$json$Json$Decode$maybe(
+		A2($elm$json$Json$Decode$field, 'parent', $elm$json$Json$Decode$int)));
 var $elm$json$Json$Decode$list = _Json_decodeList;
 var $author$project$Data$AudienceFolder$decodeData = $elm$json$Json$Decode$list($author$project$Data$AudienceFolder$decodeItem);
 var $author$project$Data$AudienceFolder$decodeJson = A2($elm$json$Json$Decode$field, 'data', $author$project$Data$AudienceFolder$decodeData);
@@ -5390,6 +5394,7 @@ var $author$project$Data$Audience$Audience = F3(
 	function (id, name, folder) {
 		return {folder: folder, id: id, name: name};
 	});
+var $elm$json$Json$Decode$null = _Json_decodeNull;
 var $author$project$Data$Audience$badInt = $elm$json$Json$Decode$oneOf(
 	_List_fromArray(
 		[
@@ -5420,9 +5425,7 @@ var $author$project$Main$initModel = {
 	}
 };
 var $author$project$Main$init = $author$project$Main$initModel;
-var $elm$json$Json$Decode$map = _Json_map1;
 var $elm$json$Json$Decode$map2 = _Json_map2;
-var $elm$json$Json$Decode$succeed = _Json_succeed;
 var $elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 	switch (handler.$) {
 		case 'Normal':
@@ -9779,7 +9782,7 @@ var $author$project$Main$openFolders = F2(
 	function (opened, list) {
 		return (_Utils_eq(
 			$elm$core$List$head(opened.parentID),
-			$elm$core$Maybe$Just(list.parent)) && opened.state) ? A2(
+			list.parent) && opened.state) ? A2(
 			$elm$html$Html$button,
 			_List_fromArray(
 				[
@@ -9790,7 +9793,7 @@ var $author$project$Main$openFolders = F2(
 			_List_fromArray(
 				[
 					$elm$html$Html$text(list.name)
-				])) : (((!list.parent) && (!opened.state)) ? A2(
+				])) : ((_Utils_eq(list.parent, $elm$core$Maybe$Nothing) && (!opened.state)) ? A2(
 			$elm$html$Html$button,
 			_List_fromArray(
 				[

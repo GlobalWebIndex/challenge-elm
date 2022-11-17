@@ -10,7 +10,7 @@ import Json.Decode as JD exposing (..)
 type alias AudienceFolder =
     { id : Int
     , name : String
-    , parent : Int
+    , parent : Maybe Int
     }
 
 -- decoder
@@ -36,7 +36,7 @@ decodeItem =
     JD.map3 AudienceFolder
         (JD.field "id" JD.int)
         (JD.field "name" JD.string)
-        (JD.field "parent" badInt)
+        (JD.field "parent" JD.int |> JD.maybe)
 
 badInt : Decoder Int
 badInt =

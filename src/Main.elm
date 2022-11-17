@@ -93,10 +93,10 @@ view model =
 
 openFolders : Opened -> AudFolders.AudienceFolder -> Html Msg
 openFolders opened list =
-    if List.head opened.parentID == Just list.parent && opened.state == True then
+    if List.head opened.parentID == list.parent && opened.state == True then
         Html.button [ class "folder", onClick (MsgFolderOpened list.id list.name) ] [ text list.name ]
 
-    else if list.parent == 0 && opened.state == False then
+    else if list.parent == Nothing && opened.state == False then
         Html.button [ class "folder", onClick (MsgFolderOpened list.id list.name) ] [ text list.name ]
 
     else
