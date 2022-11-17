@@ -4951,6 +4951,7 @@ var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
 var $elm$core$Basics$False = {$: 'False'};
+var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $elm$core$Basics$apR = F2(
 	function (x, f) {
 		return f(x);
@@ -4985,7 +4986,6 @@ var $elm$core$Basics$add = _Basics_add;
 var $elm$core$Maybe$Just = function (a) {
 	return {$: 'Just', a: a};
 };
-var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $elm$core$String$all = _String_all;
 var $elm$core$Basics$and = _Basics_and;
 var $elm$core$Basics$append = _Utils_append;
@@ -5394,19 +5394,13 @@ var $author$project$Data$Audience$Audience = F3(
 	function (id, name, folder) {
 		return {folder: folder, id: id, name: name};
 	});
-var $elm$json$Json$Decode$null = _Json_decodeNull;
-var $author$project$Data$Audience$badInt = $elm$json$Json$Decode$oneOf(
-	_List_fromArray(
-		[
-			$elm$json$Json$Decode$int,
-			$elm$json$Json$Decode$null(0)
-		]));
 var $author$project$Data$Audience$decodeItem = A4(
 	$elm$json$Json$Decode$map3,
 	$author$project$Data$Audience$Audience,
 	A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'name', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'folder', $author$project$Data$Audience$badInt));
+	$elm$json$Json$Decode$maybe(
+		A2($elm$json$Json$Decode$field, 'folder', $elm$json$Json$Decode$int)));
 var $author$project$Data$Audience$decodeData = $elm$json$Json$Decode$list($author$project$Data$Audience$decodeItem);
 var $author$project$Data$Audience$decodeJson = A2($elm$json$Json$Decode$field, 'data', $author$project$Data$Audience$decodeData);
 var $author$project$Data$Audience$audience = A2(
@@ -5417,8 +5411,7 @@ var $author$project$Main$initModel = {
 	audience: $author$project$Data$Audience$audience,
 	folders: $author$project$Data$AudienceFolder$audFolders,
 	opened: {
-		parentID: _List_fromArray(
-			[0]),
+		parentID: $elm$core$Maybe$Nothing,
 		parentName: _List_fromArray(
 			['Home']),
 		state: false
@@ -9722,9 +9715,6 @@ var $elm$browser$Browser$sandbox = function (impl) {
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		var newOpened = model.opened;
-		var newParentID = function (id) {
-			return A2($elm$core$List$cons, id, newOpened.parentID);
-		};
 		var newParentName = function (name) {
 			return A2($elm$core$List$cons, name, newOpened.parentName);
 		};
@@ -9737,7 +9727,7 @@ var $author$project$Main$update = F2(
 					opened: _Utils_update(
 						newOpened,
 						{
-							parentID: newParentID(id),
+							parentID: $elm$core$Maybe$Just(id),
 							parentName: newParentName(name),
 							state: true
 						})
@@ -9749,8 +9739,7 @@ var $author$project$Main$update = F2(
 					opened: _Utils_update(
 						newOpened,
 						{
-							parentID: _List_fromArray(
-								[0]),
+							parentID: $elm$core$Maybe$Nothing,
 							parentName: _List_fromArray(
 								['Home']),
 							state: false
@@ -9769,20 +9758,9 @@ var $author$project$Main$MsgFolderOpened = F2(
 	function (a, b) {
 		return {$: 'MsgFolderOpened', a: a, b: b};
 	});
-var $elm$core$List$head = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return $elm$core$Maybe$Just(x);
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
 var $author$project$Main$openFolders = F2(
 	function (opened, list) {
-		return (_Utils_eq(
-			$elm$core$List$head(opened.parentID),
-			list.parent) && opened.state) ? A2(
+		return (_Utils_eq(opened.parentID, list.parent) && opened.state) ? A2(
 			$elm$html$Html$button,
 			_List_fromArray(
 				[
@@ -9808,9 +9786,7 @@ var $author$project$Main$openFolders = F2(
 	});
 var $author$project$Main$viewAudience = F2(
 	function (opened, listAudience) {
-		return (_Utils_eq(
-			$elm$core$List$head(opened.parentID),
-			$elm$core$Maybe$Just(listAudience.folder)) && opened.state) ? A2(
+		return (_Utils_eq(opened.parentID, listAudience.folder) && opened.state) ? A2(
 			$elm$html$Html$button,
 			_List_fromArray(
 				[
@@ -9819,7 +9795,7 @@ var $author$project$Main$viewAudience = F2(
 			_List_fromArray(
 				[
 					$elm$html$Html$text(listAudience.name)
-				])) : (((!listAudience.folder) && (!opened.state)) ? A2(
+				])) : ((_Utils_eq(listAudience.folder, $elm$core$Maybe$Nothing) && (!opened.state)) ? A2(
 			$elm$html$Html$button,
 			_List_fromArray(
 				[

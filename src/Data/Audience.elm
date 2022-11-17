@@ -35,7 +35,7 @@ type alias Audience =
     { id : Int
     , name : String
 --    , type_ : AudienceType
-    , folder : Int
+    , folder : Maybe Int
     }
 
 audience : List Audience
@@ -58,7 +58,7 @@ decodeItem =
     JD.map3 Audience
         (JD.field "id" JD.int)
         (JD.field "name" JD.string)
-        (JD.field "folder" badInt)
+        (JD.field "folder" JD.int |> JD.maybe)
 
 badInt : Decoder Int
 badInt =

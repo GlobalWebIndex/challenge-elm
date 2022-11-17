@@ -29,7 +29,7 @@ type alias Model =
 
 
 type alias Opened =
-    { parentID : List Int
+    { parentID : Maybe Int
     , parentName : List String
     , state : Bool
     }
@@ -48,7 +48,7 @@ init =
 initModel : Model
 initModel =
     { folders = AudFolders.audFolders
-    , opened = { parentID = [ 0 ], parentName = ["Home"], state = False }
+    , opened = { parentID = Nothing , parentName = ["Home"], state = False }
     , audience = Aud.audience
     }
 
@@ -58,18 +58,18 @@ update msg model =
     let
         newOpened =
             model.opened
-        newParentID id =
-            id :: newOpened.parentID
+        -- newParentID id =
+        --     id :: newOpened.parentID
         newParentName name =
             name :: newOpened.parentName
     in
     case msg of
         MsgFolderOpened id name ->
             { model | opened = {
-                newOpened | parentID = newParentID id, parentName = newParentName name, state = True } }
+                newOpened | parentID = Just id, parentName = newParentName name, state = True } }
 
         MsgFolderClosed ->
-            { model | opened = { newOpened | parentID = [0], parentName = ["Home"], state = False } }
+            { model | opened = { newOpened | parentID = Nothing, parentName = ["Home"], state = False } }
 
 
 view : Model -> Html Msg
@@ -93,7 +93,7 @@ view model =
 
 openFolders : Opened -> AudFolders.AudienceFolder -> Html Msg
 openFolders opened list =
-    if List.head opened.parentID == list.parent && opened.state == True then
+    if opened.parentID == list.parent && opened.state == True then
         Html.button [ class "folder", onClick (MsgFolderOpened list.id list.name) ] [ text list.name ]
 
     else if list.parent == Nothing && opened.state == False then
@@ -109,10 +109,10 @@ breadCrumbs model =
 
 viewAudience : Opened -> Aud.Audience -> Html msg
 viewAudience opened listAudience =
-    if List.head opened.parentID == Just listAudience.folder && opened.state == True then
+    if opened.parentID == listAudience.folder && opened.state == True then
         Html.button [ class "audience" ] [ text listAudience.name ]
 
-    else if listAudience.folder == 0 && opened.state == False then
+    else if listAudience.folder == Nothing && opened.state == False then
         Html.button [ class "audience" ] [ text listAudience.name ]
 
     else
