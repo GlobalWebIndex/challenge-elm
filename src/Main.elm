@@ -75,8 +75,10 @@ update msg model =
             id :: newBreadcrumb.breadCrumbId
 
         newParentId =
-            --
             newOpened.currentId
+
+        newCurrentId =
+            newOpened.parentId
 
         newParentName name =
             name :: newOpened.parentName
@@ -98,7 +100,7 @@ update msg model =
             { model | opened = { newOpened | currentId = Just id, parentId = newParentId, parentName = newParentName name, usedIdList = newUsedIdList id, state = True }, breadcrumbs = { newBreadcrumb | breadCrumbName = newBreadcrumbpName name, breadCrumbId = newBreadcrumbId id } }
 
         MsgFolderClosed ->
-            { model | opened = { newOpened | currentId = List.head newOpened.usedIdList, parentId = List.head (List.drop 1 newOpened.usedIdList), parentName = List.drop 1 newOpened.parentName, usedIdList = List.drop 1 newOpened.usedIdList, state = stateOfcurrentId newOpened.parentId }, breadcrumbs = { newBreadcrumb | breadCrumbName = List.drop 1 newBreadcrumb.breadCrumbName, breadCrumbId = List.drop 1 newBreadcrumb.breadCrumbId } }
+            { model | opened = { newOpened | currentId = newCurrentId, parentId = List.head (List.drop 2 newOpened.usedIdList), parentName = List.drop 1 newOpened.parentName, usedIdList = List.drop 1 newOpened.usedIdList, state = stateOfcurrentId newOpened.parentId }, breadcrumbs = { newBreadcrumb | breadCrumbName = List.drop 1 newBreadcrumb.breadCrumbName, breadCrumbId = List.drop 1 newBreadcrumb.breadCrumbId } }
 
 
 view : Model -> Html Msg

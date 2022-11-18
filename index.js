@@ -9759,6 +9759,7 @@ var $author$project$Main$update = F2(
 		var newUsedIdList = function (id) {
 			return A2($elm$core$List$cons, id, newOpened.usedIdList);
 		};
+		var newCurrentId = newOpened.parentId;
 		var newBreadcrumb = model.breadcrumbs;
 		var newBreadcrumbId = function (id) {
 			return A2($elm$core$List$cons, id, newBreadcrumb.breadCrumbId);
@@ -9801,9 +9802,9 @@ var $author$project$Main$update = F2(
 					opened: _Utils_update(
 						newOpened,
 						{
-							currentId: $elm$core$List$head(newOpened.usedIdList),
+							currentId: newCurrentId,
 							parentId: $elm$core$List$head(
-								A2($elm$core$List$drop, 1, newOpened.usedIdList)),
+								A2($elm$core$List$drop, 2, newOpened.usedIdList)),
 							parentName: A2($elm$core$List$drop, 1, newOpened.parentName),
 							state: stateOfcurrentId(newOpened.parentId),
 							usedIdList: A2($elm$core$List$drop, 1, newOpened.usedIdList)
