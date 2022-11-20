@@ -144,7 +144,7 @@ view model =
         , Html.div [ class "listContainer" ]
             [ Html.div [ id "head" ]
                 [ Html.div [ class "breadcrumbsArea" ]
-                    [ Html.a [class "breadcrumbsText"] [ text "Home"]
+                    [ Html.a [ class "breadcrumbsText" ] [ text "Home" ]
                     , Html.ul [ class "breadcrumbsText" ] (List.map (breadCrumbs model.breadcrumbs) (List.reverse model.breadcrumbs.breadCrumbName))
                     ]
                 , if isOpened == True then
@@ -176,7 +176,7 @@ openFolder opened list =
     else
         text ""
 
-
+breadCrumbs : Breadcrumbs -> String -> Html msg
 breadCrumbs breadcrumbs list =
     li [ class "breadcrumbs" ] [ text (" -> " ++ list) ]
 

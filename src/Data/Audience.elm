@@ -4,13 +4,15 @@ module Data.Audience exposing
     , audience
     )
 
-import Json.Decode as JD exposing (decodeString, succeed, int, string, nullable, list, field, andThen)
+import Json.Decode as JD exposing (andThen, decodeString, field, int, list, nullable, string, succeed)
 import Json.Decode.Pipeline exposing (required)
+
 
 type AudienceType
     = Authored
     | Shared
     | Curated
+
 
 type alias Audience =
     { id : Int
@@ -24,7 +26,7 @@ audience : List Audience
 audience =
     decodeString decodeItem audiencesJSON |> Result.withDefault []
 
---decoding audience to list using pipelines
+
 decodeItem : JD.Decoder (List Audience)
 decodeItem =
     JD.succeed Audience
@@ -36,13 +38,12 @@ decodeItem =
         |> field "data"
 
 
-
 decodeType : JD.Decoder AudienceType
 decodeType =
     let
         toType : String -> JD.Decoder AudienceType
         toType b =
-             case b of
+            case b of
                 "user" ->
                     JD.succeed Authored
 

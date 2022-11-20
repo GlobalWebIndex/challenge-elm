@@ -1,6 +1,6 @@
 module Data.AudienceFolder exposing (AudienceFolder, audFolders)
 
-import Json.Decode as JD exposing (decodeString, succeed, int, string, nullable, list, field)
+import Json.Decode as JD exposing (decodeString, field, int, list, nullable, string, succeed)
 import Json.Decode.Pipeline exposing (required)
 
 
@@ -13,7 +13,7 @@ type alias AudienceFolder =
 
 audFolders : List AudienceFolder
 audFolders =
-    (decodeString folderDecoder audienceFoldersJSON) |> Result.withDefault []
+    decodeString folderDecoder audienceFoldersJSON |> Result.withDefault []
 
 
 folderDecoder : JD.Decoder (List AudienceFolder)
