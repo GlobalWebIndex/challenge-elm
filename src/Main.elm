@@ -143,7 +143,7 @@ view model =
             ]
         , Html.div [ class "listContainer" ]
             [ Html.div [ id "head" ]
-                [ Html.a [ class "breadcrumbps" ] [ text (breadCrumbs model.breadcrumbs) ]
+                [ Html.ul [ class "breadcrumbsArea" ] (List.map (breadCrumbs model.breadcrumbs) (List.reverse model.breadcrumbs.breadCrumbName))
                 , if isOpened == True then
                     Html.button [ class "backButton", onClick MsgFolderClosed ] [ text "Go Up" ]
 
@@ -176,9 +176,9 @@ openFolder opened list =
         text ""
 
 
-breadCrumbs : Breadcrumbs -> String
-breadCrumbs breadcrumbs =
-    toString (List.reverse breadcrumbs.breadCrumbName)
+breadCrumbs breadcrumbs list =
+
+    li [ class "breadcrumbs" ] [text list]
 
 
 viewAudience : Opened -> Aud.Audience -> Html msg

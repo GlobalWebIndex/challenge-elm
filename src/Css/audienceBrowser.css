@@ -90,9 +90,13 @@
 
 }
 
-.breadcrumbps {
+.breadcrumbsArea {
     display: inline-block;
     width: 80%;
+}
+
+.breadcrumbs {
+    display: inline;
     line-height: 10px;
 }
 

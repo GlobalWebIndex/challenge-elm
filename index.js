@@ -9862,11 +9862,19 @@ var $author$project$Main$update = F2(
 		}
 	});
 var $author$project$Main$MsgFolderClosed = {$: 'MsgFolderClosed'};
-var $elm$core$Debug$toString = _Debug_toString;
-var $author$project$Main$breadCrumbs = function (breadcrumbs) {
-	return $elm$core$Debug$toString(
-		$elm$core$List$reverse(breadcrumbs.breadCrumbName));
-};
+var $author$project$Main$breadCrumbs = F2(
+	function (breadcrumbs, list) {
+		return A2(
+			$elm$html$Html$li,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('breadcrumbs')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(list)
+				]));
+	});
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $author$project$Main$MsgFolderOpened = F2(
 	function (a, b) {
@@ -9939,16 +9947,15 @@ var $author$project$Main$view = function (model) {
 						_List_fromArray(
 							[
 								A2(
-								$elm$html$Html$a,
+								$elm$html$Html$ul,
 								_List_fromArray(
 									[
-										$elm$html$Html$Attributes$class('breadcrumbps')
+										$elm$html$Html$Attributes$class('breadcrumbsArea')
 									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text(
-										$author$project$Main$breadCrumbs(model.breadcrumbs))
-									])),
+								A2(
+									$elm$core$List$map,
+									$author$project$Main$breadCrumbs(model.breadcrumbs),
+									$elm$core$List$reverse(model.breadcrumbs.breadCrumbName))),
 								isOpened ? A2(
 								$elm$html$Html$button,
 								_List_fromArray(
