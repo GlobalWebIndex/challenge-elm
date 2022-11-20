@@ -1,9 +1,12 @@
 module Data.Audience exposing
-    ( AudienceType(..), Audience
+    ( Audience
+    , AudienceType(..)
     , audience
     )
 
-import Json.Decode as JD exposing (..)
+import Json.Decode as JD exposing (decodeString, succeed, int, string, nullable, list, field, andThen)
+import Json.Decode.Pipeline exposing (required)
+
 
 {-| Data.Audiences module
 
@@ -16,12 +19,13 @@ This module implements everything related to audience resource.
 
 -}
 
+
+
 -- Type definition
-
-
 {-
-| Audience type
+   | Audience type
 -}
+
 
 type AudienceType
     = Authored
@@ -34,37 +38,46 @@ type AudienceType
 type alias Audience =
     { id : Int
     , name : String
---    , type_ : AudienceType
+    , type_ : AudienceType
     , folder : Maybe Int
     }
 
+
 audience : List Audience
 audience =
-    (decodeString decodeJson audiencesJSON) |> Result.withDefault []
+    decodeString decodeItem audiencesJSON |> Result.withDefault []
 
-
-decodeJson : JD.Decoder (List Audience)
-decodeJson =
-    JD.field "data" decodeData
-
-
-decodeData : JD.Decoder (List Audience)
-decodeData =
-    JD.list decodeItem
-
-
-decodeItem : JD.Decoder Audience
+decodeItem : JD.Decoder (List Audience)
 decodeItem =
-    JD.map3 Audience
-        (JD.field "id" JD.int)
-        (JD.field "name" JD.string)
-        (JD.field "folder" JD.int |> JD.maybe)
+    JD.succeed Audience
+        |> required "id" int
+        |> required "name" string
+        |> required "type" decodeType
+        |> required "folder" (nullable int)
+        |> list
+        |> field "data"
 
-badInt : Decoder Int
-badInt =
-      oneOf [ int, null 0 ]
 
 
+decodeType : JD.Decoder AudienceType
+decodeType =
+    let
+        toType : String -> JD.Decoder AudienceType
+        toType b =
+             case b of
+                "user" ->
+                    JD.succeed Authored
+
+                "shared" ->
+                    JD.succeed Shared
+
+                "curated" ->
+                    JD.succeed Curated
+
+                _ ->
+                    JD.fail (b ++ "is not valid type")
+    in
+    JD.string |> andThen toType
 
 -- Fixtures
 

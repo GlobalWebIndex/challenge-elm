@@ -1,11 +1,8 @@
 module Data.AudienceFolder exposing (AudienceFolder, audFolders)
 
-import Json.Decode as JD exposing (..)
+import Json.Decode as JD exposing (decodeString, succeed, int, string, nullable, list, field)
+import Json.Decode.Pipeline exposing (required)
 
-
-
--- type alias Folders =
---     List AudienceFolder
 
 type alias AudienceFolder =
     { id : Int
@@ -16,33 +13,23 @@ type alias AudienceFolder =
 -- decoder
 -- https://gist.github.com/joanllenas/60edc839742bb67227b4cbf21977859b
 
+
 audFolders : List AudienceFolder
 audFolders =
-    (decodeString decodeJson audienceFoldersJSON) |> Result.withDefault []
+    (decodeString folderDecoder audienceFoldersJSON) |> Result.withDefault []
 
 
-decodeJson : JD.Decoder (List AudienceFolder)
-decodeJson =
-    JD.field "data" decodeData
-
-
-decodeData : JD.Decoder (List AudienceFolder)
-decodeData =
-    JD.list decodeItem
-
-
-decodeItem : JD.Decoder AudienceFolder
-decodeItem =
-    JD.map3 AudienceFolder
-        (JD.field "id" JD.int)
-        (JD.field "name" JD.string)
-        (JD.field "parent" JD.int |> JD.maybe)
-
-badInt : Decoder Int
-badInt =
-      oneOf [ int, null 0 ]
+folderDecoder : JD.Decoder (List AudienceFolder)
+folderDecoder =
+    JD.succeed AudienceFolder
+        |> required "id" int
+        |> required "name" string
+        |> required "parent" (nullable int)
+        |> list
+        |> field "data"
 
 -- Fixtures
+
 
 audienceFoldersJSON : String
 audienceFoldersJSON =

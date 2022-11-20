@@ -32,6 +32,7 @@
     line-height: 10px;
     text-align: left;
     border: 2px solid mediumvioletred;
+
 }
 
 .folder:hover {
@@ -77,7 +78,6 @@
     width: 20%;
     background-color: mediumvioletred;
     color: white;
-    margin: 10px auto 0 auto;
     padding: 5px 5px;
     border-radius: 5px;
     line-height: 10px;
@@ -90,18 +90,15 @@
 
 }
 
-.backButton:focus {
-    background-color: rgb(255, 255, 255);
-    color: mediumvioletred;
-}
-
 .breadcrumbps {
     display: inline-block;
     width: 80%;
+    line-height: 10px;
 }
 
 #head {
     width: 100%;
+    min-height: 40px;
     border-bottom: 1px solid grey;
     padding: 5px 5px 10px 5px;
 }
