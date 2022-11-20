@@ -95,6 +95,11 @@
     width: 80%;
 }
 
+.breadcrumbsText {
+    display: inline;
+    line-height: 10px;
+}
+
 .breadcrumbs {
     display: inline;
     line-height: 10px;

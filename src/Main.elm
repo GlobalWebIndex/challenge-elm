@@ -144,8 +144,8 @@ view model =
         , Html.div [ class "listContainer" ]
             [ Html.div [ id "head" ]
                 [ Html.div [ class "breadcrumbsArea" ]
-                    [ Html.a [] [ text "Home " ]
-                    , Html.ul [ class "breadcrumbsArea" ] (List.map (breadCrumbs model.breadcrumbs) (List.reverse model.breadcrumbs.breadCrumbName))
+                    [ Html.a [class "breadcrumbsText"] [ text "Home"]
+                    , Html.ul [ class "breadcrumbsText" ] (List.map (breadCrumbs model.breadcrumbs) (List.reverse model.breadcrumbs.breadCrumbName))
                     ]
                 , if isOpened == True then
                     Html.button [ class "backButton", onClick MsgFolderClosed ] [ text "Go Up" ]
@@ -158,8 +158,6 @@ view model =
             , Html.ul [ class "list" ]
                 (List.map (viewAudience model.opened) model.audience)
             ]
-
-        -- , Html.div [ class "openedAudience"] [ text model.audience.name]
         ]
 
 

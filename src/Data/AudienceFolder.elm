@@ -10,9 +10,6 @@ type alias AudienceFolder =
     , parent : Maybe Int
     }
 
--- decoder
--- https://gist.github.com/joanllenas/60edc839742bb67227b4cbf21977859b
-
 
 audFolders : List AudienceFolder
 audFolders =
@@ -28,9 +25,8 @@ folderDecoder =
         |> list
         |> field "data"
 
+
 -- Fixtures
-
-
 audienceFoldersJSON : String
 audienceFoldersJSON =
     """

@@ -7,34 +7,11 @@ module Data.Audience exposing
 import Json.Decode as JD exposing (decodeString, succeed, int, string, nullable, list, field, andThen)
 import Json.Decode.Pipeline exposing (required)
 
-
-{-| Data.Audiences module
-
-This module implements everything related to audience resource.
-
-
-# Interface
-
-@docs AudienceType, Audience, audienceJSON
-
--}
-
-
-
--- Type definition
-{-
-   | Audience type
--}
-
-
 type AudienceType
     = Authored
     | Shared
     | Curated
 
-
-{-| Basic type of Audience record
--}
 type alias Audience =
     { id : Int
     , name : String
@@ -47,6 +24,7 @@ audience : List Audience
 audience =
     decodeString decodeItem audiencesJSON |> Result.withDefault []
 
+--decoding audience to list using pipelines
 decodeItem : JD.Decoder (List Audience)
 decodeItem =
     JD.succeed Audience
@@ -79,21 +57,7 @@ decodeType =
     in
     JD.string |> andThen toType
 
--- Fixtures
 
-
-{-| Fixtures for audiences
-In real world something like this is returned by `GET /api/audiences`
-
-As you can see real world can be cruel sometimes.
-JSON format is not exactly ideal (see shared, curated and type attr).
-
-This is how we usually deal with making non-breaking continuous changes
-from old version of API to new one.
-
-You're free to use any strategy to decode JSON.
-
--}
 audiencesJSON : String
 audiencesJSON =
     """

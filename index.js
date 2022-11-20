@@ -9952,16 +9952,19 @@ var $author$project$Main$view = function (model) {
 									[
 										A2(
 										$elm$html$Html$a,
-										_List_Nil,
 										_List_fromArray(
 											[
-												$elm$html$Html$text('Home ')
+												$elm$html$Html$Attributes$class('breadcrumbsText')
+											]),
+										_List_fromArray(
+											[
+												$elm$html$Html$text('Home')
 											])),
 										A2(
 										$elm$html$Html$ul,
 										_List_fromArray(
 											[
-												$elm$html$Html$Attributes$class('breadcrumbsArea')
+												$elm$html$Html$Attributes$class('breadcrumbsText')
 											]),
 										A2(
 											$elm$core$List$map,
