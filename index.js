@@ -9806,7 +9806,7 @@ var $author$project$Main$update = F2(
 							parentId: $elm$core$List$head(
 								A2($elm$core$List$drop, 2, newOpened.usedIdList)),
 							parentName: A2($elm$core$List$drop, 1, newOpened.parentName),
-							state: stateOfcurrentId(newOpened.parentId),
+							state: stateOfcurrentId(newCurrentId),
 							usedIdList: A2($elm$core$List$drop, 1, newOpened.usedIdList)
 						})
 				});
@@ -9814,18 +9814,18 @@ var $author$project$Main$update = F2(
 	});
 var $author$project$Main$MsgFolderClosed = {$: 'MsgFolderClosed'};
 var $elm$core$Debug$toString = _Debug_toString;
-var $author$project$Main$breadCrumbs = function (model) {
+var $author$project$Main$breadCrumbs = function (breadcrumbs) {
 	return $elm$core$Debug$toString(
-		$elm$core$List$reverse(model.breadcrumbs.breadCrumbName));
+		$elm$core$List$reverse(breadcrumbs.breadCrumbName));
 };
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $author$project$Main$MsgFolderOpened = F2(
 	function (a, b) {
 		return {$: 'MsgFolderOpened', a: a, b: b};
 	});
-var $author$project$Main$openFolders = F2(
+var $author$project$Main$openFolder = F2(
 	function (opened, list) {
-		return (_Utils_eq(opened.currentId, list.parent) && opened.state) ? A2(
+		var folderButton = A2(
 			$elm$html$Html$button,
 			_List_fromArray(
 				[
@@ -9836,22 +9836,12 @@ var $author$project$Main$openFolders = F2(
 			_List_fromArray(
 				[
 					$elm$html$Html$text(list.name)
-				])) : ((_Utils_eq(list.parent, $elm$core$Maybe$Nothing) && (!opened.state)) ? A2(
-			$elm$html$Html$button,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('folder'),
-					$elm$html$Html$Events$onClick(
-					A2($author$project$Main$MsgFolderOpened, list.id, list.name))
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text(list.name)
-				])) : $elm$html$Html$text(''));
+				]));
+		return (_Utils_eq(opened.currentId, list.parent) && opened.state) ? folderButton : ((_Utils_eq(list.parent, $elm$core$Maybe$Nothing) && (!opened.state)) ? folderButton : $elm$html$Html$text(''));
 	});
 var $author$project$Main$viewAudience = F2(
 	function (opened, listAudience) {
-		return (_Utils_eq(opened.currentId, listAudience.folder) && opened.state) ? A2(
+		var audienceButton = A2(
 			$elm$html$Html$button,
 			_List_fromArray(
 				[
@@ -9860,18 +9850,11 @@ var $author$project$Main$viewAudience = F2(
 			_List_fromArray(
 				[
 					$elm$html$Html$text(listAudience.name)
-				])) : ((_Utils_eq(listAudience.folder, $elm$core$Maybe$Nothing) && (!opened.state)) ? A2(
-			$elm$html$Html$button,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('audience')
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text(listAudience.name)
-				])) : $elm$html$Html$text(''));
+				]));
+		return (_Utils_eq(opened.currentId, listAudience.folder) && opened.state) ? audienceButton : ((_Utils_eq(listAudience.folder, $elm$core$Maybe$Nothing) && (!opened.state)) ? audienceButton : $elm$html$Html$text(''));
 	});
 var $author$project$Main$view = function (model) {
+	var isOpened = model.opened.state;
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
@@ -9915,9 +9898,9 @@ var $author$project$Main$view = function (model) {
 								_List_fromArray(
 									[
 										$elm$html$Html$text(
-										$author$project$Main$breadCrumbs(model))
+										$author$project$Main$breadCrumbs(model.breadcrumbs))
 									])),
-								A2(
+								isOpened ? A2(
 								$elm$html$Html$button,
 								_List_fromArray(
 									[
@@ -9927,7 +9910,7 @@ var $author$project$Main$view = function (model) {
 								_List_fromArray(
 									[
 										$elm$html$Html$text('Go Up')
-									]))
+									])) : $elm$html$Html$text('')
 							])),
 						A2(
 						$elm$html$Html$ul,
@@ -9937,7 +9920,7 @@ var $author$project$Main$view = function (model) {
 							]),
 						A2(
 							$elm$core$List$map,
-							$author$project$Main$openFolders(model.opened),
+							$author$project$Main$openFolder(model.opened),
 							model.folders)),
 						A2(
 						$elm$html$Html$ul,

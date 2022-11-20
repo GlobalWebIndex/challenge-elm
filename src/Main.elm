@@ -7,8 +7,6 @@ import Debug exposing (toString)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
-import Json.Decode exposing (string)
-import Platform.Cmd exposing (none)
 
 
 main : Program () Model Msg
@@ -91,68 +89,109 @@ update msg model =
 
         stateOfcurrentId id =
             case id of
-                Just _ -> True
-                Nothing -> False
+                Just _ ->
+                    True
 
+                Nothing ->
+                    False
     in
     case msg of
         MsgFolderOpened id name ->
-            { model | opened = { newOpened | currentId = Just id, parentId = newParentId, parentName = newParentName name, usedIdList = newUsedIdList id, state = True }, breadcrumbs = { newBreadcrumb | breadCrumbName = newBreadcrumbpName name, breadCrumbId = newBreadcrumbId id } }
+            { model
+                | opened =
+                    { newOpened
+                        | currentId = Just id
+                        , parentId = newParentId
+                        , parentName = newParentName name
+                        , usedIdList = newUsedIdList id
+                        , state = True
+                    }
+                , breadcrumbs =
+                    { newBreadcrumb
+                        | breadCrumbName = newBreadcrumbpName name
+                        , breadCrumbId = newBreadcrumbId id
+                    }
+            }
 
         MsgFolderClosed ->
-            { model | opened = { newOpened | currentId = newCurrentId, parentId = List.head (List.drop 2 newOpened.usedIdList), parentName = List.drop 1 newOpened.parentName, usedIdList = List.drop 1 newOpened.usedIdList, state = stateOfcurrentId newOpened.parentId }, breadcrumbs = { newBreadcrumb | breadCrumbName = List.drop 1 newBreadcrumb.breadCrumbName, breadCrumbId = List.drop 1 newBreadcrumb.breadCrumbId } }
+            { model
+                | opened =
+                    { newOpened
+                        | currentId = newCurrentId
+                        , parentId = List.head (List.drop 2 newOpened.usedIdList)
+                        , parentName = List.drop 1 newOpened.parentName
+                        , usedIdList = List.drop 1 newOpened.usedIdList
+                        , state = stateOfcurrentId newCurrentId
+                    }
+                , breadcrumbs =
+                    { newBreadcrumb
+                        | breadCrumbName = List.drop 1 newBreadcrumb.breadCrumbName
+                        , breadCrumbId = List.drop 1 newBreadcrumb.breadCrumbId
+                    }
+            }
 
 
 view : Model -> Html Msg
 view model =
+    let
+        isOpened =
+            model.opened.state
+    in
     Html.div [ class "container" ]
         [ Html.h1 [ class "h1" ]
             [ Html.text "Audience Browser"
             ]
         , Html.div [ class "listContainer" ]
             [ Html.div [ id "head" ]
-                [ Html.a [ class "breadcrumbps" ] [ text (breadCrumbs model) ]
-                , Html.button [ class "backButton", onClick MsgFolderClosed ] [ text "Go Up" ]
+                [ Html.a [ class "breadcrumbps" ] [ text (breadCrumbs model.breadcrumbs) ]
+                , if isOpened == True then
+                    Html.button [ class "backButton", onClick MsgFolderClosed ] [ text "Go Up" ]
+
+                  else
+                    text ""
                 ]
             , Html.ul [ class "list" ]
-                (List.map (openFolders model.opened) model.folders)
+                (List.map (openFolder model.opened) model.folders)
             , Html.ul [ class "list" ]
                 (List.map (viewAudience model.opened) model.audience)
             ]
+
+        -- , Html.div [ class "openedAudience"] [ text model.audience.name]
         ]
 
 
-
--- closeFolders =
---     if opened.currentId == list.parent && opened.state == True then
---         MsgFolderClosed list.id
---     else
---         Html.button [ class "folder", onClick (MsgFolderOpened list.id list.name) ] [ text list.name ]
-
-
-openFolders : Opened -> AudFolders.AudienceFolder -> Html Msg
-openFolders opened list =
+openFolder : Opened -> AudFolders.AudienceFolder -> Html Msg
+openFolder opened list =
+    let
+        folderButton =
+            Html.button [ class "folder", onClick (MsgFolderOpened list.id list.name) ] [ text list.name ]
+    in
     if opened.currentId == list.parent && opened.state == True then
-        Html.button [ class "folder", onClick (MsgFolderOpened list.id list.name) ] [ text list.name ]
+        folderButton
 
     else if list.parent == Nothing && opened.state == False then
-        Html.button [ class "folder", onClick (MsgFolderOpened list.id list.name) ] [ text list.name ]
+        folderButton
 
     else
         text ""
 
 
-breadCrumbs model =
-    toString (List.reverse model.breadcrumbs.breadCrumbName)
+breadCrumbs : Breadcrumbs -> String
+breadCrumbs breadcrumbs =
+    toString (List.reverse breadcrumbs.breadCrumbName)
 
 
 viewAudience : Opened -> Aud.Audience -> Html msg
 viewAudience opened listAudience =
+    let
+        audienceButton =
+            Html.button [ class "audience" ] [ text listAudience.name ]
+    in
     if opened.currentId == listAudience.folder && opened.state == True then
-        Html.button [ class "audience" ] [ text listAudience.name ]
+        audienceButton
 
     else if listAudience.folder == Nothing && opened.state == False then
-        Html.button [ class "audience" ] [ text listAudience.name ]
+        audienceButton
 
     else
         text ""

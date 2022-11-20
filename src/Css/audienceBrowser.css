@@ -75,6 +75,24 @@
 .backButton {
     display: inline-block;
     width: 20%;
+    background-color: mediumvioletred;
+    color: white;
+    margin: 10px auto 0 auto;
+    padding: 5px 5px;
+    border-radius: 5px;
+    line-height: 10px;
+    text-align: center;
+    border: 2px solid mediumvioletred;
+}
+
+.backButton:hover {
+    background-color: rgb(226, 116, 186);
+
+}
+
+.backButton:focus {
+    background-color: rgb(255, 255, 255);
+    color: mediumvioletred;
 }
 
 .breadcrumbps {
