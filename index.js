@@ -5458,11 +5458,7 @@ var $author$project$Data$Audience$audience = A2(
 	A2($elm$json$Json$Decode$decodeString, $author$project$Data$Audience$decodeItem, $author$project$Data$Audience$audiencesJSON));
 var $author$project$Main$initModel = {
 	audience: $author$project$Data$Audience$audience,
-	breadcrumbs: {
-		breadCrumbId: _List_Nil,
-		breadCrumbName: _List_fromArray(
-			['Home'])
-	},
+	breadcrumbs: {breadCrumbId: _List_Nil, breadCrumbName: _List_Nil},
 	folders: $author$project$Data$AudienceFolder$audFolders,
 	opened: {currentId: $elm$core$Maybe$Nothing, parentId: $elm$core$Maybe$Nothing, parentName: _List_Nil, state: false, usedIdList: _List_Nil}
 };
@@ -9872,7 +9868,7 @@ var $author$project$Main$breadCrumbs = F2(
 				]),
 			_List_fromArray(
 				[
-					$elm$html$Html$text(list)
+					$elm$html$Html$text(' -> ' + list)
 				]));
 	});
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
@@ -9947,15 +9943,31 @@ var $author$project$Main$view = function (model) {
 						_List_fromArray(
 							[
 								A2(
-								$elm$html$Html$ul,
+								$elm$html$Html$div,
 								_List_fromArray(
 									[
 										$elm$html$Html$Attributes$class('breadcrumbsArea')
 									]),
-								A2(
-									$elm$core$List$map,
-									$author$project$Main$breadCrumbs(model.breadcrumbs),
-									$elm$core$List$reverse(model.breadcrumbs.breadCrumbName))),
+								_List_fromArray(
+									[
+										A2(
+										$elm$html$Html$a,
+										_List_Nil,
+										_List_fromArray(
+											[
+												$elm$html$Html$text('Home ')
+											])),
+										A2(
+										$elm$html$Html$ul,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$class('breadcrumbsArea')
+											]),
+										A2(
+											$elm$core$List$map,
+											$author$project$Main$breadCrumbs(model.breadcrumbs),
+											$elm$core$List$reverse(model.breadcrumbs.breadCrumbName)))
+									])),
 								isOpened ? A2(
 								$elm$html$Html$button,
 								_List_fromArray(
