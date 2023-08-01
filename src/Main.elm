@@ -63,7 +63,11 @@ goBackView model =
     else
         []
 
+
+
 --VIEW OF THE CONTENT
+
+
 viewContent : Model -> List (Html Msg)
 viewContent model =
     case model.currentFolderId of
@@ -71,16 +75,40 @@ viewContent model =
             let
                 _ =
                     Debug.log "Current ID: " currentID
+
+                listOfFolderSon =
+                    model.audienceFolder
+                        |> List.filter
+                            (\folder ->
+                                case folder.parent of
+                                    Just parentId ->
+                                        parentId == currentID
+
+                                    Nothing ->
+                                        False
+                            )
+                        |> List.map viewFolder
+
+                folderSonView =
+                    if List.isEmpty listOfFolderSon then
+                        []
+                    else
+                        [ div []
+                            [ ul [] listOfFolderSon
+                            ]
+                        ]
             in
             [ div []
-                [ ul []
-                    (model.audience
-                        |> List.filter (\audience -> audience.folder == Just currentID)
-                        |> List.map viewAudience
-                    )
-                ]
+                (List.append folderSonView
+                    [ ul []
+                        (model.audience
+                            |> List.filter (\audience -> audience.folder == Just currentID)
+                            |> List.map viewAudience
+                        )
+                    ]
+                )
             ]
-
+        --if the currentID is Nothing it will show us the first page
         Nothing ->
             [ div []
                 [ ul []
@@ -92,7 +120,11 @@ viewContent model =
                 ]
             ]
 
+
+
 --VIEW OF THE COMPONENTS
+
+
 viewFolder : AudienceFolder.AudienceFolder -> Html Msg
 viewFolder audienceFolder =
     button
@@ -197,19 +229,54 @@ update msg model =
             case model.currentFolderId of
                 Just folderId ->
                     let
-                        newModel =
-                            getParentFolderId  ( folderId ) model
+                        newId =
+                            getActualParent folderId model
 
                         _ =
-                            Debug.log "Older ID: " model.currentFolderId
+                            Debug.log "Older ID: " newId
                     in
-                    ( newModel, Cmd.none )
+                    ( {model | currentFolderId=newId}, Cmd.none )
 
                 Nothing ->
                     ( model, Cmd.none )
-                    
+
+
+
 --Get the parent of the folder, if there is no parent he put the currentFolderId to Nothing so he come back
 --to the inicial screen
+--TODO REVIEW 
+getActualParent : Int -> Model -> Maybe Int
+getActualParent folderId model =
+    let
+        actualFolder = getFolderById folderId model
+    in
+    case actualFolder of
+        Just folder ->
+            case folder.parent of
+                Just parentId ->
+                    let
+                        folderData = { id = Just folder.id, name = folder.name, parent = folder.parent }
+                        parentFolders = List.filter (\f -> f.id == Just parentId) (List.map toFolderData model.audienceFolder)
+                    in
+                    case parentFolders of
+                        [] -> Just folder.id
+                        parentFolder::_ -> parentFolder.id
+                Nothing ->
+                    Nothing
+        Nothing ->
+            Nothing
+
+toFolderData : AudienceFolder.AudienceFolder -> { id : Maybe Int, name : String, parent : Maybe Int }
+toFolderData folder =
+    { id = Just folder.id, name = folder.name, parent = folder.parent }
+
+
+getFolderById : Int -> Model -> Maybe AudienceFolder.AudienceFolder
+getFolderById targetId model =
+    List.filter (\folder -> folder.id == targetId) model.audienceFolder |> List.head
+
+
+
 getParentFolderId : Int -> Model -> Model
 getParentFolderId folderId model =
     case List.filter (\folder -> folder.parent == Just folderId) model.audienceFolder of
@@ -222,6 +289,7 @@ getParentFolderId folderId model =
                     List.head parentFolders |> Maybe.map .id
             in
             { model | currentFolderId = parentId }
+
 
 
 --SUBSCRIPTIONS
