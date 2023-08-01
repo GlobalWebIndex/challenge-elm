@@ -1,0 +1,14 @@
+{
+  "name": "challenge-elm",
+  "version": "1.0.0",
+  "description": "Hello! Welcome to the Elm Challenge.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "elm-live src/Main.elm -- --debug --output=index.js",
+    "compile": "elm make src/Main.elm --output=index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
