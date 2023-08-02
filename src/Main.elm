@@ -16,6 +16,7 @@ type Msg
     | MsgGotResultsAudience (Result Http.Error (List Audience.Audience))
     | OpenFolder Int
     | GoBack
+    | SelectCategory Audience.AudienceType
 
 
 type alias Model =
@@ -25,6 +26,7 @@ type alias Model =
     , urlAudience : String
     , errorMessage : Maybe String
     , currentFolderId : Maybe Int
+    , selectedCategory : Audience.AudienceType
     }
 
 
@@ -45,7 +47,12 @@ main =
 view : Model -> Html Msg
 view model =
     div []
-        (List.concat [ goBackView model, viewContent model ])
+        (List.concat
+            [ categoryButtonsView
+            , goBackView model
+            , viewContent model
+            ]
+        )
 
 
 
@@ -65,6 +72,20 @@ goBackView model =
 
 
 
+--VIEW OF CATEGORY
+
+
+categoryButtonsView : List (Html Msg)
+categoryButtonsView =
+    [ div []
+        [ button [ class "category-button", onClick (SelectCategory Audience.Authored) ] [ text "Authored" ]
+        , button [ class "category-button", onClick (SelectCategory Audience.Shared) ] [ text "Shared" ]
+        , button [ class "category-button", onClick (SelectCategory Audience.Curated) ] [ text "Curated" ]
+        ]
+    ]
+
+
+
 --VIEW OF THE CONTENT
 
 
@@ -81,21 +102,56 @@ viewContent model =
 
         --if the currentID is Nothing it will show us the first page
         Nothing ->
-            [ div []
-                [ folderView model
-                ]
-            ]
+            case model.selectedCategory of
+                Audience.Shared ->
+                    [ div []
+                        (viewSharedAudience model)
+                    ]
+
+                _ ->
+                    [ div []
+                        [ folderView model
+                        ]
+                    ]
 
 
 
 --VIEW OF THE PARTS
 
 
+viewSharedAudience : Model -> List (Html Msg)
+viewSharedAudience model =
+    let
+        filteredAudience =
+            List.filter (\audience -> audience.type_ == Audience.Shared) model.audience
+    in
+    [ ul []
+        (filteredAudience
+            |> List.map viewComponentAudience
+        )
+    ]
+
+
 audienceView : Model -> Int -> List (Html Msg)
 audienceView model currentID =
+    let
+        --Filtered list with the assigned category
+        filteredAudience =
+            case model.selectedCategory of
+                Audience.Curated ->
+                    List.filter (\audience -> audience.folder == Just currentID && audience.type_ == Audience.Curated) model.audience
+
+                Audience.Authored ->
+                    List.filter (\audience -> audience.folder == Just currentID && audience.type_ == Audience.Authored) model.audience
+
+                Audience.Shared ->
+                    List.filter (\audience -> audience.type_ == Audience.Shared) model.audience
+
+        _ =
+            Debug.log "category ID: " model.selectedCategory
+    in
     [ ul []
-        (model.audience
-            |> List.filter (\audience -> audience.folder == Just currentID)
+        (filteredAudience
             |> List.map viewComponentAudience
         )
     ]
@@ -256,6 +312,9 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
+        SelectCategory category ->
+            ( { model | selectedCategory = category, currentFolderId = Nothing }, Cmd.none )
+
 
 
 --Get the parent of the folder, if there is no parent he put the currentFolderId to Nothing so he come back
@@ -326,6 +385,7 @@ initModel =
     , urlAudience = "http://localhost:8000/server/Json/Audience.Json"
     , errorMessage = Nothing
     , currentFolderId = Nothing
+    , selectedCategory = Audience.Authored
     }
 
 

@@ -10157,7 +10157,7 @@ var $author$project$Main$cmdSearchFolder = function (model) {
 			url: model.urlAudienceFolder
 		});
 };
-var $author$project$Main$initModel = {audience: _List_Nil, audienceFolder: _List_Nil, currentFolderId: $elm$core$Maybe$Nothing, errorMessage: $elm$core$Maybe$Nothing, urlAudience: 'http://localhost:8000/server/Json/Audience.Json', urlAudienceFolder: 'http://localhost:8000/server/Json/AudienceFolder.Json'};
+var $author$project$Main$initModel = {audience: _List_Nil, audienceFolder: _List_Nil, currentFolderId: $elm$core$Maybe$Nothing, errorMessage: $elm$core$Maybe$Nothing, selectedCategory: $author$project$Data$Audience$Authored, urlAudience: 'http://localhost:8000/server/Json/Audience.Json', urlAudienceFolder: 'http://localhost:8000/server/Json/AudienceFolder.Json'};
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
 		$author$project$Main$initModel,
@@ -10321,7 +10321,7 @@ var $author$project$Main$update = F2(
 							currentFolderId: $elm$core$Maybe$Just(folderId)
 						}),
 					$elm$core$Platform$Cmd$none);
-			default:
+			case 'GoBack':
 				var _v8 = model.currentFolderId;
 				if (_v8.$ === 'Just') {
 					var folderId = _v8.a;
@@ -10335,8 +10335,63 @@ var $author$project$Main$update = F2(
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
+			default:
+				var category = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{currentFolderId: $elm$core$Maybe$Nothing, selectedCategory: category}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
+var $author$project$Main$SelectCategory = function (a) {
+	return {$: 'SelectCategory', a: a};
+};
+var $author$project$Main$categoryButtonsView = _List_fromArray(
+	[
+		A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('category-button'),
+						$elm$html$Html$Events$onClick(
+						$author$project$Main$SelectCategory($author$project$Data$Audience$Authored))
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Authored')
+					])),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('category-button'),
+						$elm$html$Html$Events$onClick(
+						$author$project$Main$SelectCategory($author$project$Data$Audience$Shared))
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Shared')
+					])),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('category-button'),
+						$elm$html$Html$Events$onClick(
+						$author$project$Main$SelectCategory($author$project$Data$Audience$Curated))
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Curated')
+					]))
+			]))
+	]);
 var $author$project$Main$GoBack = {$: 'GoBack'};
 var $author$project$Main$goBackView = function (model) {
 	return (!_Utils_eq(model.currentFolderId, $elm$core$Maybe$Nothing)) ? _List_fromArray(
@@ -10368,22 +10423,43 @@ var $author$project$Main$viewComponentAudience = function (audience) {
 };
 var $author$project$Main$audienceView = F2(
 	function (model, currentID) {
+		var filteredAudience = function () {
+			var _v1 = model.selectedCategory;
+			switch (_v1.$) {
+				case 'Curated':
+					return A2(
+						$elm$core$List$filter,
+						function (audience) {
+							return _Utils_eq(
+								audience.folder,
+								$elm$core$Maybe$Just(currentID)) && _Utils_eq(audience.type_, $author$project$Data$Audience$Curated);
+						},
+						model.audience);
+				case 'Authored':
+					return A2(
+						$elm$core$List$filter,
+						function (audience) {
+							return _Utils_eq(
+								audience.folder,
+								$elm$core$Maybe$Just(currentID)) && _Utils_eq(audience.type_, $author$project$Data$Audience$Authored);
+						},
+						model.audience);
+				default:
+					return A2(
+						$elm$core$List$filter,
+						function (audience) {
+							return _Utils_eq(audience.type_, $author$project$Data$Audience$Shared);
+						},
+						model.audience);
+			}
+		}();
+		var _v0 = A2($elm$core$Debug$log, 'category ID: ', model.selectedCategory);
 		return _List_fromArray(
 			[
 				A2(
 				$elm$html$Html$ul,
 				_List_Nil,
-				A2(
-					$elm$core$List$map,
-					$author$project$Main$viewComponentAudience,
-					A2(
-						$elm$core$List$filter,
-						function (audience) {
-							return _Utils_eq(
-								audience.folder,
-								$elm$core$Maybe$Just(currentID));
-						},
-						model.audience)))
+				A2($elm$core$List$map, $author$project$Main$viewComponentAudience, filteredAudience))
 			]);
 	});
 var $author$project$Main$OpenFolder = function (a) {
@@ -10445,6 +10521,21 @@ var $author$project$Main$folderView = function (model) {
 				},
 				model.audienceFolder)));
 };
+var $author$project$Main$viewSharedAudience = function (model) {
+	var filteredAudience = A2(
+		$elm$core$List$filter,
+		function (audience) {
+			return _Utils_eq(audience.type_, $author$project$Data$Audience$Shared);
+		},
+		model.audience);
+	return _List_fromArray(
+		[
+			A2(
+			$elm$html$Html$ul,
+			_List_Nil,
+			A2($elm$core$List$map, $author$project$Main$viewComponentAudience, filteredAudience))
+		]);
+};
 var $author$project$Main$viewContent = function (model) {
 	var _v0 = model.currentFolderId;
 	if (_v0.$ === 'Just') {
@@ -10460,16 +10551,27 @@ var $author$project$Main$viewContent = function (model) {
 					A2($author$project$Main$audienceView, model, currentID)))
 			]);
 	} else {
-		return _List_fromArray(
-			[
-				A2(
-				$elm$html$Html$div,
-				_List_Nil,
-				_List_fromArray(
-					[
-						$author$project$Main$folderView(model)
-					]))
-			]);
+		var _v1 = model.selectedCategory;
+		if (_v1.$ === 'Shared') {
+			return _List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_Nil,
+					$author$project$Main$viewSharedAudience(model))
+				]);
+		} else {
+			return _List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$author$project$Main$folderView(model)
+						]))
+				]);
+		}
 	}
 };
 var $author$project$Main$view = function (model) {
@@ -10479,6 +10581,7 @@ var $author$project$Main$view = function (model) {
 		$elm$core$List$concat(
 			_List_fromArray(
 				[
+					$author$project$Main$categoryButtonsView,
 					$author$project$Main$goBackView(model),
 					$author$project$Main$viewContent(model)
 				])));
@@ -10486,4 +10589,4 @@ var $author$project$Main$view = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Data.Audience.Audience":{"args":[],"type":"{ id : Basics.Int, name : String.String, type_ : Data.Audience.AudienceType, folder : Maybe.Maybe Basics.Int }"},"Data.AudienceFolder.AudienceFolder":{"args":[],"type":"{ id : Basics.Int, name : String.String, parent : Maybe.Maybe Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"MsgGotResultsAudienceFolder":["Result.Result Http.Error (List.List Data.AudienceFolder.AudienceFolder)"],"MsgGotResultsAudience":["Result.Result Http.Error (List.List Data.Audience.Audience)"],"OpenFolder":["Basics.Int"],"GoBack":[]}},"Data.Audience.AudienceType":{"args":[],"tags":{"Authored":[],"Shared":[],"Curated":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Data.Audience.Audience":{"args":[],"type":"{ id : Basics.Int, name : String.String, type_ : Data.Audience.AudienceType, folder : Maybe.Maybe Basics.Int }"},"Data.AudienceFolder.AudienceFolder":{"args":[],"type":"{ id : Basics.Int, name : String.String, parent : Maybe.Maybe Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"MsgGotResultsAudienceFolder":["Result.Result Http.Error (List.List Data.AudienceFolder.AudienceFolder)"],"MsgGotResultsAudience":["Result.Result Http.Error (List.List Data.Audience.Audience)"],"OpenFolder":["Basics.Int"],"GoBack":[],"SelectCategory":["Data.Audience.AudienceType"]}},"Data.Audience.AudienceType":{"args":[],"tags":{"Authored":[],"Shared":[],"Curated":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
