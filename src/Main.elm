@@ -63,7 +63,7 @@ goBackView model =
     if model.currentFolderId /= Nothing then
         [ div
             [ class "goBack-button", onClick GoBack ]
-            [ text "Go Back" ]
+            [ text "Go Up" ]
         ]
 
     else
@@ -96,9 +96,12 @@ viewContent model =
 
                 _ ->
                     [ div []
-                        [ folderView model
-                        ]
+                        (List.append
+                            (folderView model )
+                            (viewAudienceWithoutFolder model )
+                        )
                     ]
+                    
 
 
 
@@ -117,6 +120,24 @@ viewSharedAudience model =
         )
     ]
 
+viewAudienceWithoutFolder : Model -> List (Html Msg)
+viewAudienceWithoutFolder model =
+    let
+        --Filtered list with the assigned category
+        filteredAudience =
+            case model.selectedCategory of
+                Audience.Curated ->
+                    List.filter (\audience -> audience.folder == Nothing && audience.type_ == Audience.Curated) model.audience
+
+                --if the category is not Curated or shared its Authored
+                _ ->
+                    List.filter (\audience -> audience.folder == Nothing && audience.type_ == Audience.Authored) model.audience
+    in
+    [ ul [ class "audience-container" ]
+        (filteredAudience
+            |> List.map viewComponentAudience
+        )
+    ] 
 
 audienceView : Model -> Int -> List (Html Msg)
 audienceView model currentID =
@@ -130,9 +151,6 @@ audienceView model currentID =
                 --if the category is not Curated or shared its Authored
                 _ ->
                     List.filter (\audience -> audience.folder == Just currentID && audience.type_ == Audience.Authored) model.audience
-
-        _ =
-            Debug.log "category ID: " model.selectedCategory
     in
     [ ul [ class "audience-container" ]
         (filteredAudience
@@ -141,14 +159,14 @@ audienceView model currentID =
     ]
 
 
-folderView : Model -> Html Msg
+folderView : Model -> List (Html Msg)
 folderView model =
-    ul []
+    [ul []
         (model.audienceFolder
             --only show if parent == Nothing
             |> List.filter (\folder -> folder.parent == Nothing)
             |> List.map viewComponentFolder
-        )
+        )]
 
 
 folderSonView : Model -> Int -> List (Html Msg)
@@ -241,10 +259,6 @@ update msg model =
                                     "Bad status"
 
                                 BadBody reason ->
-                                    let
-                                        _ =
-                                            Debug.log "Error Audience Folder: " reason
-                                    in
                                     reason
                     in
                     ( { model | errorMessage = Just errorMessage }, Cmd.none )
@@ -256,7 +270,6 @@ update msg model =
                         newModel =
                             { model | audience = data, errorMessage = Nothing }
                     in
-                    --update MsgFilterPermition newModel
                     ( newModel, Cmd.none )
 
                 Err error ->
@@ -276,19 +289,11 @@ update msg model =
                                     "Bad status"
 
                                 BadBody reason ->
-                                    let
-                                        _ =
-                                            Debug.log "Error Audience: " reason
-                                    in
                                     reason
                     in
                     ( { model | errorMessage = Just errorMessage }, Cmd.none )
 
         OpenFolder folderId ->
-            let
-                _ =
-                    Debug.log "Folder ID: " folderId
-            in
             ( { model | currentFolderId = Just folderId }, Cmd.none )
 
         GoBack ->
@@ -297,9 +302,6 @@ update msg model =
                     let
                         newId =
                             getActualParent folderId model
-
-                        _ =
-                            Debug.log "Older ID: " newId
                     in
                     ( { model | currentFolderId = newId }, Cmd.none )
 

@@ -10227,7 +10227,6 @@ var $author$project$Main$getActualParent = F2(
 			return $elm$core$Maybe$Nothing;
 		}
 	});
-var $elm$core$Debug$log = _Debug_log;
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -10253,7 +10252,6 @@ var $author$project$Main$update = F2(
 								return 'Bad status';
 							default:
 								var reason = error.a;
-								var _v3 = A2($elm$core$Debug$log, 'Error Audience Folder: ', reason);
 								return reason;
 						}
 					}();
@@ -10287,7 +10285,6 @@ var $author$project$Main$update = F2(
 								return 'Bad status';
 							default:
 								var reason = error.a;
-								var _v6 = A2($elm$core$Debug$log, 'Error Audience: ', reason);
 								return reason;
 						}
 					}();
@@ -10301,7 +10298,6 @@ var $author$project$Main$update = F2(
 				}
 			case 'OpenFolder':
 				var folderId = msg.a;
-				var _v7 = A2($elm$core$Debug$log, 'Folder ID: ', folderId);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -10310,11 +10306,10 @@ var $author$project$Main$update = F2(
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 'GoBack':
-				var _v8 = model.currentFolderId;
-				if (_v8.$ === 'Just') {
-					var folderId = _v8.a;
+				var _v5 = model.currentFolderId;
+				if (_v5.$ === 'Just') {
+					var folderId = _v5.a;
 					var newId = A2($author$project$Main$getActualParent, folderId, model);
-					var _v9 = A2($elm$core$Debug$log, 'Older ID: ', newId);
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -10393,7 +10388,7 @@ var $author$project$Main$goBackView = function (model) {
 				]),
 			_List_fromArray(
 				[
-					$elm$html$Html$text('Go Back')
+					$elm$html$Html$text('Go Up')
 				]))
 		]) : _List_Nil;
 };
@@ -10412,8 +10407,8 @@ var $author$project$Main$viewComponentAudience = function (audience) {
 var $author$project$Main$audienceView = F2(
 	function (model, currentID) {
 		var filteredAudience = function () {
-			var _v1 = model.selectedCategory;
-			if (_v1.$ === 'Curated') {
+			var _v0 = model.selectedCategory;
+			if (_v0.$ === 'Curated') {
 				return A2(
 					$elm$core$List$filter,
 					function (audience) {
@@ -10433,7 +10428,6 @@ var $author$project$Main$audienceView = F2(
 					model.audience);
 			}
 		}();
-		var _v0 = A2($elm$core$Debug$log, 'category ID: ', model.selectedCategory);
 		return _List_fromArray(
 			[
 				A2(
@@ -10491,18 +10485,51 @@ var $author$project$Main$folderSonView = F2(
 			]);
 	});
 var $author$project$Main$folderView = function (model) {
-	return A2(
-		$elm$html$Html$ul,
-		_List_Nil,
-		A2(
-			$elm$core$List$map,
-			$author$project$Main$viewComponentFolder,
+	return _List_fromArray(
+		[
 			A2(
+			$elm$html$Html$ul,
+			_List_Nil,
+			A2(
+				$elm$core$List$map,
+				$author$project$Main$viewComponentFolder,
+				A2(
+					$elm$core$List$filter,
+					function (folder) {
+						return _Utils_eq(folder.parent, $elm$core$Maybe$Nothing);
+					},
+					model.audienceFolder)))
+		]);
+};
+var $author$project$Main$viewAudienceWithoutFolder = function (model) {
+	var filteredAudience = function () {
+		var _v0 = model.selectedCategory;
+		if (_v0.$ === 'Curated') {
+			return A2(
 				$elm$core$List$filter,
-				function (folder) {
-					return _Utils_eq(folder.parent, $elm$core$Maybe$Nothing);
+				function (audience) {
+					return _Utils_eq(audience.folder, $elm$core$Maybe$Nothing) && _Utils_eq(audience.type_, $author$project$Data$Audience$Curated);
 				},
-				model.audienceFolder)));
+				model.audience);
+		} else {
+			return A2(
+				$elm$core$List$filter,
+				function (audience) {
+					return _Utils_eq(audience.folder, $elm$core$Maybe$Nothing) && _Utils_eq(audience.type_, $author$project$Data$Audience$Authored);
+				},
+				model.audience);
+		}
+	}();
+	return _List_fromArray(
+		[
+			A2(
+			$elm$html$Html$ul,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('audience-container')
+				]),
+			A2($elm$core$List$map, $author$project$Main$viewComponentAudience, filteredAudience))
+		]);
 };
 var $author$project$Main$viewSharedAudience = function (model) {
 	var filteredAudience = A2(
@@ -10549,10 +10576,10 @@ var $author$project$Main$viewContent = function (model) {
 					A2(
 					$elm$html$Html$div,
 					_List_Nil,
-					_List_fromArray(
-						[
-							$author$project$Main$folderView(model)
-						]))
+					A2(
+						$elm$core$List$append,
+						$author$project$Main$folderView(model),
+						$author$project$Main$viewAudienceWithoutFolder(model)))
 				]);
 		}
 	}
