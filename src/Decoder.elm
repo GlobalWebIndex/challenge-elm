@@ -9,7 +9,7 @@ import Json.Decode.Pipeline exposing (required)
 
 --DECODERS it put them in another class because we can rehuse
 
-
+--AUDIENCE FOLDERS
 decodeAudienceFolders : Decoder (List AudienceFolder.AudienceFolder)
 decodeAudienceFolders =
     Decode.at [ "data" ] (Decode.list audienceFolderJsonDecoder)
@@ -22,6 +22,7 @@ audienceFolderJsonDecoder =
         |> required "name" Decode.string
         |> required "parent" (Decode.maybe Decode.int)
 
+--AUDIENCE
 
 decodeAudiences : Decoder (List Audience.Audience)
 decodeAudiences =

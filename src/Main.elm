@@ -71,20 +71,6 @@ goBackView model =
 
 
 
---VIEW OF CATEGORY
-
-
-categoryButtonsView : List (Html Msg)
-categoryButtonsView =
-    [ div []
-        [ button [ class "category-button", onClick (SelectCategory Audience.Authored) ] [ text "Authored" ]
-        , button [ class "category-button", onClick (SelectCategory Audience.Shared) ] [ text "Shared" ]
-        , button [ class "category-button", onClick (SelectCategory Audience.Curated) ] [ text "Curated" ]
-        ]
-    ]
-
-
-
 --VIEW OF THE CONTENT
 
 
@@ -100,6 +86,7 @@ viewContent model =
             ]
 
         --if the currentID is Nothing it will show us the first page
+        --but if the category is Shared It will show just the Shared Audience
         Nothing ->
             case model.selectedCategory of
                 Audience.Shared ->
@@ -192,11 +179,19 @@ folderSonView model currentID =
 
 --VIEW OF THE COMPONENTS
 
+categoryButtonsView : List (Html Msg)
+categoryButtonsView =
+    [ div []
+        [ button [ class "category-button", onClick (SelectCategory Audience.Authored) ] [ text "Authored" ]
+        , button [ class "category-button", onClick (SelectCategory Audience.Shared) ] [ text "Shared" ]
+        , button [ class "category-button", onClick (SelectCategory Audience.Curated) ] [ text "Curated" ]
+        ]
+    ]
 
 viewComponentFolder : AudienceFolder.AudienceFolder -> Html Msg
 viewComponentFolder audienceFolder =
     button
-        [ class "audience-button"
+        [ class "folder-button"
         , onClick (OpenFolder audienceFolder.id)
         ]
         [ text audienceFolder.name ]

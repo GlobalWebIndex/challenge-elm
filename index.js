@@ -10450,7 +10450,7 @@ var $author$project$Main$viewComponentFolder = function (audienceFolder) {
 		$elm$html$Html$button,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$class('audience-button'),
+				$elm$html$Html$Attributes$class('folder-button'),
 				$elm$html$Html$Events$onClick(
 				$author$project$Main$OpenFolder(audienceFolder.id))
 			]),
