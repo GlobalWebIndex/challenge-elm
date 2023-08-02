@@ -7,6 +7,7 @@
 .table {
     width: 500px;
     margin: 0 auto;
+
 }
 
 .button {
@@ -17,37 +18,56 @@
     cursor: pointer;
 }
 
+
+.category-buttons {
+    display: flex;
+    width: 100%;
+}
+
 .category-button {
     background-color: #051FF7;
     color: white;
-    padding: 10px 15px;
+    width: 33.33%;
+    height: 40px;
     font-size: 16px;
+    flex: 1;
 }
 
-.goBackButton {
-    float: right;
-    clear: both;
-    background-color: #e74c3c;
+.goBack-button {
+    background-color: #4248FF;
     color: white;
+    text-align: center;
+    padding: 20px 10px;
+    font-size: 16px;
+    display: block;
+    width: 100%;
+    border-radius: 6px;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .folder-button {
-    background-color: #85c1e9;
+    background-color: #4248FF;
     color: white;
-    padding: 5px 10px;
+    height: 60px;
     font-size: 16px;
-    margin-bottom: 20px;
-}
-
-.audience-container {
-    padding-top: 25px;
+    display: block;
+    width: 100%;
+    border-radius: 6px;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .audience-button {
-    background-color: #39F062;
+    background-color: #5D9EFD;
     color: white;
-    padding: 5px 10px;
+    height: 60px;
     font-size: 16px;
+    display: block;
+    width: 100%;
+    border-radius: 6px;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .category-buttons-container {
@@ -58,3 +78,6 @@
     text-align: center;
     margin-top: 20px;
 }
+
+
+

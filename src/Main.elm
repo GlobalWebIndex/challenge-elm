@@ -3,12 +3,12 @@ module Main exposing (main)
 import Browser
 import Data.Audience as Audience
 import Data.AudienceFolder as AudienceFolder
+import Decoder
 import Html exposing (Html, button, div, text, ul)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Http exposing (Error(..))
-import Decoder as Decoder
-import Json.Decode as Decode 
+
 
 type Msg
     = MsgGotResultsAudienceFolder (Result Http.Error (List AudienceFolder.AudienceFolder))
@@ -45,7 +45,7 @@ main =
 
 view : Model -> Html Msg
 view model =
-    div [class "table"]
+    div [ class "table" ]
         (List.concat
             [ categoryButtonsView
             , goBackView model
@@ -62,7 +62,7 @@ goBackView : Model -> List (Html Msg)
 goBackView model =
     if model.currentFolderId /= Nothing then
         [ div
-            [ class "goBackButton", onClick GoBack ]
+            [ class "goBack-button", onClick GoBack ]
             [ text "Go Back" ]
         ]
 
@@ -111,7 +111,7 @@ viewSharedAudience model =
         filteredAudience =
             List.filter (\audience -> audience.type_ == Audience.Shared) model.audience
     in
-    [ ul [class "audience-container"]
+    [ ul []
         (filteredAudience
             |> List.map viewComponentAudience
         )
@@ -126,6 +126,7 @@ audienceView model currentID =
             case model.selectedCategory of
                 Audience.Curated ->
                     List.filter (\audience -> audience.folder == Just currentID && audience.type_ == Audience.Curated) model.audience
+
                 --if the category is not Curated or shared its Authored
                 _ ->
                     List.filter (\audience -> audience.folder == Just currentID && audience.type_ == Audience.Authored) model.audience
@@ -133,7 +134,7 @@ audienceView model currentID =
         _ =
             Debug.log "category ID: " model.selectedCategory
     in
-    [ ul [class "audience-container"]
+    [ ul [ class "audience-container" ]
         (filteredAudience
             |> List.map viewComponentAudience
         )
@@ -179,6 +180,7 @@ folderSonView model currentID =
 
 --VIEW OF THE COMPONENTS
 
+
 categoryButtonsView : List (Html Msg)
 categoryButtonsView =
     [ div []
@@ -187,6 +189,7 @@ categoryButtonsView =
         , button [ class "category-button", onClick (SelectCategory Audience.Curated) ] [ text "Curated" ]
         ]
     ]
+
 
 viewComponentFolder : AudienceFolder.AudienceFolder -> Html Msg
 viewComponentFolder audienceFolder =
@@ -326,6 +329,7 @@ getActualParent folderId model =
         Nothing ->
             Nothing
 
+
 getFolderById : Int -> Model -> Maybe AudienceFolder.AudienceFolder
 getFolderById targetId model =
     List.filter (\folder -> folder.id == targetId) model.audienceFolder |> List.head
@@ -379,4 +383,3 @@ cmdSearchAudience model =
         { url = model.urlAudience
         , expect = Http.expectJson MsgGotResultsAudience Decoder.decodeAudiences
         }
-
