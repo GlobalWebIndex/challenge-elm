@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Data.Audience as Audience
 import Data.AudienceFolder as AudienceFolder
-import Html exposing (Html, button, div, li, text, ul)
+import Html exposing (Html, button, div, text, ul)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Http exposing (Error(..))
@@ -73,9 +73,6 @@ viewContent model =
     case model.currentFolderId of
         Just currentID ->
             let
-                _ =
-                    Debug.log "Current ID: " currentID
-
                 listOfFolderSon =
                     model.audienceFolder
                         |> List.filter
@@ -87,46 +84,56 @@ viewContent model =
                                     Nothing ->
                                         False
                             )
-                        |> List.map viewFolder
+                        |> List.map viewComponentFolder
 
                 folderSonView =
                     if List.isEmpty listOfFolderSon then
                         []
+
                     else
                         [ div []
                             [ ul [] listOfFolderSon
                             ]
                         ]
-            in
-            [ div []
-                (List.append folderSonView
+
+                audienceView =
                     [ ul []
                         (model.audience
                             |> List.filter (\audience -> audience.folder == Just currentID)
-                            |> List.map viewAudience
+                            |> List.map viewComponentAudience
                         )
                     ]
+            in
+            [ div []
+                (List.append
+                    folderSonView
+                    audienceView
                 )
             ]
+
         --if the currentID is Nothing it will show us the first page
         Nothing ->
-            [ div []
-                [ ul []
-                    (model.audienceFolder
-                        --only show if parent == Nothing
-                        |> List.filter (\folder -> folder.parent == Nothing)
-                        |> List.map viewFolder
-                    )
+            let
+                folderView= ul []
+                        (model.audienceFolder
+                            --only show if parent == Nothing
+                            |> List.filter (\folder -> folder.parent == Nothing)
+                            |> List.map viewComponentFolder
+                        )
+            in
+                [ div []
+                    [ 
+                        folderView
+                    ]
                 ]
-            ]
 
 
 
 --VIEW OF THE COMPONENTS
 
 
-viewFolder : AudienceFolder.AudienceFolder -> Html Msg
-viewFolder audienceFolder =
+viewComponentFolder : AudienceFolder.AudienceFolder -> Html Msg
+viewComponentFolder audienceFolder =
     button
         [ class "audience-button"
         , onClick (OpenFolder audienceFolder.id)
@@ -134,8 +141,8 @@ viewFolder audienceFolder =
         [ text audienceFolder.name ]
 
 
-viewAudience : Audience.Audience -> Html Msg
-viewAudience audience =
+viewComponentAudience : Audience.Audience -> Html Msg
+viewComponentAudience audience =
     button
         [ class "audience-button"
         ]
@@ -235,7 +242,7 @@ update msg model =
                         _ =
                             Debug.log "Older ID: " newId
                     in
-                    ( {model | currentFolderId=newId}, Cmd.none )
+                    ( { model | currentFolderId = newId }, Cmd.none )
 
                 Nothing ->
                     ( model, Cmd.none )
@@ -244,27 +251,36 @@ update msg model =
 
 --Get the parent of the folder, if there is no parent he put the currentFolderId to Nothing so he come back
 --to the inicial screen
---TODO REVIEW 
+
+
 getActualParent : Int -> Model -> Maybe Int
 getActualParent folderId model =
     let
-        actualFolder = getFolderById folderId model
+        actualFolder =
+            getFolderById folderId model
     in
     case actualFolder of
         Just folder ->
             case folder.parent of
                 Just parentId ->
                     let
-                        folderData = { id = Just folder.id, name = folder.name, parent = folder.parent }
-                        parentFolders = List.filter (\f -> f.id == Just parentId) (List.map toFolderData model.audienceFolder)
+
+                        parentFolders =
+                            List.filter (\f -> f.id == Just parentId) (List.map toFolderData model.audienceFolder)
                     in
                     case parentFolders of
-                        [] -> Just folder.id
-                        parentFolder::_ -> parentFolder.id
+                        [] ->
+                            Just folder.id
+
+                        parentFolder :: _ ->
+                            parentFolder.id
+
                 Nothing ->
                     Nothing
+
         Nothing ->
             Nothing
+
 
 toFolderData : AudienceFolder.AudienceFolder -> { id : Maybe Int, name : String, parent : Maybe Int }
 toFolderData folder =
@@ -274,21 +290,6 @@ toFolderData folder =
 getFolderById : Int -> Model -> Maybe AudienceFolder.AudienceFolder
 getFolderById targetId model =
     List.filter (\folder -> folder.id == targetId) model.audienceFolder |> List.head
-
-
-
-getParentFolderId : Int -> Model -> Model
-getParentFolderId folderId model =
-    case List.filter (\folder -> folder.parent == Just folderId) model.audienceFolder of
-        [] ->
-            { model | currentFolderId = Nothing }
-
-        parentFolders ->
-            let
-                parentId =
-                    List.head parentFolders |> Maybe.map .id
-            in
-            { model | currentFolderId = parentId }
 
 
 

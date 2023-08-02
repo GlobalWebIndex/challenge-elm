@@ -10226,11 +10226,6 @@ var $author$project$Main$getActualParent = F2(
 							$elm$core$Maybe$Just(parentId));
 					},
 					A2($elm$core$List$map, $author$project$Main$toFolderData, model.audienceFolder));
-				var folderData = {
-					id: $elm$core$Maybe$Just(folder.id),
-					name: folder.name,
-					parent: folder.parent
-				};
 				if (!parentFolders.b) {
 					return $elm$core$Maybe$Just(folder.id);
 				} else {
@@ -10359,7 +10354,7 @@ var $author$project$Main$goBackView = function (model) {
 				]))
 		]) : _List_Nil;
 };
-var $author$project$Main$viewAudience = function (audience) {
+var $author$project$Main$viewComponentAudience = function (audience) {
 	return A2(
 		$elm$html$Html$button,
 		_List_fromArray(
@@ -10374,7 +10369,7 @@ var $author$project$Main$viewAudience = function (audience) {
 var $author$project$Main$OpenFolder = function (a) {
 	return {$: 'OpenFolder', a: a};
 };
-var $author$project$Main$viewFolder = function (audienceFolder) {
+var $author$project$Main$viewComponentFolder = function (audienceFolder) {
 	return A2(
 		$elm$html$Html$button,
 		_List_fromArray(
@@ -10394,13 +10389,13 @@ var $author$project$Main$viewContent = function (model) {
 		var currentID = _v0.a;
 		var listOfFolderSon = A2(
 			$elm$core$List$map,
-			$author$project$Main$viewFolder,
+			$author$project$Main$viewComponentFolder,
 			A2(
 				$elm$core$List$filter,
 				function (folder) {
-					var _v2 = folder.parent;
-					if (_v2.$ === 'Just') {
-						var parentId = _v2.a;
+					var _v1 = folder.parent;
+					if (_v1.$ === 'Just') {
+						var parentId = _v1.a;
 						return _Utils_eq(parentId, currentID);
 					} else {
 						return false;
@@ -10417,54 +10412,50 @@ var $author$project$Main$viewContent = function (model) {
 						A2($elm$html$Html$ul, _List_Nil, listOfFolderSon)
 					]))
 			]);
-		var _v1 = A2($elm$core$Debug$log, 'Current ID: ', currentID);
+		var audienceView = _List_fromArray(
+			[
+				A2(
+				$elm$html$Html$ul,
+				_List_Nil,
+				A2(
+					$elm$core$List$map,
+					$author$project$Main$viewComponentAudience,
+					A2(
+						$elm$core$List$filter,
+						function (audience) {
+							return _Utils_eq(
+								audience.folder,
+								$elm$core$Maybe$Just(currentID));
+						},
+						model.audience)))
+			]);
 		return _List_fromArray(
 			[
 				A2(
 				$elm$html$Html$div,
 				_List_Nil,
-				A2(
-					$elm$core$List$append,
-					folderSonView,
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$ul,
-							_List_Nil,
-							A2(
-								$elm$core$List$map,
-								$author$project$Main$viewAudience,
-								A2(
-									$elm$core$List$filter,
-									function (audience) {
-										return _Utils_eq(
-											audience.folder,
-											$elm$core$Maybe$Just(currentID));
-									},
-									model.audience)))
-						])))
+				A2($elm$core$List$append, folderSonView, audienceView))
 			]);
 	} else {
+		var folderView = A2(
+			$elm$html$Html$ul,
+			_List_Nil,
+			A2(
+				$elm$core$List$map,
+				$author$project$Main$viewComponentFolder,
+				A2(
+					$elm$core$List$filter,
+					function (folder) {
+						return _Utils_eq(folder.parent, $elm$core$Maybe$Nothing);
+					},
+					model.audienceFolder)));
 		return _List_fromArray(
 			[
 				A2(
 				$elm$html$Html$div,
 				_List_Nil,
 				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$ul,
-						_List_Nil,
-						A2(
-							$elm$core$List$map,
-							$author$project$Main$viewFolder,
-							A2(
-								$elm$core$List$filter,
-								function (folder) {
-									return _Utils_eq(folder.parent, $elm$core$Maybe$Nothing);
-								},
-								model.audienceFolder)))
-					]))
+					[folderView]))
 			]);
 	}
 };
