@@ -10388,7 +10388,7 @@ var $author$project$Main$goBackView = function (model) {
 			$elm$html$Html$div,
 			_List_fromArray(
 				[
-					$elm$html$Html$Attributes$class('audience-button'),
+					$elm$html$Html$Attributes$class('goBackButton'),
 					$elm$html$Html$Events$onClick($author$project$Main$GoBack)
 				]),
 			_List_fromArray(
@@ -10438,7 +10438,10 @@ var $author$project$Main$audienceView = F2(
 			[
 				A2(
 				$elm$html$Html$ul,
-				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('audience-container')
+					]),
 				A2($elm$core$List$map, $author$project$Main$viewComponentAudience, filteredAudience))
 			]);
 	});
@@ -10512,7 +10515,10 @@ var $author$project$Main$viewSharedAudience = function (model) {
 		[
 			A2(
 			$elm$html$Html$ul,
-			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('audience-container')
+				]),
 			A2($elm$core$List$map, $author$project$Main$viewComponentAudience, filteredAudience))
 		]);
 };
@@ -10557,7 +10563,10 @@ var $author$project$Main$viewContent = function (model) {
 var $author$project$Main$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
-		_List_Nil,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('table')
+			]),
 		$elm$core$List$concat(
 			_List_fromArray(
 				[

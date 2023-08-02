@@ -45,7 +45,7 @@ main =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [class "table"]
         (List.concat
             [ categoryButtonsView
             , goBackView model
@@ -62,7 +62,7 @@ goBackView : Model -> List (Html Msg)
 goBackView model =
     if model.currentFolderId /= Nothing then
         [ div
-            [ class "audience-button", onClick GoBack ]
+            [ class "goBackButton", onClick GoBack ]
             [ text "Go Back" ]
         ]
 
@@ -111,7 +111,7 @@ viewSharedAudience model =
         filteredAudience =
             List.filter (\audience -> audience.type_ == Audience.Shared) model.audience
     in
-    [ ul []
+    [ ul [class "audience-container"]
         (filteredAudience
             |> List.map viewComponentAudience
         )
@@ -133,7 +133,7 @@ audienceView model currentID =
         _ =
             Debug.log "category ID: " model.selectedCategory
     in
-    [ ul []
+    [ ul [class "audience-container"]
         (filteredAudience
             |> List.map viewComponentAudience
         )
