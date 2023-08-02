@@ -72,60 +72,69 @@ viewContent : Model -> List (Html Msg)
 viewContent model =
     case model.currentFolderId of
         Just currentID ->
-            let
-                listOfFolderSon =
-                    model.audienceFolder
-                        |> List.filter
-                            (\folder ->
-                                case folder.parent of
-                                    Just parentId ->
-                                        parentId == currentID
-
-                                    Nothing ->
-                                        False
-                            )
-                        |> List.map viewComponentFolder
-
-                folderSonView =
-                    if List.isEmpty listOfFolderSon then
-                        []
-
-                    else
-                        [ div []
-                            [ ul [] listOfFolderSon
-                            ]
-                        ]
-
-                audienceView =
-                    [ ul []
-                        (model.audience
-                            |> List.filter (\audience -> audience.folder == Just currentID)
-                            |> List.map viewComponentAudience
-                        )
-                    ]
-            in
             [ div []
                 (List.append
-                    folderSonView
-                    audienceView
+                    (folderSonView model currentID)
+                    (audienceView model currentID)
                 )
             ]
 
         --if the currentID is Nothing it will show us the first page
         Nothing ->
-            let
-                folderView= ul []
-                        (model.audienceFolder
-                            --only show if parent == Nothing
-                            |> List.filter (\folder -> folder.parent == Nothing)
-                            |> List.map viewComponentFolder
-                        )
-            in
-                [ div []
-                    [ 
-                        folderView
-                    ]
+            [ div []
+                [ folderView model
                 ]
+            ]
+
+
+
+--VIEW OF THE PARTS
+
+
+audienceView : Model -> Int -> List (Html Msg)
+audienceView model currentID =
+    [ ul []
+        (model.audience
+            |> List.filter (\audience -> audience.folder == Just currentID)
+            |> List.map viewComponentAudience
+        )
+    ]
+
+
+folderView : Model -> Html Msg
+folderView model =
+    ul []
+        (model.audienceFolder
+            --only show if parent == Nothing
+            |> List.filter (\folder -> folder.parent == Nothing)
+            |> List.map viewComponentFolder
+        )
+
+
+folderSonView : Model -> Int -> List (Html Msg)
+folderSonView model currentID =
+    let
+        listOfFolderSon =
+            model.audienceFolder
+                |> List.filter
+                    (\folder ->
+                        case folder.parent of
+                            Just parentId ->
+                                parentId == currentID
+
+                            Nothing ->
+                                False
+                    )
+                |> List.map viewComponentFolder
+    in
+    if List.isEmpty listOfFolderSon then
+        []
+
+    else
+        [ div []
+            [ ul [] listOfFolderSon
+            ]
+        ]
 
 
 
@@ -264,7 +273,6 @@ getActualParent folderId model =
             case folder.parent of
                 Just parentId ->
                     let
-
                         parentFolders =
                             List.filter (\f -> f.id == Just parentId) (List.map toFolderData model.audienceFolder)
                     in
