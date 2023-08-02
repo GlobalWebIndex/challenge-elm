@@ -9805,6 +9805,10 @@ var $elm$browser$Browser$element = _Browser_element;
 var $author$project$Main$MsgGotResultsAudience = function (a) {
 	return {$: 'MsgGotResultsAudience', a: a};
 };
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
 var $author$project$Data$Audience$Audience = F4(
 	function (id, name, type_, folder) {
 		return {folder: folder, id: id, name: name, type_: type_};
@@ -9814,7 +9818,7 @@ var $author$project$Data$Audience$Curated = {$: 'Curated'};
 var $author$project$Data$Audience$Shared = {$: 'Shared'};
 var $elm$json$Json$Decode$andThen = _Json_andThen;
 var $elm$json$Json$Decode$fail = _Json_fail;
-var $author$project$Main$audienceTypeDecoder = A2(
+var $author$project$Decoder$audienceTypeDecoder = A2(
 	$elm$json$Json$Decode$andThen,
 	function (str) {
 		switch (str) {
@@ -9847,14 +9851,14 @@ var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
 			A2($elm$json$Json$Decode$field, key, valDecoder),
 			decoder);
 	});
-var $author$project$Main$audienceJsonDecoder = A3(
+var $author$project$Decoder$audienceJsonDecoder = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'folder',
 	$elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
 	A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'type',
-		$author$project$Main$audienceTypeDecoder,
+		$author$project$Decoder$audienceTypeDecoder,
 		A3(
 			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 			'name',
@@ -9864,6 +9868,11 @@ var $author$project$Main$audienceJsonDecoder = A3(
 				'id',
 				$elm$json$Json$Decode$int,
 				$elm$json$Json$Decode$succeed($author$project$Data$Audience$Audience)))));
+var $author$project$Decoder$decodeAudiences = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['data']),
+	$elm$json$Json$Decode$list($author$project$Decoder$audienceJsonDecoder));
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -10120,10 +10129,7 @@ var $elm$http$Http$get = function (r) {
 var $author$project$Main$cmdSearchAudience = function (model) {
 	return $elm$http$Http$get(
 		{
-			expect: A2(
-				$elm$http$Http$expectJson,
-				$author$project$Main$MsgGotResultsAudience,
-				$elm$json$Json$Decode$list($author$project$Main$audienceJsonDecoder)),
+			expect: A2($elm$http$Http$expectJson, $author$project$Main$MsgGotResultsAudience, $author$project$Decoder$decodeAudiences),
 			url: model.urlAudience
 		});
 };
@@ -10134,7 +10140,7 @@ var $author$project$Data$AudienceFolder$AudienceFolder = F3(
 	function (id, name, parent) {
 		return {id: id, name: name, parent: parent};
 	});
-var $author$project$Main$audienceFolderJsonDecoder = A3(
+var $author$project$Decoder$audienceFolderJsonDecoder = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'parent',
 	$elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
@@ -10147,13 +10153,15 @@ var $author$project$Main$audienceFolderJsonDecoder = A3(
 			'id',
 			$elm$json$Json$Decode$int,
 			$elm$json$Json$Decode$succeed($author$project$Data$AudienceFolder$AudienceFolder))));
+var $author$project$Decoder$decodeAudienceFolders = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['data']),
+	$elm$json$Json$Decode$list($author$project$Decoder$audienceFolderJsonDecoder));
 var $author$project$Main$cmdSearchFolder = function (model) {
 	return $elm$http$Http$get(
 		{
-			expect: A2(
-				$elm$http$Http$expectJson,
-				$author$project$Main$MsgGotResultsAudienceFolder,
-				$elm$json$Json$Decode$list($author$project$Main$audienceFolderJsonDecoder)),
+			expect: A2($elm$http$Http$expectJson, $author$project$Main$MsgGotResultsAudienceFolder, $author$project$Decoder$decodeAudienceFolders),
 			url: model.urlAudienceFolder
 		});
 };
@@ -10203,35 +10211,15 @@ var $author$project$Main$getFolderById = F2(
 				},
 				model.audienceFolder));
 	});
-var $author$project$Main$toFolderData = function (folder) {
-	return {
-		id: $elm$core$Maybe$Just(folder.id),
-		name: folder.name,
-		parent: folder.parent
-	};
-};
 var $author$project$Main$getActualParent = F2(
 	function (folderId, model) {
-		var actualFolder = A2($author$project$Main$getFolderById, folderId, model);
-		if (actualFolder.$ === 'Just') {
-			var folder = actualFolder.a;
+		var _v0 = A2($author$project$Main$getFolderById, folderId, model);
+		if (_v0.$ === 'Just') {
+			var folder = _v0.a;
 			var _v1 = folder.parent;
 			if (_v1.$ === 'Just') {
 				var parentId = _v1.a;
-				var parentFolders = A2(
-					$elm$core$List$filter,
-					function (f) {
-						return _Utils_eq(
-							f.id,
-							$elm$core$Maybe$Just(parentId));
-					},
-					A2($elm$core$List$map, $author$project$Main$toFolderData, model.audienceFolder));
-				if (!parentFolders.b) {
-					return $elm$core$Maybe$Just(folder.id);
-				} else {
-					var parentFolder = parentFolders.a;
-					return parentFolder.id;
-				}
+				return $elm$core$Maybe$Just(parentId);
 			} else {
 				return $elm$core$Maybe$Nothing;
 			}
@@ -10425,32 +10413,24 @@ var $author$project$Main$audienceView = F2(
 	function (model, currentID) {
 		var filteredAudience = function () {
 			var _v1 = model.selectedCategory;
-			switch (_v1.$) {
-				case 'Curated':
-					return A2(
-						$elm$core$List$filter,
-						function (audience) {
-							return _Utils_eq(
-								audience.folder,
-								$elm$core$Maybe$Just(currentID)) && _Utils_eq(audience.type_, $author$project$Data$Audience$Curated);
-						},
-						model.audience);
-				case 'Authored':
-					return A2(
-						$elm$core$List$filter,
-						function (audience) {
-							return _Utils_eq(
-								audience.folder,
-								$elm$core$Maybe$Just(currentID)) && _Utils_eq(audience.type_, $author$project$Data$Audience$Authored);
-						},
-						model.audience);
-				default:
-					return A2(
-						$elm$core$List$filter,
-						function (audience) {
-							return _Utils_eq(audience.type_, $author$project$Data$Audience$Shared);
-						},
-						model.audience);
+			if (_v1.$ === 'Curated') {
+				return A2(
+					$elm$core$List$filter,
+					function (audience) {
+						return _Utils_eq(
+							audience.folder,
+							$elm$core$Maybe$Just(currentID)) && _Utils_eq(audience.type_, $author$project$Data$Audience$Curated);
+					},
+					model.audience);
+			} else {
+				return A2(
+					$elm$core$List$filter,
+					function (audience) {
+						return _Utils_eq(
+							audience.folder,
+							$elm$core$Maybe$Just(currentID)) && _Utils_eq(audience.type_, $author$project$Data$Audience$Authored);
+					},
+					model.audience);
 			}
 		}();
 		var _v0 = A2($elm$core$Debug$log, 'category ID: ', model.selectedCategory);

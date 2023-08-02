@@ -7,9 +7,8 @@ import Html exposing (Html, button, div, text, ul)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Http exposing (Error(..))
-import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Pipeline exposing (required)
-
+import Decoder as Decoder
+import Json.Decode as Decode 
 
 type Msg
     = MsgGotResultsAudienceFolder (Result Http.Error (List AudienceFolder.AudienceFolder))
@@ -140,12 +139,9 @@ audienceView model currentID =
             case model.selectedCategory of
                 Audience.Curated ->
                     List.filter (\audience -> audience.folder == Just currentID && audience.type_ == Audience.Curated) model.audience
-
-                Audience.Authored ->
+                --if the category is not Curated or shared its Authored
+                _ ->
                     List.filter (\audience -> audience.folder == Just currentID && audience.type_ == Audience.Authored) model.audience
-
-                Audience.Shared ->
-                    List.filter (\audience -> audience.type_ == Audience.Shared) model.audience
 
         _ =
             Debug.log "category ID: " model.selectedCategory
@@ -323,36 +319,17 @@ update msg model =
 
 getActualParent : Int -> Model -> Maybe Int
 getActualParent folderId model =
-    let
-        actualFolder =
-            getFolderById folderId model
-    in
-    case actualFolder of
+    case getFolderById folderId model of
         Just folder ->
             case folder.parent of
                 Just parentId ->
-                    let
-                        parentFolders =
-                            List.filter (\f -> f.id == Just parentId) (List.map toFolderData model.audienceFolder)
-                    in
-                    case parentFolders of
-                        [] ->
-                            Just folder.id
-
-                        parentFolder :: _ ->
-                            parentFolder.id
+                    Just parentId
 
                 Nothing ->
                     Nothing
 
         Nothing ->
             Nothing
-
-
-toFolderData : AudienceFolder.AudienceFolder -> { id : Maybe Int, name : String, parent : Maybe Int }
-toFolderData folder =
-    { id = Just folder.id, name = folder.name, parent = folder.parent }
-
 
 getFolderById : Int -> Model -> Maybe AudienceFolder.AudienceFolder
 getFolderById targetId model =
@@ -397,7 +374,7 @@ cmdSearchFolder : Model -> Cmd Msg
 cmdSearchFolder model =
     Http.get
         { url = model.urlAudienceFolder
-        , expect = Http.expectJson MsgGotResultsAudienceFolder (Decode.list audienceFolderJsonDecoder)
+        , expect = Http.expectJson MsgGotResultsAudienceFolder Decoder.decodeAudienceFolders
         }
 
 
@@ -405,46 +382,6 @@ cmdSearchAudience : Model -> Cmd Msg
 cmdSearchAudience model =
     Http.get
         { url = model.urlAudience
-        , expect = Http.expectJson MsgGotResultsAudience (Decode.list audienceJsonDecoder)
+        , expect = Http.expectJson MsgGotResultsAudience Decoder.decodeAudiences
         }
 
-
-
---DECODERS
-
-
-audienceFolderJsonDecoder : Decoder AudienceFolder.AudienceFolder
-audienceFolderJsonDecoder =
-    Decode.succeed AudienceFolder.AudienceFolder
-        |> required "id" Decode.int
-        |> required "name" Decode.string
-        |> required "parent" (Decode.maybe Decode.int)
-
-
-audienceTypeDecoder : Decoder Audience.AudienceType
-audienceTypeDecoder =
-    Decode.string
-        |> Decode.andThen
-            (\str ->
-                case str of
-                    "user" ->
-                        Decode.succeed Audience.Authored
-
-                    "shared" ->
-                        Decode.succeed Audience.Shared
-
-                    "curated" ->
-                        Decode.succeed Audience.Curated
-
-                    _ ->
-                        Decode.fail "Invalid audience type"
-            )
-
-
-audienceJsonDecoder : Decoder Audience.Audience
-audienceJsonDecoder =
-    Decode.succeed Audience.Audience
-        |> required "id" Decode.int
-        |> required "name" Decode.string
-        |> required "type" audienceTypeDecoder
-        |> required "folder" (Decode.maybe Decode.int)

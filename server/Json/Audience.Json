@@ -1,4 +1,5 @@
- [
+{
+    "data": [
         {
             "id": 104,
             "name": "Food Lovers",
@@ -5865,3 +5866,4 @@
             "folder": null
         }
     ]
+}

@@ -1,4 +1,5 @@
- [
+{
+    "data": [
         {
             "id": 357,
             "name": "Demographics",
@@ -30,3 +31,4 @@
             "parent": 3110
         }
     ]
+}
