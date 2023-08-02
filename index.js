@@ -10181,6 +10181,21 @@ var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Main$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
 };
+var $author$project$Main$errorMessage = function (error) {
+	switch (error.$) {
+		case 'NetworkError':
+			return 'Network Error';
+		case 'BadUrl':
+			return 'Bad URL';
+		case 'Timeout':
+			return 'Timeout';
+		case 'BadStatus':
+			return 'Bad status';
+		default:
+			var reason = error.a;
+			return reason;
+	}
+};
 var $elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -10240,26 +10255,12 @@ var $author$project$Main$update = F2(
 					return _Utils_Tuple2(newModel, $elm$core$Platform$Cmd$none);
 				} else {
 					var error = result.a;
-					var errorMessage = function () {
-						switch (error.$) {
-							case 'NetworkError':
-								return 'Network Error';
-							case 'BadUrl':
-								return 'Bad URL';
-							case 'Timeout':
-								return 'Timeout';
-							case 'BadStatus':
-								return 'Bad status';
-							default:
-								var reason = error.a;
-								return reason;
-						}
-					}();
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
-								errorMessage: $elm$core$Maybe$Just(errorMessage)
+								errorMessage: $elm$core$Maybe$Just(
+									$author$project$Main$errorMessage(error))
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
@@ -10273,26 +10274,12 @@ var $author$project$Main$update = F2(
 					return _Utils_Tuple2(newModel, $elm$core$Platform$Cmd$none);
 				} else {
 					var error = result.a;
-					var errorMessage = function () {
-						switch (error.$) {
-							case 'NetworkError':
-								return 'Network Error';
-							case 'BadUrl':
-								return 'Bad URL';
-							case 'Timeout':
-								return 'Timeout';
-							case 'BadStatus':
-								return 'Bad status';
-							default:
-								var reason = error.a;
-								return reason;
-						}
-					}();
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
-								errorMessage: $elm$core$Maybe$Just(errorMessage)
+								errorMessage: $elm$core$Maybe$Just(
+									$author$project$Main$errorMessage(error))
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
@@ -10306,9 +10293,9 @@ var $author$project$Main$update = F2(
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 'GoBack':
-				var _v5 = model.currentFolderId;
-				if (_v5.$ === 'Just') {
-					var folderId = _v5.a;
+				var _v3 = model.currentFolderId;
+				if (_v3.$ === 'Just') {
+					var folderId = _v3.a;
 					var newId = A2($author$project$Main$getActualParent, folderId, model);
 					return _Utils_Tuple2(
 						_Utils_update(
@@ -10404,30 +10391,8 @@ var $author$project$Main$viewComponentAudience = function (audience) {
 				$elm$html$Html$text(audience.name)
 			]));
 };
-var $author$project$Main$audienceView = F2(
-	function (model, currentID) {
-		var filteredAudience = function () {
-			var _v0 = model.selectedCategory;
-			if (_v0.$ === 'Curated') {
-				return A2(
-					$elm$core$List$filter,
-					function (audience) {
-						return _Utils_eq(
-							audience.folder,
-							$elm$core$Maybe$Just(currentID)) && _Utils_eq(audience.type_, $author$project$Data$Audience$Curated);
-					},
-					model.audience);
-			} else {
-				return A2(
-					$elm$core$List$filter,
-					function (audience) {
-						return _Utils_eq(
-							audience.folder,
-							$elm$core$Maybe$Just(currentID)) && _Utils_eq(audience.type_, $author$project$Data$Audience$Authored);
-					},
-					model.audience);
-			}
-		}();
+var $author$project$Main$viewFilteredAudience = F2(
+	function (filterFn, audienceList) {
 		return _List_fromArray(
 			[
 				A2(
@@ -10436,8 +10401,30 @@ var $author$project$Main$audienceView = F2(
 					[
 						$elm$html$Html$Attributes$class('audience-container')
 					]),
-				A2($elm$core$List$map, $author$project$Main$viewComponentAudience, filteredAudience))
+				A2(
+					$elm$core$List$map,
+					$author$project$Main$viewComponentAudience,
+					A2($elm$core$List$filter, filterFn, audienceList)))
 			]);
+	});
+var $author$project$Main$viewAudienceByCategory = F3(
+	function (category, model, currentID) {
+		var filterFn = function (audience) {
+			if (category.$ === 'Curated') {
+				return _Utils_eq(
+					audience.folder,
+					$elm$core$Maybe$Just(currentID)) && _Utils_eq(audience.type_, $author$project$Data$Audience$Curated);
+			} else {
+				return _Utils_eq(
+					audience.folder,
+					$elm$core$Maybe$Just(currentID)) && _Utils_eq(audience.type_, $author$project$Data$Audience$Authored);
+			}
+		};
+		return A2($author$project$Main$viewFilteredAudience, filterFn, model.audience);
+	});
+var $author$project$Main$audienceView = F2(
+	function (model, currentID) {
+		return A3($author$project$Main$viewAudienceByCategory, model.selectedCategory, model, currentID);
 	});
 var $author$project$Main$OpenFolder = function (a) {
 	return {$: 'OpenFolder', a: a};
@@ -10502,49 +10489,30 @@ var $author$project$Main$folderView = function (model) {
 		]);
 };
 var $author$project$Main$viewAudienceWithoutFolder = function (model) {
-	var filteredAudience = function () {
-		var _v0 = model.selectedCategory;
-		if (_v0.$ === 'Curated') {
-			return A2(
-				$elm$core$List$filter,
-				function (audience) {
-					return _Utils_eq(audience.folder, $elm$core$Maybe$Nothing) && _Utils_eq(audience.type_, $author$project$Data$Audience$Curated);
-				},
-				model.audience);
-		} else {
-			return A2(
-				$elm$core$List$filter,
-				function (audience) {
-					return _Utils_eq(audience.folder, $elm$core$Maybe$Nothing) && _Utils_eq(audience.type_, $author$project$Data$Audience$Authored);
-				},
-				model.audience);
-		}
-	}();
-	return _List_fromArray(
-		[
-			A2(
-			$elm$html$Html$ul,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('audience-container')
-				]),
-			A2($elm$core$List$map, $author$project$Main$viewComponentAudience, filteredAudience))
-		]);
+	var _v0 = model.selectedCategory;
+	if (_v0.$ === 'Curated') {
+		return A2(
+			$author$project$Main$viewFilteredAudience,
+			function (audience) {
+				return _Utils_eq(audience.folder, $elm$core$Maybe$Nothing) && _Utils_eq(audience.type_, $author$project$Data$Audience$Curated);
+			},
+			model.audience);
+	} else {
+		return A2(
+			$author$project$Main$viewFilteredAudience,
+			function (audience) {
+				return _Utils_eq(audience.folder, $elm$core$Maybe$Nothing) && _Utils_eq(audience.type_, $author$project$Data$Audience$Authored);
+			},
+			model.audience);
+	}
 };
 var $author$project$Main$viewSharedAudience = function (model) {
-	var filteredAudience = A2(
-		$elm$core$List$filter,
+	return A2(
+		$author$project$Main$viewFilteredAudience,
 		function (audience) {
 			return _Utils_eq(audience.type_, $author$project$Data$Audience$Shared);
 		},
 		model.audience);
-	return _List_fromArray(
-		[
-			A2(
-			$elm$html$Html$ul,
-			_List_Nil,
-			A2($elm$core$List$map, $author$project$Main$viewComponentAudience, filteredAudience))
-		]);
 };
 var $author$project$Main$viewContent = function (model) {
 	var _v0 = model.currentFolderId;

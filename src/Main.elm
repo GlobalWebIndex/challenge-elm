@@ -97,76 +97,68 @@ viewContent model =
                 _ ->
                     [ div []
                         (List.append
-                            (folderView model )
-                            (viewAudienceWithoutFolder model )
+                            (folderView model)
+                            (viewAudienceWithoutFolder model)
                         )
                     ]
-                    
 
 
 
 --VIEW OF THE PARTS
 
 
-viewSharedAudience : Model -> List (Html Msg)
-viewSharedAudience model =
-    let
-        filteredAudience =
-            List.filter (\audience -> audience.type_ == Audience.Shared) model.audience
-    in
-    [ ul []
-        (filteredAudience
+viewFilteredAudience : (Audience.Audience -> Bool) -> List Audience.Audience -> List (Html Msg)
+viewFilteredAudience filterFn audienceList =
+    [ ul [ class "audience-container" ]
+        (List.filter filterFn audienceList
             |> List.map viewComponentAudience
         )
     ]
+
+
+viewSharedAudience : Model -> List (Html Msg)
+viewSharedAudience model =
+    viewFilteredAudience (\audience -> audience.type_ == Audience.Shared) model.audience
+
 
 viewAudienceWithoutFolder : Model -> List (Html Msg)
 viewAudienceWithoutFolder model =
-    let
-        --Filtered list with the assigned category
-        filteredAudience =
-            case model.selectedCategory of
-                Audience.Curated ->
-                    List.filter (\audience -> audience.folder == Nothing && audience.type_ == Audience.Curated) model.audience
+    case model.selectedCategory of
+        Audience.Curated ->
+            viewFilteredAudience (\audience -> audience.folder == Nothing && audience.type_ == Audience.Curated) model.audience
 
-                --if the category is not Curated or shared its Authored
+        _ ->
+            viewFilteredAudience (\audience -> audience.folder == Nothing && audience.type_ == Audience.Authored) model.audience
+
+
+viewAudienceByCategory : Audience.AudienceType -> Model -> Int -> List (Html Msg)
+viewAudienceByCategory category model currentID =
+    let
+        filterFn audience =
+            case category of
+                Audience.Curated ->
+                    audience.folder == Just currentID && audience.type_ == Audience.Curated
+
                 _ ->
-                    List.filter (\audience -> audience.folder == Nothing && audience.type_ == Audience.Authored) model.audience
+                    audience.folder == Just currentID && audience.type_ == Audience.Authored
     in
-    [ ul [ class "audience-container" ]
-        (filteredAudience
-            |> List.map viewComponentAudience
-        )
-    ] 
+    viewFilteredAudience filterFn model.audience
+
 
 audienceView : Model -> Int -> List (Html Msg)
 audienceView model currentID =
-    let
-        --Filtered list with the assigned category
-        filteredAudience =
-            case model.selectedCategory of
-                Audience.Curated ->
-                    List.filter (\audience -> audience.folder == Just currentID && audience.type_ == Audience.Curated) model.audience
-
-                --if the category is not Curated or shared its Authored
-                _ ->
-                    List.filter (\audience -> audience.folder == Just currentID && audience.type_ == Audience.Authored) model.audience
-    in
-    [ ul [ class "audience-container" ]
-        (filteredAudience
-            |> List.map viewComponentAudience
-        )
-    ]
+    viewAudienceByCategory model.selectedCategory model currentID
 
 
 folderView : Model -> List (Html Msg)
 folderView model =
-    [ul []
+    [ ul []
         (model.audienceFolder
             --only show if parent == Nothing
             |> List.filter (\folder -> folder.parent == Nothing)
             |> List.map viewComponentFolder
-        )]
+        )
+    ]
 
 
 folderSonView : Model -> Int -> List (Html Msg)
@@ -243,25 +235,7 @@ update msg model =
                     ( newModel, Cmd.none )
 
                 Err error ->
-                    let
-                        errorMessage =
-                            case error of
-                                NetworkError ->
-                                    "Network Error"
-
-                                BadUrl _ ->
-                                    "Bad URL"
-
-                                Timeout ->
-                                    "Timeout"
-
-                                BadStatus _ ->
-                                    "Bad status"
-
-                                BadBody reason ->
-                                    reason
-                    in
-                    ( { model | errorMessage = Just errorMessage }, Cmd.none )
+                    ( { model | errorMessage = Just (errorMessage error) }, Cmd.none )
 
         MsgGotResultsAudience result ->
             case result of
@@ -273,25 +247,7 @@ update msg model =
                     ( newModel, Cmd.none )
 
                 Err error ->
-                    let
-                        errorMessage =
-                            case error of
-                                NetworkError ->
-                                    "Network Error"
-
-                                BadUrl _ ->
-                                    "Bad URL"
-
-                                Timeout ->
-                                    "Timeout"
-
-                                BadStatus _ ->
-                                    "Bad status"
-
-                                BadBody reason ->
-                                    reason
-                    in
-                    ( { model | errorMessage = Just errorMessage }, Cmd.none )
+                    ( { model | errorMessage = Just (errorMessage error) }, Cmd.none )
 
         OpenFolder folderId ->
             ( { model | currentFolderId = Just folderId }, Cmd.none )
@@ -310,6 +266,25 @@ update msg model =
 
         SelectCategory category ->
             ( { model | selectedCategory = category, currentFolderId = Nothing }, Cmd.none )
+
+
+errorMessage : Http.Error -> String
+errorMessage error =
+    case error of
+        NetworkError ->
+            "Network Error"
+
+        BadUrl _ ->
+            "Bad URL"
+
+        Timeout ->
+            "Timeout"
+
+        BadStatus _ ->
+            "Bad status"
+
+        BadBody reason ->
+            reason
 
 
 
