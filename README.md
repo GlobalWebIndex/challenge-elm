@@ -84,7 +84,7 @@ Also we want to see your ability to come up with a robust solution and will look
 ## Contacts
 
 In case you want to apply for a position in our team, please contact `engineering-recruitment@globalwebindex.com`.
-If you have any questions about the implementation itself, you can send an e-mail to `mjaniczek@globalwebindex.com`
+If you have any questions about the implementation itself, you can send an e-mail to `asbernal@gwi.com`
 or open issue/PR in this repository so we can discuss any part together.
 
 ## License
