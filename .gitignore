@@ -1,1 +1,6 @@
+# Archivos de Elm
 elm-stuff/
+node_modules/
+.DS_Store
+
+

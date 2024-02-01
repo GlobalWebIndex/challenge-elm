@@ -1,0 +1,34 @@
+{
+    "data": [
+        {
+            "id": 357,
+            "name": "Demographics",
+            "curated": true,
+            "parent": null
+        },
+        {
+            "id": 358,
+            "name": "Marketing Personas",
+            "curated": true,
+            "parent": null
+        },
+        {
+            "id": 383,
+            "name": "Reports",
+            "curated": true,
+            "parent": null
+        },
+        {
+            "id": 3110,
+            "name": "New Group",
+            "curated": false,
+            "parent": null
+        },
+        {
+            "id": 3111,
+            "name": "New Group 2",
+            "curated": false,
+            "parent": 3110
+        }
+    ]
+}
