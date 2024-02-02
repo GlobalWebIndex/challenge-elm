@@ -5,6 +5,7 @@ import Data.Audience as Audience
 import Data.AudienceFolder as AudienceFolder
 import Html exposing (Html, button, div, img, li, text, ul)
 import Html.Attributes exposing (class, src)
+import Html.Events exposing (onClick)
 import Http exposing (..)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
@@ -15,6 +16,8 @@ import RemoteData
 type alias Model =
     { audienceFolders : RemoteData.WebData (List AudienceFolder.AudienceFolder)
     , audiences : RemoteData.WebData (List Audience.Audience)
+    , currentFolderId : Maybe Int
+    , previousFolderIds : List Int
     }
 
 
@@ -22,6 +25,8 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { audienceFolders = RemoteData.NotAsked
       , audiences = RemoteData.NotAsked
+      , currentFolderId = Nothing
+      , previousFolderIds = []
       }
     , Cmd.batch [ fetchAudienceFolders, fetchAudiences ]
     )
@@ -32,6 +37,8 @@ type Msg
     | GotAudienceFolders (Result Http.Error (List AudienceFolder.AudienceFolder))
     | FetchAudiences
     | GotAudiences (Result Http.Error (List Audience.Audience))
+    | ChangeCurrentFolderIdAndAddItToPreviousList Int
+    | RemoveCurrentFolderIdAndGoBack
 
 
 fetchAudienceFolders : Cmd Msg
@@ -70,7 +77,7 @@ update msg model =
 
         FetchAudiences ->
             ( { model | audiences = RemoteData.Loading }
-            , fetchAudiences
+            , Cmd.none
             )
 
         GotAudiences (Ok audiences) ->
@@ -81,14 +88,38 @@ update msg model =
         GotAudiences (Err err) ->
             ( { model | audiences = RemoteData.Failure err }, Cmd.none )
 
+        ChangeCurrentFolderIdAndAddItToPreviousList folderId ->
+            let
+                newModel =
+                    { model
+                        | currentFolderId = Just folderId
+                        , previousFolderIds = folderId :: model.previousFolderIds
+                    }
+            in
+            ( newModel, Cmd.none )
 
-findFilesAtCurrentLevel : List Audience.Audience -> List Audience.Audience
-findFilesAtCurrentLevel items =
-    let
-        uniqueItems =
-            List.filter (\item -> item.folder == Nothing && (ListE.count ((==) item.id) <| List.map .id items) == 1) items
-    in
-    uniqueItems
+        RemoveCurrentFolderIdAndGoBack ->
+            let
+                newCurrentFolderId =
+                    List.head (List.drop 1 model.previousFolderIds)
+
+                _ =
+                    Debug.log "newCurrentFolderId" newCurrentFolderId
+
+                updatedPreviousFolderIds =
+                    case List.reverse model.previousFolderIds of
+                        _ :: rest ->
+                            List.reverse rest
+
+                        _ ->
+                            []
+            in
+            ( { model
+                | currentFolderId = newCurrentFolderId
+                , previousFolderIds = updatedPreviousFolderIds
+              }
+            , Cmd.none
+            )
 
 
 view : Model -> Browser.Document Msg
@@ -104,7 +135,6 @@ view model =
                     text "Loading"
 
                 RemoteData.Success audienceFolders ->
-                    -- viewFolders audiences
                     case model.audiences of
                         RemoteData.NotAsked ->
                             text "Not Asked"
@@ -113,7 +143,18 @@ view model =
                             text "Loading"
 
                         RemoteData.Success audiences ->
-                            viewFolders audienceFolders audiences
+                            if model.currentFolderId == Nothing then
+                                viewFolders audienceFolders audiences model
+
+                            else
+                                let
+                                    sonContent =
+                                        List.filter (\item -> item.folder == model.currentFolderId) audiences
+
+                                    sonFoldersContent =
+                                        List.filter (\item -> item.parent == model.currentFolderId) audienceFolders
+                                in
+                                viewFolders sonFoldersContent sonContent model
 
                         RemoteData.Failure _ ->
                             text "Failure"
@@ -125,15 +166,19 @@ view model =
     }
 
 
-viewFolders : List AudienceFolder.AudienceFolder -> List Audience.Audience -> Html Msg
-viewFolders audienceFolders audiences =
+viewFolders : List AudienceFolder.AudienceFolder -> List Audience.Audience -> Model -> Html Msg
+viewFolders audienceFolders audiences model =
     let
         {-
            Maybe a litle big complex, the idea of this function is to filter the items that are not
            in the list. Why? Because the items that has not folders and are not repeated int the list are the files
         -}
         uniqueItems =
-            List.filter (\item -> item.folder == Nothing && (ListE.count ((==) item.id) <| List.map .id audiences) == 1) audiences
+            if model.currentFolderId == Nothing then
+                List.filter (\item -> item.folder == Nothing && (ListE.count ((==) item.id) <| List.map .id audiences) == 1) audiences
+
+            else
+                List.filter (\item -> item.folder == model.currentFolderId && (ListE.count ((==) item.id) <| List.map .id audiences) == 1) audiences
 
         filteredIds =
             List.map .id uniqueItems
@@ -143,23 +188,31 @@ viewFolders audienceFolders audiences =
         -}
         itemsNotInList =
             List.filter (\item -> not (List.member item.id filteredIds)) audiences
-
-        _ =
-            Debug.log "" itemsNotInList
     in
     div []
-        [ ul [] (List.map viewAudienceFolders audienceFolders)
+        [ ul [] [ viewButtonGoBack model ]
+        , ul [] (List.map (\folder -> viewAudienceFolders folder model) audienceFolders)
         , ul [] (List.map viewAudiences itemsNotInList)
         , ul [] (List.map viewAudienceFiles uniqueItems)
         ]
 
 
-viewAudienceFolders : AudienceFolder.AudienceFolder -> Html Msg
-viewAudienceFolders folder =
-    if folder.parent == Nothing then
+viewAudienceFolders : AudienceFolder.AudienceFolder -> Model -> Html Msg
+viewAudienceFolders folder model =
+    let
+        {-
+           Why of this validation? Because with this logic, there are to options available:
+               - Folders in the root directory, witch are gonna be the first ones to be displayed
+               - Folders that are children of the current folder. But if I only check if folder.parent
+                 is Nothing, then the children folders never gonna be displayed.
+        -}
+        validFolder =
+            folder.parent == Nothing || folder.parent /= Nothing && folder.parent == model.currentFolderId
+    in
+    if validFolder then
         div [ class "folder" ]
             [ li []
-                [ button [ class "folder-button" ]
+                [ button [ class "folder-button", onClick (ChangeCurrentFolderIdAndAddItToPreviousList folder.id) ]
                     [ img [ src "/assets/folder.svg", class "button-icon" ] []
                     , text folder.name
                     ]
@@ -198,9 +251,21 @@ viewAudienceFiles audience =
         ]
 
 
+viewButtonGoBack : Model -> Html Msg
+viewButtonGoBack model =
+    case model.currentFolderId of
+        Just _ ->
+            div [ class "folder" ]
+                [ li []
+                    [ button [ class "folder-button", onClick RemoveCurrentFolderIdAndGoBack ]
+                        [ img [ src "/assets/back.svg", class "button-icon" ] []
+                        , text "Go Back"
+                        ]
+                    ]
+                ]
 
---else
--- div [] []
+        Nothing ->
+            div [] []
 
 
 decodeAudienceFolders : Decoder (List AudienceFolder.AudienceFolder)

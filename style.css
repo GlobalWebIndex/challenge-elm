@@ -57,6 +57,7 @@
     width: 100%;
     border: 1px solid black;
     border-radius: 10px;
+    margin: 2px;
 }
 
 .folder:hover{
@@ -68,6 +69,7 @@
     width: 100%;
     border: 1px solid black;
     border-radius: 10px;
+    margin: 2px;
 }
 
 .audience:hover{

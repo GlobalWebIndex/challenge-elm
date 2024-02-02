@@ -10164,7 +10164,7 @@ var $author$project$Main$fetchAudiences = $elm$http$Http$get(
 	});
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
-		{audienceFolders: $krisajenkins$remotedata$RemoteData$NotAsked, audiences: $krisajenkins$remotedata$RemoteData$NotAsked},
+		{audienceFolders: $krisajenkins$remotedata$RemoteData$NotAsked, audiences: $krisajenkins$remotedata$RemoteData$NotAsked, currentFolderId: $elm$core$Maybe$Nothing, previousFolderIds: _List_Nil},
 		$elm$core$Platform$Cmd$batch(
 			_List_fromArray(
 				[$author$project$Main$fetchAudienceFolders, $author$project$Main$fetchAudiences])));
@@ -10178,6 +10178,37 @@ var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
 var $krisajenkins$remotedata$RemoteData$Success = function (a) {
 	return {$: 'Success', a: a};
 };
+var $elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
+			} else {
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
+			}
+		}
+	});
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $elm$core$Debug$log = _Debug_log;
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -10212,8 +10243,8 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{audiences: $krisajenkins$remotedata$RemoteData$Loading}),
-					$author$project$Main$fetchAudiences);
-			default:
+					$elm$core$Platform$Cmd$none);
+			case 'GotAudiences':
 				if (msg.a.$ === 'Ok') {
 					var audiences = msg.a.a;
 					return _Utils_Tuple2(
@@ -10233,17 +10264,35 @@ var $author$project$Main$update = F2(
 							}),
 						$elm$core$Platform$Cmd$none);
 				}
+			case 'ChangeCurrentFolderIdAndAddItToPreviousList':
+				var folderId = msg.a;
+				var newModel = _Utils_update(
+					model,
+					{
+						currentFolderId: $elm$core$Maybe$Just(folderId),
+						previousFolderIds: A2($elm$core$List$cons, folderId, model.previousFolderIds)
+					});
+				return _Utils_Tuple2(newModel, $elm$core$Platform$Cmd$none);
+			default:
+				var updatedPreviousFolderIds = function () {
+					var _v2 = $elm$core$List$reverse(model.previousFolderIds);
+					if (_v2.b) {
+						var rest = _v2.b;
+						return $elm$core$List$reverse(rest);
+					} else {
+						return _List_Nil;
+					}
+				}();
+				var newCurrentFolderId = $elm$core$List$head(
+					A2($elm$core$List$drop, 1, model.previousFolderIds));
+				var _v1 = A2($elm$core$Debug$log, 'newCurrentFolderId', newCurrentFolderId);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{currentFolderId: newCurrentFolderId, previousFolderIds: updatedPreviousFolderIds}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
-var $elm_community$list_extra$List$Extra$count = function (predicate) {
-	return A2(
-		$elm$core$List$foldl,
-		F2(
-			function (x, acc) {
-				return predicate(x) ? (acc + 1) : acc;
-			}),
-		0);
-};
 var $elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -10255,7 +10304,15 @@ var $elm$core$List$filter = F2(
 			_List_Nil,
 			list);
 	});
-var $elm$core$Debug$log = _Debug_log;
+var $elm_community$list_extra$List$Extra$count = function (predicate) {
+	return A2(
+		$elm$core$List$foldl,
+		F2(
+			function (x, acc) {
+				return predicate(x) ? (acc + 1) : acc;
+			}),
+		0);
+};
 var $elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
@@ -10328,41 +10385,48 @@ var $author$project$Main$viewAudienceFiles = function (audience) {
 					]))
 			]));
 };
-var $author$project$Main$viewAudienceFolders = function (folder) {
-	return _Utils_eq(folder.parent, $elm$core$Maybe$Nothing) ? A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('folder')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$li,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$button,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('folder-button')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$img,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$src('/assets/folder.svg'),
-										$elm$html$Html$Attributes$class('button-icon')
-									]),
-								_List_Nil),
-								$elm$html$Html$text(folder.name)
-							]))
-					]))
-			])) : A2($elm$html$Html$div, _List_Nil, _List_Nil);
+var $author$project$Main$ChangeCurrentFolderIdAndAddItToPreviousList = function (a) {
+	return {$: 'ChangeCurrentFolderIdAndAddItToPreviousList', a: a};
 };
+var $author$project$Main$viewAudienceFolders = F2(
+	function (folder, model) {
+		var validFolder = _Utils_eq(folder.parent, $elm$core$Maybe$Nothing) || ((!_Utils_eq(folder.parent, $elm$core$Maybe$Nothing)) && _Utils_eq(folder.parent, model.currentFolderId));
+		return validFolder ? A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('folder')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$button,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('folder-button'),
+									$elm$html$Html$Events$onClick(
+									$author$project$Main$ChangeCurrentFolderIdAndAddItToPreviousList(folder.id))
+								]),
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$img,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$src('/assets/folder.svg'),
+											$elm$html$Html$Attributes$class('button-icon')
+										]),
+									_List_Nil),
+									$elm$html$Html$text(folder.name)
+								]))
+						]))
+				])) : A2($elm$html$Html$div, _List_Nil, _List_Nil);
+	});
 var $author$project$Main$viewAudiences = function (audience) {
 	return _Utils_eq(audience.folder, $elm$core$Maybe$Nothing) ? A2(
 		$elm$html$Html$div,
@@ -10398,12 +10462,67 @@ var $author$project$Main$viewAudiences = function (audience) {
 					]))
 			])) : A2($elm$html$Html$div, _List_Nil, _List_Nil);
 };
-var $author$project$Main$viewFolders = F2(
-	function (audienceFolders, audiences) {
-		var uniqueItems = A2(
+var $author$project$Main$RemoveCurrentFolderIdAndGoBack = {$: 'RemoveCurrentFolderIdAndGoBack'};
+var $author$project$Main$viewButtonGoBack = function (model) {
+	var _v0 = model.currentFolderId;
+	if (_v0.$ === 'Just') {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('folder')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$button,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('folder-button'),
+									$elm$html$Html$Events$onClick($author$project$Main$RemoveCurrentFolderIdAndGoBack)
+								]),
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$img,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$src('/assets/back.svg'),
+											$elm$html$Html$Attributes$class('button-icon')
+										]),
+									_List_Nil),
+									$elm$html$Html$text('Go Back')
+								]))
+						]))
+				]));
+	} else {
+		return A2($elm$html$Html$div, _List_Nil, _List_Nil);
+	}
+};
+var $author$project$Main$viewFolders = F3(
+	function (audienceFolders, audiences, model) {
+		var uniqueItems = _Utils_eq(model.currentFolderId, $elm$core$Maybe$Nothing) ? A2(
 			$elm$core$List$filter,
 			function (item) {
 				return _Utils_eq(item.folder, $elm$core$Maybe$Nothing) && (A2(
+					$elm_community$list_extra$List$Extra$count,
+					$elm$core$Basics$eq(item.id),
+					A2(
+						$elm$core$List$map,
+						function ($) {
+							return $.id;
+						},
+						audiences)) === 1);
+			},
+			audiences) : A2(
+			$elm$core$List$filter,
+			function (item) {
+				return _Utils_eq(item.folder, model.currentFolderId) && (A2(
 					$elm_community$list_extra$List$Extra$count,
 					$elm$core$Basics$eq(item.id),
 					A2(
@@ -10426,7 +10545,6 @@ var $author$project$Main$viewFolders = F2(
 				return !A2($elm$core$List$member, item.id, filteredIds);
 			},
 			audiences);
-		var _v0 = A2($elm$core$Debug$log, '', itemsNotInList);
 		return A2(
 			$elm$html$Html$div,
 			_List_Nil,
@@ -10435,7 +10553,19 @@ var $author$project$Main$viewFolders = F2(
 					A2(
 					$elm$html$Html$ul,
 					_List_Nil,
-					A2($elm$core$List$map, $author$project$Main$viewAudienceFolders, audienceFolders)),
+					_List_fromArray(
+						[
+							$author$project$Main$viewButtonGoBack(model)
+						])),
+					A2(
+					$elm$html$Html$ul,
+					_List_Nil,
+					A2(
+						$elm$core$List$map,
+						function (folder) {
+							return A2($author$project$Main$viewAudienceFolders, folder, model);
+						},
+						audienceFolders)),
 					A2(
 					$elm$html$Html$ul,
 					_List_Nil,
@@ -10475,7 +10605,23 @@ var $author$project$Main$view = function (model) {
 										return $elm$html$Html$text('Loading');
 									case 'Success':
 										var audiences = _v1.a;
-										return A2($author$project$Main$viewFolders, audienceFolders, audiences);
+										if (_Utils_eq(model.currentFolderId, $elm$core$Maybe$Nothing)) {
+											return A3($author$project$Main$viewFolders, audienceFolders, audiences, model);
+										} else {
+											var sonFoldersContent = A2(
+												$elm$core$List$filter,
+												function (item) {
+													return _Utils_eq(item.parent, model.currentFolderId);
+												},
+												audienceFolders);
+											var sonContent = A2(
+												$elm$core$List$filter,
+												function (item) {
+													return _Utils_eq(item.folder, model.currentFolderId);
+												},
+												audiences);
+											return A3($author$project$Main$viewFolders, sonFoldersContent, sonContent, model);
+										}
 									default:
 										return $elm$html$Html$text('Failure');
 								}
@@ -10498,4 +10644,4 @@ var $author$project$Main$main = $elm$browser$Browser$document(
 		view: $author$project$Main$view
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Data.Audience.Audience":{"args":[],"type":"{ id : Basics.Int, name : String.String, type_ : Data.Audience.AudienceType, folder : Maybe.Maybe Basics.Int }"},"Data.AudienceFolder.AudienceFolder":{"args":[],"type":"{ id : Basics.Int, name : String.String, parent : Maybe.Maybe Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"FetchAudienceFolders":[],"GotAudienceFolders":["Result.Result Http.Error (List.List Data.AudienceFolder.AudienceFolder)"],"FetchAudiences":[],"GotAudiences":["Result.Result Http.Error (List.List Data.Audience.Audience)"]}},"Data.Audience.AudienceType":{"args":[],"tags":{"Authored":[],"Shared":[],"Curated":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Data.Audience.Audience":{"args":[],"type":"{ id : Basics.Int, name : String.String, type_ : Data.Audience.AudienceType, folder : Maybe.Maybe Basics.Int }"},"Data.AudienceFolder.AudienceFolder":{"args":[],"type":"{ id : Basics.Int, name : String.String, parent : Maybe.Maybe Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"FetchAudienceFolders":[],"GotAudienceFolders":["Result.Result Http.Error (List.List Data.AudienceFolder.AudienceFolder)"],"FetchAudiences":[],"GotAudiences":["Result.Result Http.Error (List.List Data.Audience.Audience)"],"ChangeCurrentFolderIdAndAddItToPreviousList":["Basics.Int"],"RemoveCurrentFolderIdAndGoBack":[]}},"Data.Audience.AudienceType":{"args":[],"tags":{"Authored":[],"Shared":[],"Curated":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
