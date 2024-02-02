@@ -13,6 +13,16 @@ import List.Extra as ListE
 import RemoteData
 
 
+urlGetAudienceFolders : String
+urlGetAudienceFolders =
+    "http://localhost:8000/jsons/audienceFolder.json"
+
+
+urlGetAudiences : String
+urlGetAudiences =
+    "http://localhost:8000/jsons/audience.json"
+
+
 type alias Model =
     { audienceFolders : RemoteData.WebData (List AudienceFolder.AudienceFolder)
     , audiences : RemoteData.WebData (List Audience.Audience)
@@ -44,7 +54,7 @@ type Msg
 fetchAudienceFolders : Cmd Msg
 fetchAudienceFolders =
     Http.get
-        { url = "http://localhost:8000/jsons/audienceFolder.json"
+        { url = urlGetAudienceFolders
         , expect = Http.expectJson GotAudienceFolders decodeAudienceFolders
         }
 
@@ -52,7 +62,7 @@ fetchAudienceFolders =
 fetchAudiences : Cmd Msg
 fetchAudiences =
     Http.get
-        { url = "http://localhost:8000/jsons/audience.json"
+        { url = urlGetAudiences
         , expect = Http.expectJson GotAudiences decodeAudiences
         }
 
@@ -102,9 +112,6 @@ update msg model =
             let
                 newCurrentFolderId =
                     List.head (List.drop 1 model.previousFolderIds)
-
-                _ =
-                    Debug.log "newCurrentFolderId" newCurrentFolderId
 
                 updatedPreviousFolderIds =
                     case List.reverse model.previousFolderIds of
@@ -157,10 +164,10 @@ view model =
                                 viewFolders sonFoldersContent sonContent model
 
                         RemoteData.Failure _ ->
-                            text "Failure"
+                            text "Something went wrong"
 
                 RemoteData.Failure _ ->
-                    text "Failure"
+                    text "Something went wrong"
             ]
         ]
     }
@@ -220,7 +227,7 @@ viewAudienceFolders folder model =
             ]
 
     else
-        div [] []
+        Html.text ""
 
 
 viewAudiences : Audience.Audience -> Html Msg
@@ -236,7 +243,7 @@ viewAudiences audience =
             ]
 
     else
-        div [] []
+        Html.text ""
 
 
 viewAudienceFiles : Audience.Audience -> Html Msg
@@ -265,7 +272,7 @@ viewButtonGoBack model =
                 ]
 
         Nothing ->
-            div [] []
+            Html.text ""
 
 
 decodeAudienceFolders : Decoder (List AudienceFolder.AudienceFolder)

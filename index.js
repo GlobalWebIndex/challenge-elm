@@ -10103,10 +10103,11 @@ var $elm$http$Http$get = function (r) {
 	return $elm$http$Http$request(
 		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
+var $author$project$Main$urlGetAudienceFolders = 'http://localhost:8000/jsons/audienceFolder.json';
 var $author$project$Main$fetchAudienceFolders = $elm$http$Http$get(
 	{
 		expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAudienceFolders, $author$project$Main$decodeAudienceFolders),
-		url: 'http://localhost:8000/jsons/audienceFolder.json'
+		url: $author$project$Main$urlGetAudienceFolders
 	});
 var $author$project$Main$GotAudiences = function (a) {
 	return {$: 'GotAudiences', a: a};
@@ -10157,10 +10158,11 @@ var $author$project$Main$decodeAudiences = A2(
 	_List_fromArray(
 		['data']),
 	$elm$json$Json$Decode$list($author$project$Main$decodeAudience));
+var $author$project$Main$urlGetAudiences = 'http://localhost:8000/jsons/audience.json';
 var $author$project$Main$fetchAudiences = $elm$http$Http$get(
 	{
 		expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAudiences, $author$project$Main$decodeAudiences),
-		url: 'http://localhost:8000/jsons/audience.json'
+		url: $author$project$Main$urlGetAudiences
 	});
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
@@ -10208,7 +10210,6 @@ var $elm$core$List$head = function (list) {
 		return $elm$core$Maybe$Nothing;
 	}
 };
-var $elm$core$Debug$log = _Debug_log;
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -10275,9 +10276,9 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(newModel, $elm$core$Platform$Cmd$none);
 			default:
 				var updatedPreviousFolderIds = function () {
-					var _v2 = $elm$core$List$reverse(model.previousFolderIds);
-					if (_v2.b) {
-						var rest = _v2.b;
+					var _v1 = $elm$core$List$reverse(model.previousFolderIds);
+					if (_v1.b) {
+						var rest = _v1.b;
 						return $elm$core$List$reverse(rest);
 					} else {
 						return _List_Nil;
@@ -10285,7 +10286,6 @@ var $author$project$Main$update = F2(
 				}();
 				var newCurrentFolderId = $elm$core$List$head(
 					A2($elm$core$List$drop, 1, model.previousFolderIds));
-				var _v1 = A2($elm$core$Debug$log, 'newCurrentFolderId', newCurrentFolderId);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -10425,7 +10425,7 @@ var $author$project$Main$viewAudienceFolders = F2(
 									$elm$html$Html$text(folder.name)
 								]))
 						]))
-				])) : A2($elm$html$Html$div, _List_Nil, _List_Nil);
+				])) : $elm$html$Html$text('');
 	});
 var $author$project$Main$viewAudiences = function (audience) {
 	return _Utils_eq(audience.folder, $elm$core$Maybe$Nothing) ? A2(
@@ -10460,7 +10460,7 @@ var $author$project$Main$viewAudiences = function (audience) {
 								$elm$html$Html$text(audience.name)
 							]))
 					]))
-			])) : A2($elm$html$Html$div, _List_Nil, _List_Nil);
+			])) : $elm$html$Html$text('');
 };
 var $author$project$Main$RemoveCurrentFolderIdAndGoBack = {$: 'RemoveCurrentFolderIdAndGoBack'};
 var $author$project$Main$viewButtonGoBack = function (model) {
@@ -10501,7 +10501,7 @@ var $author$project$Main$viewButtonGoBack = function (model) {
 						]))
 				]));
 	} else {
-		return A2($elm$html$Html$div, _List_Nil, _List_Nil);
+		return $elm$html$Html$text('');
 	}
 };
 var $author$project$Main$viewFolders = F3(
@@ -10623,10 +10623,10 @@ var $author$project$Main$view = function (model) {
 											return A3($author$project$Main$viewFolders, sonFoldersContent, sonContent, model);
 										}
 									default:
-										return $elm$html$Html$text('Failure');
+										return $elm$html$Html$text('Something went wrong');
 								}
 							default:
-								return $elm$html$Html$text('Failure');
+								return $elm$html$Html$text('Something went wrong');
 						}
 					}()
 					]))
