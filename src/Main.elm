@@ -3,10 +3,10 @@ module Main exposing (..)
 import Browser
 import Data.Audience as Audience
 import Data.AudienceFolder as AudienceFolder
-import Html exposing (Html, button, div, footer, img, li, text, ul)
+import Html exposing (Html, button, div, footer, img, li, span, text, ul)
 import Html.Attributes exposing (class, src)
 import Html.Events exposing (onClick)
-import Http exposing (..)
+import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
 import List.Extra as ListE
@@ -28,6 +28,7 @@ type alias Model =
     , audiences : RemoteData.WebData (List Audience.Audience)
     , currentFolderId : Maybe Int
     , previousFolderIds : List Int
+    , clickedFooterOption : String
     }
 
 
@@ -37,6 +38,7 @@ init _ =
       , audiences = RemoteData.NotAsked
       , currentFolderId = Nothing
       , previousFolderIds = []
+      , clickedFooterOption = "Authored"
       }
     , Cmd.batch [ fetchAudienceFolders, fetchAudiences ]
     )
@@ -49,6 +51,7 @@ type Msg
     | GotAudiences (Result Http.Error (List Audience.Audience))
     | ChangeCurrentFolderIdAndAddItToPreviousList Int
     | RemoveCurrentFolderIdAndGoBack
+    | SetNewPage String
 
 
 fetchAudienceFolders : Cmd Msg
@@ -128,6 +131,9 @@ update msg model =
             , Cmd.none
             )
 
+        SetNewPage newPage ->
+            ( { model | clickedFooterOption = newPage }, Cmd.none )
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -169,15 +175,44 @@ view model =
                 RemoteData.Failure _ ->
                     text "Something went wrong"
             ]
-        , viewFooter
+        , viewFooter model.clickedFooterOption
         ]
     }
 
 
-viewFooter : Html Msg
-viewFooter =
-    footer [ class "footer" ]
-        [ text "GWI Elm Challenge" ]
+viewFooter : String -> Html Msg
+viewFooter footerOptionSelected =
+    footer []
+        [ viewFooterOptions footerOptionSelected ]
+
+
+viewFooterOptions : String -> Html Msg
+viewFooterOptions footerOptionSelected =
+    div [ class "footer-container" ]
+        [ viewSingleFooterOption "/assets/authored.svg" "Authored" footerOptionSelected
+        , viewSingleFooterOption "/assets/shared.svg" "Shared" footerOptionSelected
+        , viewSingleFooterOption "/assets/curated.svg" "Curated" footerOptionSelected
+        ]
+
+
+viewSingleFooterOption : String -> String -> String -> Html Msg
+viewSingleFooterOption imageSrc optionName footerOptionSelected =
+    div [ class "footer-option" ]
+        [ img
+            [ src imageSrc
+            , class "footer-option-icon"
+            , onClick (SetNewPage optionName)
+            , class
+                (if footerOptionSelected == optionName then
+                    "clicked"
+
+                 else
+                    ""
+                )
+            ]
+            []
+        , span [] [ text optionName ]
+        ]
 
 
 viewFolders : List AudienceFolder.AudienceFolder -> List Audience.Audience -> Model -> Html Msg

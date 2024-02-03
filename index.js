@@ -10166,7 +10166,7 @@ var $author$project$Main$fetchAudiences = $elm$http$Http$get(
 	});
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
-		{audienceFolders: $krisajenkins$remotedata$RemoteData$NotAsked, audiences: $krisajenkins$remotedata$RemoteData$NotAsked, currentFolderId: $elm$core$Maybe$Nothing, previousFolderIds: _List_Nil},
+		{audienceFolders: $krisajenkins$remotedata$RemoteData$NotAsked, audiences: $krisajenkins$remotedata$RemoteData$NotAsked, clickedFooterOption: 'Authored', currentFolderId: $elm$core$Maybe$Nothing, previousFolderIds: _List_Nil},
 		$elm$core$Platform$Cmd$batch(
 			_List_fromArray(
 				[$author$project$Main$fetchAudienceFolders, $author$project$Main$fetchAudiences])));
@@ -10253,7 +10253,7 @@ var $author$project$Main$update = F2(
 						previousFolderIds: A2($elm$core$List$cons, folderId, model.previousFolderIds)
 					});
 				return _Utils_Tuple2(newModel, $elm$core$Platform$Cmd$none);
-			default:
+			case 'RemoveCurrentFolderIdAndGoBack':
 				var updatedPreviousFolderIds = function () {
 					var _v1 = model.previousFolderIds;
 					if (_v1.b) {
@@ -10268,6 +10268,13 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{currentFolderId: newCurrentFolderId, previousFolderIds: updatedPreviousFolderIds}),
+					$elm$core$Platform$Cmd$none);
+			default:
+				var newPage = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{clickedFooterOption: newPage}),
 					$elm$core$Platform$Cmd$none);
 		}
 	});
@@ -10555,16 +10562,63 @@ var $author$project$Main$viewFolders = F3(
 				]));
 	});
 var $elm$html$Html$footer = _VirtualDom_node('footer');
-var $author$project$Main$viewFooter = A2(
-	$elm$html$Html$footer,
-	_List_fromArray(
-		[
-			$elm$html$Html$Attributes$class('footer')
-		]),
-	_List_fromArray(
-		[
-			$elm$html$Html$text('GWI Elm Challenge')
-		]));
+var $author$project$Main$SetNewPage = function (a) {
+	return {$: 'SetNewPage', a: a};
+};
+var $author$project$Main$viewSingleFooterOption = F3(
+	function (imageSrc, optionName, footerOptionSelected) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('footer-option')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$img,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$src(imageSrc),
+							$elm$html$Html$Attributes$class('footer-option-icon'),
+							$elm$html$Html$Events$onClick(
+							$author$project$Main$SetNewPage(optionName)),
+							$elm$html$Html$Attributes$class(
+							_Utils_eq(footerOptionSelected, optionName) ? 'clicked' : '')
+						]),
+					_List_Nil),
+					A2(
+					$elm$html$Html$span,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text(optionName)
+						]))
+				]));
+	});
+var $author$project$Main$viewFooterOptions = function (footerOptionSelected) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('footer-container')
+			]),
+		_List_fromArray(
+			[
+				A3($author$project$Main$viewSingleFooterOption, '/assets/authored.svg', 'Authored', footerOptionSelected),
+				A3($author$project$Main$viewSingleFooterOption, '/assets/shared.svg', 'Shared', footerOptionSelected),
+				A3($author$project$Main$viewSingleFooterOption, '/assets/curated.svg', 'Curated', footerOptionSelected)
+			]));
+};
+var $author$project$Main$viewFooter = function (footerOptionSelected) {
+	return A2(
+		$elm$html$Html$footer,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$author$project$Main$viewFooterOptions(footerOptionSelected)
+			]));
+};
 var $author$project$Main$view = function (model) {
 	return {
 		body: _List_fromArray(
@@ -10619,7 +10673,7 @@ var $author$project$Main$view = function (model) {
 						}
 					}()
 					])),
-				$author$project$Main$viewFooter
+				$author$project$Main$viewFooter(model.clickedFooterOption)
 			]),
 		title: 'GWI Elm Challenge'
 	};
@@ -10634,4 +10688,4 @@ var $author$project$Main$main = $elm$browser$Browser$document(
 		view: $author$project$Main$view
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Data.Audience.Audience":{"args":[],"type":"{ id : Basics.Int, name : String.String, type_ : Data.Audience.AudienceType, folder : Maybe.Maybe Basics.Int }"},"Data.AudienceFolder.AudienceFolder":{"args":[],"type":"{ id : Basics.Int, name : String.String, parent : Maybe.Maybe Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"FetchAudienceFolders":[],"GotAudienceFolders":["Result.Result Http.Error (List.List Data.AudienceFolder.AudienceFolder)"],"FetchAudiences":[],"GotAudiences":["Result.Result Http.Error (List.List Data.Audience.Audience)"],"ChangeCurrentFolderIdAndAddItToPreviousList":["Basics.Int"],"RemoveCurrentFolderIdAndGoBack":[]}},"Data.Audience.AudienceType":{"args":[],"tags":{"Authored":[],"Shared":[],"Curated":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Data.Audience.Audience":{"args":[],"type":"{ id : Basics.Int, name : String.String, type_ : Data.Audience.AudienceType, folder : Maybe.Maybe Basics.Int }"},"Data.AudienceFolder.AudienceFolder":{"args":[],"type":"{ id : Basics.Int, name : String.String, parent : Maybe.Maybe Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"FetchAudienceFolders":[],"GotAudienceFolders":["Result.Result Http.Error (List.List Data.AudienceFolder.AudienceFolder)"],"FetchAudiences":[],"GotAudiences":["Result.Result Http.Error (List.List Data.Audience.Audience)"],"ChangeCurrentFolderIdAndAddItToPreviousList":["Basics.Int"],"RemoveCurrentFolderIdAndGoBack":[],"SetNewPage":["String.String"]}},"Data.Audience.AudienceType":{"args":[],"tags":{"Authored":[],"Shared":[],"Curated":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
