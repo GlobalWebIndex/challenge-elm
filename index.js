@@ -10180,27 +10180,6 @@ var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
 var $krisajenkins$remotedata$RemoteData$Success = function (a) {
 	return {$: 'Success', a: a};
 };
-var $elm$core$List$drop = F2(
-	function (n, list) {
-		drop:
-		while (true) {
-			if (n <= 0) {
-				return list;
-			} else {
-				if (!list.b) {
-					return list;
-				} else {
-					var x = list.a;
-					var xs = list.b;
-					var $temp$n = n - 1,
-						$temp$list = xs;
-					n = $temp$n;
-					list = $temp$list;
-					continue drop;
-				}
-			}
-		}
-	});
 var $elm$core$List$head = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -10276,16 +10255,15 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(newModel, $elm$core$Platform$Cmd$none);
 			default:
 				var updatedPreviousFolderIds = function () {
-					var _v1 = $elm$core$List$reverse(model.previousFolderIds);
+					var _v1 = model.previousFolderIds;
 					if (_v1.b) {
 						var rest = _v1.b;
-						return $elm$core$List$reverse(rest);
+						return rest;
 					} else {
 						return _List_Nil;
 					}
 				}();
-				var newCurrentFolderId = $elm$core$List$head(
-					A2($elm$core$List$drop, 1, model.previousFolderIds));
+				var newCurrentFolderId = $elm$core$List$head(updatedPreviousFolderIds);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -10576,6 +10554,17 @@ var $author$project$Main$viewFolders = F3(
 					A2($elm$core$List$map, $author$project$Main$viewAudienceFiles, uniqueItems))
 				]));
 	});
+var $elm$html$Html$footer = _VirtualDom_node('footer');
+var $author$project$Main$viewFooter = A2(
+	$elm$html$Html$footer,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('footer')
+		]),
+	_List_fromArray(
+		[
+			$elm$html$Html$text('GWI Elm Challenge')
+		]));
 var $author$project$Main$view = function (model) {
 	return {
 		body: _List_fromArray(
@@ -10629,7 +10618,8 @@ var $author$project$Main$view = function (model) {
 								return $elm$html$Html$text('Something went wrong');
 						}
 					}()
-					]))
+					])),
+				$author$project$Main$viewFooter
 			]),
 		title: 'GWI Elm Challenge'
 	};

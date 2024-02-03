@@ -3,7 +3,7 @@ module Main exposing (..)
 import Browser
 import Data.Audience as Audience
 import Data.AudienceFolder as AudienceFolder
-import Html exposing (Html, button, div, img, li, text, ul)
+import Html exposing (Html, button, div, footer, img, li, text, ul)
 import Html.Attributes exposing (class, src)
 import Html.Events exposing (onClick)
 import Http exposing (..)
@@ -110,16 +110,16 @@ update msg model =
 
         RemoveCurrentFolderIdAndGoBack ->
             let
-                newCurrentFolderId =
-                    List.head (List.drop 1 model.previousFolderIds)
-
                 updatedPreviousFolderIds =
-                    case List.reverse model.previousFolderIds of
+                    case model.previousFolderIds of
                         _ :: rest ->
-                            List.reverse rest
+                            rest
 
                         _ ->
                             []
+
+                newCurrentFolderId =
+                    List.head updatedPreviousFolderIds
             in
             ( { model
                 | currentFolderId = newCurrentFolderId
@@ -169,8 +169,15 @@ view model =
                 RemoteData.Failure _ ->
                     text "Something went wrong"
             ]
+        , viewFooter
         ]
     }
+
+
+viewFooter : Html Msg
+viewFooter =
+    footer [ class "footer" ]
+        [ text "GWI Elm Challenge" ]
 
 
 viewFolders : List AudienceFolder.AudienceFolder -> List Audience.Audience -> Model -> Html Msg
