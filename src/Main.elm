@@ -154,18 +154,18 @@ viewBody model =
         [ div [ class "centered" ]
             [ case model.audienceFolders of
                 RemoteData.NotAsked ->
-                    text "Not Asked"
+                    text "Waiting for data"
 
                 RemoteData.Loading ->
-                    text "Loading"
+                    text "Loading data"
 
                 RemoteData.Success audienceFolders ->
                     case model.audiences of
                         RemoteData.NotAsked ->
-                            text "Not Asked"
+                            text "Waiting for data"
 
                         RemoteData.Loading ->
-                            text "Loading"
+                            text "Loading data"
 
                         RemoteData.Success audiences ->
                             if model.currentFolderId == Nothing then

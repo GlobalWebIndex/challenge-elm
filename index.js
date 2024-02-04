@@ -10572,17 +10572,17 @@ var $author$project$Main$viewBody = function (model) {
 						var _v0 = model.audienceFolders;
 						switch (_v0.$) {
 							case 'NotAsked':
-								return $elm$html$Html$text('Not Asked');
+								return $elm$html$Html$text('Waiting for data');
 							case 'Loading':
-								return $elm$html$Html$text('Loading');
+								return $elm$html$Html$text('Loading data');
 							case 'Success':
 								var audienceFolders = _v0.a;
 								var _v1 = model.audiences;
 								switch (_v1.$) {
 									case 'NotAsked':
-										return $elm$html$Html$text('Not Asked');
+										return $elm$html$Html$text('Waiting for data');
 									case 'Loading':
-										return $elm$html$Html$text('Loading');
+										return $elm$html$Html$text('Loading data');
 									case 'Success':
 										var audiences = _v1.a;
 										if (_Utils_eq(model.currentFolderId, $elm$core$Maybe$Nothing)) {
