@@ -1,0 +1,105 @@
+body {
+    font-family: Arial, sans-serif;
+    margin-bottom: 70px;
+    background-color: #29323c;
+    color: #fff;
+}
+
+ul {
+    padding: 0;
+    list-style: none;
+}
+
+button {
+    margin: 3px;
+    outline: none;
+    font-size: 20px;
+    background-color: transparent;
+}
+
+.centered {
+    width: 50%;
+    margin: 0 auto;
+}
+
+.folder-button,
+.audience-button {
+    border: none;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.button-icon {
+    padding-right: 20px;
+}
+
+.folder {
+    background-color: #2196f3;
+    width: 100%;
+    border: 1px solid black;
+    border-radius: 10px;
+    margin: 2px;
+    transition: background-color 0.3s ease;
+}
+
+.folder:hover {
+    background-color: #00B0FF;
+}
+
+.audience {
+    background-color: #74b9ff;
+    width: 100%;
+    border: 1px solid black;
+    border-radius: 10px;
+    margin: 2px;
+    transition: background-color 0.3s ease;
+}
+
+.audience:hover {
+    background-color: #4782da;
+}
+
+footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 35px;
+    background-color: #232832;
+    text-align: center;
+    padding: 10px 0;
+    display: flex;
+    justify-content: center;
+}
+
+.footer-container {
+    display: flex;
+    justify-content: space-around;
+    width: 25%;
+}
+
+.footer-option {
+    width: 100%;
+    height: 85%;
+    margin-left: 5px;
+}
+
+.footer-option-icon {
+    height: 100%;
+    width: 100%;
+    display: block;
+    border-radius: 15px;
+    transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out;
+}
+
+.footer-option-icon:hover {
+    box-shadow: 0 0 10px rgba(116, 185, 255, 0.7);
+}
+
+.footer-option-icon.clicked {
+    background-color: #74b9ff;
+}

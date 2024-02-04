@@ -1,0 +1,14 @@
+{
+  "name": "challenge-elm",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npm run live-elm & npm run http-server",
+    "live-elm": "npx elm-live src/Main.elm --start-page=index.html -- --output=index.js --debug",
+    "http-server": "npx http-server -p 8080 ./jsons", 
+    "compile": "elm make src/Main.elm --output=index.js"
+  },
+  "dependencies": {
+    "elm-watch": "^1.1.2",
+    "http-server": "^14.1.1"
+  }
+}

@@ -1,4 +1,7 @@
-module Data.AudienceFolder exposing (AudienceFolder, audienceFoldersJSON)
+module Data.AudienceFolder exposing
+    ( AudienceFolder, audienceFoldersJSON
+    , decodeAudienceFolders
+    )
 
 {-| Data.AudienceFolder module
 
@@ -11,6 +14,11 @@ This module implements everything related to audience folder resource.
 
 -}
 
+import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline exposing (required)
+
+
+
 -- Type definition
 
 
@@ -21,6 +29,19 @@ type alias AudienceFolder =
     , name : String
     , parent : Maybe Int
     }
+
+
+decodeAudienceFolders : Decoder (List AudienceFolder)
+decodeAudienceFolders =
+    Decode.at [ "data" ] (Decode.list decodeAudienceFolder)
+
+
+decodeAudienceFolder : Decoder AudienceFolder
+decodeAudienceFolder =
+    Decode.succeed AudienceFolder
+        |> required "id" Decode.int
+        |> required "name" Decode.string
+        |> required "parent" (Decode.maybe Decode.int)
 
 
 
