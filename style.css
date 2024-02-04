@@ -93,7 +93,7 @@ footer {
     width: 100%;
     display: block;
     border-radius: 15px;
-    transition: box-shadow 0.3s ease-in-out;
+    transition: box-shadow 0.3s ease-in-out, background-color 0.3s ease-in-out;
 }
 
 .footer-option-icon:hover {
