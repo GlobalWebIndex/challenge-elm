@@ -7,8 +7,6 @@ import Html exposing (Html, button, div, footer, img, li, span, text, ul)
 import Html.Attributes exposing (class, src)
 import Html.Events exposing (onClick)
 import Http
-import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Pipeline exposing (required)
 import List.Extra as ListE
 import RemoteData
 
@@ -51,14 +49,14 @@ type Msg
     | GotAudiences (Result Http.Error (List Audience.Audience))
     | ChangeCurrentFolderIdAndAddItToPreviousList Int
     | RemoveCurrentFolderIdAndGoBack
-    | SetNewPage String
+    | SetCategory String
 
 
 fetchAudienceFolders : Cmd Msg
 fetchAudienceFolders =
     Http.get
         { url = urlGetAudienceFolders
-        , expect = Http.expectJson GotAudienceFolders decodeAudienceFolders
+        , expect = Http.expectJson GotAudienceFolders AudienceFolder.decodeAudienceFolders
         }
 
 
@@ -66,7 +64,7 @@ fetchAudiences : Cmd Msg
 fetchAudiences =
     Http.get
         { url = urlGetAudiences
-        , expect = Http.expectJson GotAudiences decodeAudiences
+        , expect = Http.expectJson GotAudiences Audience.decodeAudiences
         }
 
 
@@ -131,14 +129,28 @@ update msg model =
             , Cmd.none
             )
 
-        SetNewPage newPage ->
-            ( { model | clickedFooterOption = newPage }, Cmd.none )
+        SetCategory newPage ->
+            ( { model
+                | clickedFooterOption = newPage
+                , previousFolderIds = []
+                , currentFolderId = Nothing
+              }
+              -- Reset info to go to root level
+            , Cmd.none
+            )
 
 
 view : Model -> Browser.Document Msg
 view model =
     { title = "GWI Elm Challenge"
     , body =
+        [ viewBody model ]
+    }
+
+
+viewBody : Model -> Html Msg
+viewBody model =
+    div []
         [ div [ class "centered" ]
             [ case model.audienceFolders of
                 RemoteData.NotAsked ->
@@ -157,17 +169,17 @@ view model =
 
                         RemoteData.Success audiences ->
                             if model.currentFolderId == Nothing then
-                                viewFolders audienceFolders audiences model
+                                viewFolders audienceFolders audiences model.currentFolderId model.clickedFooterOption
 
                             else
                                 let
-                                    sonContent =
+                                    audiencesContent =
                                         List.filter (\item -> item.folder == model.currentFolderId) audiences
 
-                                    sonFoldersContent =
+                                    audiencesFoldersContent =
                                         List.filter (\item -> item.parent == model.currentFolderId) audienceFolders
                                 in
-                                viewFolders sonFoldersContent sonContent model
+                                viewFolders audiencesFoldersContent audiencesContent model.currentFolderId model.clickedFooterOption
 
                         RemoteData.Failure _ ->
                             text "Something went wrong"
@@ -177,7 +189,6 @@ view model =
             ]
         , viewFooter model.clickedFooterOption
         ]
-    }
 
 
 viewFooter : String -> Html Msg
@@ -201,7 +212,7 @@ viewSingleFooterOption imageSrc optionName footerOptionSelected =
         [ img
             [ src imageSrc
             , class "footer-option-icon"
-            , onClick (SetNewPage optionName)
+            , onClick (SetCategory optionName)
             , class
                 (if footerOptionSelected == optionName then
                     "clicked"
@@ -215,48 +226,60 @@ viewSingleFooterOption imageSrc optionName footerOptionSelected =
         ]
 
 
-viewFolders : List AudienceFolder.AudienceFolder -> List Audience.Audience -> Model -> Html Msg
-viewFolders audienceFolders audiences model =
+viewFolders : List AudienceFolder.AudienceFolder -> List Audience.Audience -> Maybe Int -> String -> Html Msg
+viewFolders audienceFolders audiences currentFolderId footerClickedOption =
     let
-        {-
-           Maybe a litle big complex, the idea of this function is to filter the items that are not
-           in the list. Why? Because the items that has not folders and are not repeated int the list are the files
-        -}
-        uniqueItems =
-            if model.currentFolderId == Nothing then
+        audiencesAvailable =
+            if currentFolderId == Nothing then
+                {- Root files -}
                 List.filter (\item -> item.folder == Nothing && (ListE.count ((==) item.id) <| List.map .id audiences) == 1) audiences
 
             else
-                List.filter (\item -> item.folder == model.currentFolderId && (ListE.count ((==) item.id) <| List.map .id audiences) == 1) audiences
-
-        filteredIds =
-            List.map .id uniqueItems
-
-        {-
-           Same idea, but reversed. If the ids filtered above are not in the list, then they are folders
-        -}
-        itemsNotInList =
-            List.filter (\item -> not (List.member item.id filteredIds)) audiences
+                {- Children files -}
+                List.filter (\item -> item.folder == currentFolderId && (ListE.count ((==) item.id) <| List.map .id audiences) == 1) audiences
     in
     div []
-        [ ul [] [ viewButtonGoBack model ]
-        , ul [] (List.map (\folder -> viewAudienceFolders folder model) audienceFolders)
-        , ul [] (List.map viewAudiences itemsNotInList)
-        , ul [] (List.map viewAudienceFiles uniqueItems)
+        [ ul [] [ viewButtonGoBack currentFolderId ]
+        , ul []
+            (if footerClickedOption == "Shared" then
+                []
+
+             else
+                List.map (\folder -> viewAudienceFolders folder currentFolderId) audienceFolders
+            )
+        , ul []
+            (audiencesAvailable
+                |> List.filter
+                    (\audience ->
+                        case footerClickedOption of
+                            "Authored" ->
+                                audience.type_ == Audience.Authored
+
+                            "Shared" ->
+                                audience.type_ == Audience.Shared
+
+                            "Curated" ->
+                                audience.type_ == Audience.Curated
+
+                            _ ->
+                                False
+                    )
+                |> List.map viewAudiences
+            )
         ]
 
 
-viewAudienceFolders : AudienceFolder.AudienceFolder -> Model -> Html Msg
-viewAudienceFolders folder model =
+viewAudienceFolders : AudienceFolder.AudienceFolder -> Maybe Int -> Html Msg
+viewAudienceFolders folder currentFolderId =
     let
         {-
            Why of this validation? Because with this logic, there are to options available:
-               - Folders in the root directory, witch are gonna be the first ones to be displayed
-               - Folders that are children of the current folder. But if I only check if folder.parent
-                 is Nothing, then the children folders never gonna be displayed.
+               - Audiences in the root directory, witch are gonna be the first ones to be displayed
+               - Audiences that are children of the current folder. This is gonna be displayed when
+                 the user clicks on a folder
         -}
         validFolder =
-            folder.parent == Nothing || folder.parent /= Nothing && folder.parent == model.currentFolderId
+            folder.parent == Nothing || folder.parent == currentFolderId
     in
     if validFolder then
         div [ class "folder" ]
@@ -274,22 +297,6 @@ viewAudienceFolders folder model =
 
 viewAudiences : Audience.Audience -> Html Msg
 viewAudiences audience =
-    if audience.folder == Nothing then
-        div [ class "folder" ]
-            [ li []
-                [ button [ class "folder-button" ]
-                    [ img [ src "/assets/folder.svg", class "button-icon" ] []
-                    , text audience.name
-                    ]
-                ]
-            ]
-
-    else
-        Html.text ""
-
-
-viewAudienceFiles : Audience.Audience -> Html Msg
-viewAudienceFiles audience =
     div [ class "audience" ]
         [ li []
             [ button [ class "audience-button" ]
@@ -300,9 +307,9 @@ viewAudienceFiles audience =
         ]
 
 
-viewButtonGoBack : Model -> Html Msg
-viewButtonGoBack model =
-    case model.currentFolderId of
+viewButtonGoBack : Maybe Int -> Html Msg
+viewButtonGoBack currentFolderId =
+    case currentFolderId of
         Just _ ->
             div [ class "folder" ]
                 [ li []
@@ -315,53 +322,6 @@ viewButtonGoBack model =
 
         Nothing ->
             Html.text ""
-
-
-decodeAudienceFolders : Decoder (List AudienceFolder.AudienceFolder)
-decodeAudienceFolders =
-    Decode.at [ "data" ] (Decode.list decodeAudienceFolder)
-
-
-decodeAudienceFolder : Decoder AudienceFolder.AudienceFolder
-decodeAudienceFolder =
-    Decode.succeed AudienceFolder.AudienceFolder
-        |> required "id" Decode.int
-        |> required "name" Decode.string
-        |> required "parent" (Decode.maybe Decode.int)
-
-
-decodeAudiences : Decoder (List Audience.Audience)
-decodeAudiences =
-    Decode.at [ "data" ] (Decode.list decodeAudience)
-
-
-decodeAudience : Decoder Audience.Audience
-decodeAudience =
-    Decode.succeed Audience.Audience
-        |> required "id" Decode.int
-        |> required "name" Decode.string
-        |> required "type" decodeAudienceType
-        |> required "folder" (Decode.maybe Decode.int)
-
-
-decodeAudienceType : Decoder Audience.AudienceType
-decodeAudienceType =
-    Decode.string
-        |> Decode.andThen
-            (\str ->
-                case str of
-                    "user" ->
-                        Decode.succeed Audience.Authored
-
-                    "shared" ->
-                        Decode.succeed Audience.Shared
-
-                    "curated" ->
-                        Decode.succeed Audience.Curated
-
-                    _ ->
-                        Decode.fail "Invalid audience type"
-            )
 
 
 main : Program () Model Msg

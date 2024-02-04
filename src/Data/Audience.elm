@@ -1,7 +1,13 @@
 module Data.Audience exposing
-    ( AudienceType(..), Audience
+    ( Audience
+    , AudienceType(..)
     , audiencesJSON
+    , decodeAudiences
     )
+
+import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline exposing (required)
+
 
 {-| Data.Audiences module
 
@@ -14,11 +20,12 @@ This module implements everything related to audience resource.
 
 -}
 
+
+
 -- Type definition
+{- Audience type -}
 
 
-{-| Audience type
--}
 type AudienceType
     = Authored
     | Shared
@@ -33,6 +40,40 @@ type alias Audience =
     , type_ : AudienceType
     , folder : Maybe Int
     }
+
+
+decodeAudiences : Decoder (List Audience)
+decodeAudiences =
+    Decode.at [ "data" ] (Decode.list decodeAudience)
+
+
+decodeAudience : Decoder Audience
+decodeAudience =
+    Decode.succeed Audience
+        |> required "id" Decode.int
+        |> required "name" Decode.string
+        |> required "type" decodeAudienceType
+        |> required "folder" (Decode.maybe Decode.int)
+
+
+decodeAudienceType : Decoder AudienceType
+decodeAudienceType =
+    Decode.string
+        |> Decode.andThen
+            (\str ->
+                case str of
+                    "user" ->
+                        Decode.succeed Authored
+
+                    "shared" ->
+                        Decode.succeed Shared
+
+                    "curated" ->
+                        Decode.succeed Curated
+
+                    _ ->
+                        Decode.fail "Invalid audience type"
+            )
 
 
 

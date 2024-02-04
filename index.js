@@ -9832,7 +9832,7 @@ var $NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
 			A2($elm$json$Json$Decode$field, key, valDecoder),
 			decoder);
 	});
-var $author$project$Main$decodeAudienceFolder = A3(
+var $author$project$Data$AudienceFolder$decodeAudienceFolder = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'parent',
 	$elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
@@ -9845,11 +9845,11 @@ var $author$project$Main$decodeAudienceFolder = A3(
 			'id',
 			$elm$json$Json$Decode$int,
 			$elm$json$Json$Decode$succeed($author$project$Data$AudienceFolder$AudienceFolder))));
-var $author$project$Main$decodeAudienceFolders = A2(
+var $author$project$Data$AudienceFolder$decodeAudienceFolders = A2(
 	$elm$json$Json$Decode$at,
 	_List_fromArray(
 		['data']),
-	$elm$json$Json$Decode$list($author$project$Main$decodeAudienceFolder));
+	$elm$json$Json$Decode$list($author$project$Data$AudienceFolder$decodeAudienceFolder));
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -10106,7 +10106,7 @@ var $elm$http$Http$get = function (r) {
 var $author$project$Main$urlGetAudienceFolders = 'http://localhost:8000/jsons/audienceFolder.json';
 var $author$project$Main$fetchAudienceFolders = $elm$http$Http$get(
 	{
-		expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAudienceFolders, $author$project$Main$decodeAudienceFolders),
+		expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAudienceFolders, $author$project$Data$AudienceFolder$decodeAudienceFolders),
 		url: $author$project$Main$urlGetAudienceFolders
 	});
 var $author$project$Main$GotAudiences = function (a) {
@@ -10121,7 +10121,7 @@ var $author$project$Data$Audience$Curated = {$: 'Curated'};
 var $author$project$Data$Audience$Shared = {$: 'Shared'};
 var $elm$json$Json$Decode$andThen = _Json_andThen;
 var $elm$json$Json$Decode$fail = _Json_fail;
-var $author$project$Main$decodeAudienceType = A2(
+var $author$project$Data$Audience$decodeAudienceType = A2(
 	$elm$json$Json$Decode$andThen,
 	function (str) {
 		switch (str) {
@@ -10136,14 +10136,14 @@ var $author$project$Main$decodeAudienceType = A2(
 		}
 	},
 	$elm$json$Json$Decode$string);
-var $author$project$Main$decodeAudience = A3(
+var $author$project$Data$Audience$decodeAudience = A3(
 	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 	'folder',
 	$elm$json$Json$Decode$maybe($elm$json$Json$Decode$int),
 	A3(
 		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'type',
-		$author$project$Main$decodeAudienceType,
+		$author$project$Data$Audience$decodeAudienceType,
 		A3(
 			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 			'name',
@@ -10153,15 +10153,15 @@ var $author$project$Main$decodeAudience = A3(
 				'id',
 				$elm$json$Json$Decode$int,
 				$elm$json$Json$Decode$succeed($author$project$Data$Audience$Audience)))));
-var $author$project$Main$decodeAudiences = A2(
+var $author$project$Data$Audience$decodeAudiences = A2(
 	$elm$json$Json$Decode$at,
 	_List_fromArray(
 		['data']),
-	$elm$json$Json$Decode$list($author$project$Main$decodeAudience));
+	$elm$json$Json$Decode$list($author$project$Data$Audience$decodeAudience));
 var $author$project$Main$urlGetAudiences = 'http://localhost:8000/jsons/audience.json';
 var $author$project$Main$fetchAudiences = $elm$http$Http$get(
 	{
-		expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAudiences, $author$project$Main$decodeAudiences),
+		expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAudiences, $author$project$Data$Audience$decodeAudiences),
 		url: $author$project$Main$urlGetAudiences
 	});
 var $author$project$Main$init = function (_v0) {
@@ -10274,7 +10274,7 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{clickedFooterOption: newPage}),
+						{clickedFooterOption: newPage, currentFolderId: $elm$core$Maybe$Nothing, previousFolderIds: _List_Nil}),
 					$elm$core$Platform$Cmd$none);
 		}
 	});
@@ -10298,36 +10298,9 @@ var $elm_community$list_extra$List$Extra$count = function (predicate) {
 			}),
 		0);
 };
-var $elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
-	});
-var $elm$core$List$member = F2(
-	function (x, xs) {
-		return A2(
-			$elm$core$List$any,
-			function (a) {
-				return _Utils_eq(a, x);
-			},
-			xs);
-	});
+var $author$project$Main$ChangeCurrentFolderIdAndAddItToPreviousList = function (a) {
+	return {$: 'ChangeCurrentFolderIdAndAddItToPreviousList', a: a};
+};
 var $elm$html$Html$img = _VirtualDom_node('img');
 var $elm$html$Html$Attributes$src = function (url) {
 	return A2(
@@ -10335,47 +10308,9 @@ var $elm$html$Html$Attributes$src = function (url) {
 		'src',
 		_VirtualDom_noJavaScriptOrHtmlUri(url));
 };
-var $author$project$Main$viewAudienceFiles = function (audience) {
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('audience')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$li,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$button,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('audience-button')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$img,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$src('/assets/file.svg'),
-										$elm$html$Html$Attributes$class('button-icon')
-									]),
-								_List_Nil),
-								$elm$html$Html$text(audience.name)
-							]))
-					]))
-			]));
-};
-var $author$project$Main$ChangeCurrentFolderIdAndAddItToPreviousList = function (a) {
-	return {$: 'ChangeCurrentFolderIdAndAddItToPreviousList', a: a};
-};
 var $author$project$Main$viewAudienceFolders = F2(
-	function (folder, model) {
-		var validFolder = _Utils_eq(folder.parent, $elm$core$Maybe$Nothing) || ((!_Utils_eq(folder.parent, $elm$core$Maybe$Nothing)) && _Utils_eq(folder.parent, model.currentFolderId));
+	function (folder, currentFolderId) {
+		var validFolder = _Utils_eq(folder.parent, $elm$core$Maybe$Nothing) || _Utils_eq(folder.parent, currentFolderId);
 		return validFolder ? A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -10413,11 +10348,11 @@ var $author$project$Main$viewAudienceFolders = F2(
 				])) : $elm$html$Html$text('');
 	});
 var $author$project$Main$viewAudiences = function (audience) {
-	return _Utils_eq(audience.folder, $elm$core$Maybe$Nothing) ? A2(
+	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$class('folder')
+				$elm$html$Html$Attributes$class('audience')
 			]),
 		_List_fromArray(
 			[
@@ -10430,7 +10365,7 @@ var $author$project$Main$viewAudiences = function (audience) {
 						$elm$html$Html$button,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$class('folder-button')
+								$elm$html$Html$Attributes$class('audience-button')
 							]),
 						_List_fromArray(
 							[
@@ -10438,19 +10373,18 @@ var $author$project$Main$viewAudiences = function (audience) {
 								$elm$html$Html$img,
 								_List_fromArray(
 									[
-										$elm$html$Html$Attributes$src('/assets/folder.svg'),
+										$elm$html$Html$Attributes$src('/assets/file.svg'),
 										$elm$html$Html$Attributes$class('button-icon')
 									]),
 								_List_Nil),
 								$elm$html$Html$text(audience.name)
 							]))
 					]))
-			])) : $elm$html$Html$text('');
+			]));
 };
 var $author$project$Main$RemoveCurrentFolderIdAndGoBack = {$: 'RemoveCurrentFolderIdAndGoBack'};
-var $author$project$Main$viewButtonGoBack = function (model) {
-	var _v0 = model.currentFolderId;
-	if (_v0.$ === 'Just') {
+var $author$project$Main$viewButtonGoBack = function (currentFolderId) {
+	if (currentFolderId.$ === 'Just') {
 		return A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -10489,9 +10423,9 @@ var $author$project$Main$viewButtonGoBack = function (model) {
 		return $elm$html$Html$text('');
 	}
 };
-var $author$project$Main$viewFolders = F3(
-	function (audienceFolders, audiences, model) {
-		var uniqueItems = _Utils_eq(model.currentFolderId, $elm$core$Maybe$Nothing) ? A2(
+var $author$project$Main$viewFolders = F4(
+	function (audienceFolders, audiences, currentFolderId, footerClickedOption) {
+		var audiencesAvailable = _Utils_eq(currentFolderId, $elm$core$Maybe$Nothing) ? A2(
 			$elm$core$List$filter,
 			function (item) {
 				return _Utils_eq(item.folder, $elm$core$Maybe$Nothing) && (A2(
@@ -10507,7 +10441,7 @@ var $author$project$Main$viewFolders = F3(
 			audiences) : A2(
 			$elm$core$List$filter,
 			function (item) {
-				return _Utils_eq(item.folder, model.currentFolderId) && (A2(
+				return _Utils_eq(item.folder, currentFolderId) && (A2(
 					$elm_community$list_extra$List$Extra$count,
 					$elm$core$Basics$eq(item.id),
 					A2(
@@ -10516,18 +10450,6 @@ var $author$project$Main$viewFolders = F3(
 							return $.id;
 						},
 						audiences)) === 1);
-			},
-			audiences);
-		var filteredIds = A2(
-			$elm$core$List$map,
-			function ($) {
-				return $.id;
-			},
-			uniqueItems);
-		var itemsNotInList = A2(
-			$elm$core$List$filter,
-			function (item) {
-				return !A2($elm$core$List$member, item.id, filteredIds);
 			},
 			audiences);
 		return A2(
@@ -10540,30 +10462,43 @@ var $author$project$Main$viewFolders = F3(
 					_List_Nil,
 					_List_fromArray(
 						[
-							$author$project$Main$viewButtonGoBack(model)
+							$author$project$Main$viewButtonGoBack(currentFolderId)
 						])),
 					A2(
 					$elm$html$Html$ul,
 					_List_Nil,
-					A2(
+					(footerClickedOption === 'Shared') ? _List_Nil : A2(
 						$elm$core$List$map,
 						function (folder) {
-							return A2($author$project$Main$viewAudienceFolders, folder, model);
+							return A2($author$project$Main$viewAudienceFolders, folder, currentFolderId);
 						},
 						audienceFolders)),
 					A2(
 					$elm$html$Html$ul,
 					_List_Nil,
-					A2($elm$core$List$map, $author$project$Main$viewAudiences, itemsNotInList)),
 					A2(
-					$elm$html$Html$ul,
-					_List_Nil,
-					A2($elm$core$List$map, $author$project$Main$viewAudienceFiles, uniqueItems))
+						$elm$core$List$map,
+						$author$project$Main$viewAudiences,
+						A2(
+							$elm$core$List$filter,
+							function (audience) {
+								switch (footerClickedOption) {
+									case 'Authored':
+										return _Utils_eq(audience.type_, $author$project$Data$Audience$Authored);
+									case 'Shared':
+										return _Utils_eq(audience.type_, $author$project$Data$Audience$Shared);
+									case 'Curated':
+										return _Utils_eq(audience.type_, $author$project$Data$Audience$Curated);
+									default:
+										return false;
+								}
+							},
+							audiencesAvailable)))
 				]));
 	});
 var $elm$html$Html$footer = _VirtualDom_node('footer');
-var $author$project$Main$SetNewPage = function (a) {
-	return {$: 'SetNewPage', a: a};
+var $author$project$Main$SetCategory = function (a) {
+	return {$: 'SetCategory', a: a};
 };
 var $author$project$Main$viewSingleFooterOption = F3(
 	function (imageSrc, optionName, footerOptionSelected) {
@@ -10582,7 +10517,7 @@ var $author$project$Main$viewSingleFooterOption = F3(
 							$elm$html$Html$Attributes$src(imageSrc),
 							$elm$html$Html$Attributes$class('footer-option-icon'),
 							$elm$html$Html$Events$onClick(
-							$author$project$Main$SetNewPage(optionName)),
+							$author$project$Main$SetCategory(optionName)),
 							$elm$html$Html$Attributes$class(
 							_Utils_eq(footerOptionSelected, optionName) ? 'clicked' : '')
 						]),
@@ -10619,9 +10554,11 @@ var $author$project$Main$viewFooter = function (footerOptionSelected) {
 				$author$project$Main$viewFooterOptions(footerOptionSelected)
 			]));
 };
-var $author$project$Main$view = function (model) {
-	return {
-		body: _List_fromArray(
+var $author$project$Main$viewBody = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
 			[
 				A2(
 				$elm$html$Html$div,
@@ -10649,21 +10586,21 @@ var $author$project$Main$view = function (model) {
 									case 'Success':
 										var audiences = _v1.a;
 										if (_Utils_eq(model.currentFolderId, $elm$core$Maybe$Nothing)) {
-											return A3($author$project$Main$viewFolders, audienceFolders, audiences, model);
+											return A4($author$project$Main$viewFolders, audienceFolders, audiences, model.currentFolderId, model.clickedFooterOption);
 										} else {
-											var sonFoldersContent = A2(
+											var audiencesFoldersContent = A2(
 												$elm$core$List$filter,
 												function (item) {
 													return _Utils_eq(item.parent, model.currentFolderId);
 												},
 												audienceFolders);
-											var sonContent = A2(
+											var audiencesContent = A2(
 												$elm$core$List$filter,
 												function (item) {
 													return _Utils_eq(item.folder, model.currentFolderId);
 												},
 												audiences);
-											return A3($author$project$Main$viewFolders, sonFoldersContent, sonContent, model);
+											return A4($author$project$Main$viewFolders, audiencesFoldersContent, audiencesContent, model.currentFolderId, model.clickedFooterOption);
 										}
 									default:
 										return $elm$html$Html$text('Something went wrong');
@@ -10674,6 +10611,13 @@ var $author$project$Main$view = function (model) {
 					}()
 					])),
 				$author$project$Main$viewFooter(model.clickedFooterOption)
+			]));
+};
+var $author$project$Main$view = function (model) {
+	return {
+		body: _List_fromArray(
+			[
+				$author$project$Main$viewBody(model)
 			]),
 		title: 'GWI Elm Challenge'
 	};
@@ -10688,4 +10632,4 @@ var $author$project$Main$main = $elm$browser$Browser$document(
 		view: $author$project$Main$view
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Data.Audience.Audience":{"args":[],"type":"{ id : Basics.Int, name : String.String, type_ : Data.Audience.AudienceType, folder : Maybe.Maybe Basics.Int }"},"Data.AudienceFolder.AudienceFolder":{"args":[],"type":"{ id : Basics.Int, name : String.String, parent : Maybe.Maybe Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"FetchAudienceFolders":[],"GotAudienceFolders":["Result.Result Http.Error (List.List Data.AudienceFolder.AudienceFolder)"],"FetchAudiences":[],"GotAudiences":["Result.Result Http.Error (List.List Data.Audience.Audience)"],"ChangeCurrentFolderIdAndAddItToPreviousList":["Basics.Int"],"RemoveCurrentFolderIdAndGoBack":[],"SetNewPage":["String.String"]}},"Data.Audience.AudienceType":{"args":[],"tags":{"Authored":[],"Shared":[],"Curated":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Data.Audience.Audience":{"args":[],"type":"{ id : Basics.Int, name : String.String, type_ : Data.Audience.AudienceType, folder : Maybe.Maybe Basics.Int }"},"Data.AudienceFolder.AudienceFolder":{"args":[],"type":"{ id : Basics.Int, name : String.String, parent : Maybe.Maybe Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"FetchAudienceFolders":[],"GotAudienceFolders":["Result.Result Http.Error (List.List Data.AudienceFolder.AudienceFolder)"],"FetchAudiences":[],"GotAudiences":["Result.Result Http.Error (List.List Data.Audience.Audience)"],"ChangeCurrentFolderIdAndAddItToPreviousList":["Basics.Int"],"RemoveCurrentFolderIdAndGoBack":[],"SetCategory":["String.String"]}},"Data.Audience.AudienceType":{"args":[],"tags":{"Authored":[],"Shared":[],"Curated":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));

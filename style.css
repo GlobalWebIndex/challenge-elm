@@ -93,12 +93,13 @@ footer {
     width: 100%;
     display: block;
     border-radius: 15px;
+    transition: box-shadow 0.3s ease-in-out;
 }
 
-.footer-option-icon:hover{
-    background-color: #74b9ff;
+.footer-option-icon:hover {
+    box-shadow: 0 0 10px rgba(116, 185, 255, 0.7);
 }
 
-.footer-option-icon.clicked{
+.footer-option-icon.clicked {
     background-color: #74b9ff;
 }
